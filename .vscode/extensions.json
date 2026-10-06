@@ -1,0 +1,12 @@
+{
+    "recommendations": [
+        "marp-team.marp-vscode",
+        "yzhang.markdown-all-in-one",
+        "davidanson.vscode-markdownlint",
+        "ms-vscode.vscode-json",
+        "bradlc.vscode-tailwindcss",
+        "esbenp.prettier-vscode",
+        "ms-vscode.live-server"
+    ],
+    "unwantedRecommendations": []
+}

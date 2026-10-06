@@ -1,0 +1,26 @@
+{
+  "name": "mindx-engineer-onboarding",
+  "type": "module",
+  "private": true,
+  "description": "MindX Engineer Onboarding - Training materials and slides for engineer onboarding program",
+  "scripts": {
+    "build": "slidev build",
+    "dev": "slidev --open",
+    "dev:ai-training": "slidev slides-ai-training.md --open",
+    "dev:hexagon": "slidev slides-hexagon.md --open",
+    "dev:operating-engineer": "slidev slides-operating-engineer.md --open",
+    "dev:cv-interview": "slidev slides-cv-interview-tips.md --open",
+    "dev:lifetime-learning": "slidev slides-lifetime-learning.md --open",
+    "export": "slidev export"
+  },
+  "dependencies": {
+    "@fontsource/fira-code": "^5.2.6",
+    "@fontsource/inter": "^5.2.6",
+    "@fontsource/jetbrains-mono": "^5.2.6",
+    "@fontsource/nunito-sans": "^5.2.6",
+    "@slidev/cli": "^52.1.0",
+    "@slidev/theme-default": "latest",
+    "@slidev/theme-seriph": "latest",
+    "vue": "^3.5.18"
+  }
+}

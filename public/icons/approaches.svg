@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200" fill="none">
+  <!-- Approaches icon with arrows and paths -->
+  
+  <!-- Central hub/node -->
+  <circle cx="100" cy="100" r="20" fill="#000000"/>
+  
+  <!-- Arrow paths radiating outward -->
+  <!-- Top arrow -->
+  <path d="M 100 80 L 100 30" stroke="#000000" stroke-width="4" stroke-dasharray="8,4"/>
+  <path d="M 85 45 L 100 30 L 115 45" stroke="#000000" stroke-width="4" fill="none"/>
+  
+  <!-- Top-right arrow -->
+  <path d="M 114 86 L 155 45" stroke="#000000" stroke-width="4"/>
+  <path d="M 140 52 L 155 45 L 148 60" stroke="#000000" stroke-width="4" fill="none"/>
+  
+  <!-- Right arrow -->
+  <path d="M 120 100 L 170 100" stroke="#000000" stroke-width="4" stroke-dasharray="6,3"/>
+  <path d="M 155 85 L 170 100 L 155 115" stroke="#000000" stroke-width="4" fill="none"/>
+  
+  <!-- Bottom-right arrow -->
+  <path d="M 114 114 L 155 155" stroke="#000000" stroke-width="4"/>
+  <path d="M 148 140 L 155 155 L 140 148" stroke="#000000" stroke-width="4" fill="none"/>
+  
+  <!-- Bottom arrow -->
+  <path d="M 100 120 L 100 170" stroke="#000000" stroke-width="4" stroke-dasharray="8,4"/>
+  <path d="M 115 155 L 100 170 L 85 155" stroke="#000000" stroke-width="4" fill="none"/>
+  
+  <!-- Bottom-left arrow -->
+  <path d="M 86 114 L 45 155" stroke="#000000" stroke-width="4"/>
+  <path d="M 60 148 L 45 155 L 52 140" stroke="#000000" stroke-width="4" fill="none"/>
+  
+  <!-- Left arrow -->
+  <path d="M 80 100 L 30 100" stroke="#000000" stroke-width="4" stroke-dasharray="6,3"/>
+  <path d="M 45 115 L 30 100 L 45 85" stroke="#000000" stroke-width="4" fill="none"/>
+  
+  <!-- Top-left arrow -->
+  <path d="M 86 86 L 45 45" stroke="#000000" stroke-width="4"/>
+  <path d="M 52 60 L 45 45 L 60 52" stroke="#000000" stroke-width="4" fill="none"/>
+  
+  <!-- Small dots at arrow ends for visual balance -->
+  <circle cx="100" cy="30" r="3" fill="#000000"/>
+  <circle cx="155" cy="45" r="3" fill="#000000"/>
+  <circle cx="170" cy="100" r="3" fill="#000000"/>
+  <circle cx="155" cy="155" r="3" fill="#000000"/>
+  <circle cx="100" cy="170" r="3" fill="#000000"/>
+  <circle cx="45" cy="155" r="3" fill="#000000"/>
+  <circle cx="30" cy="100" r="3" fill="#000000"/>
+  <circle cx="45" cy="45" r="3" fill="#000000"/>
+</svg>

@@ -1,0 +1,38 @@
+{
+  "[markdown]": {
+    "editor.formatOnSave": false,
+    "editor.defaultFormatter": null
+  },
+  "prettier.disableLanguages": ["markdown"],
+  "markdown.marp.themes": ["./slides/themes/mindx-custom.css"],
+  "markdown.marp.enableHtml": true,
+  "markdown.marp.mathTypesetting": "mathjax",
+  "markdown.marp.chromePath": "",
+  "markdown.marp.exportType": "html",
+  "markdown.marp.pdf.noteAnnotations": false,
+  "markdown.marp.pdf.outlines": true,
+  "markdown.preview.fontSize": 14,
+  "markdown.preview.lineHeight": 1.6,
+  "files.associations": {
+    "*.md": "markdown"
+  },
+  "editor.fontSize": 14,
+  "editor.lineHeight": 1.5,
+  "editor.fontFamily": "'JetBrains Mono', Consolas, 'Courier New', monospace",
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "explicit"
+  },
+  "files.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/.DS_Store": true,
+    "**/Thumbs.db": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/*.html": true,
+    "**/*.pdf": true
+  }
+}

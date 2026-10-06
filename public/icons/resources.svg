@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200" fill="none">
+  <!-- Resources icon with toolbox and various tools -->
+  
+  <!-- Main toolbox/container -->
+  <rect x="60" y="80" width="80" height="60" fill="none" stroke="#000000" stroke-width="4" rx="8"/>
+  <rect x="60" y="80" width="80" height="15" fill="#000000"/>
+  
+  <!-- Toolbox handle -->
+  <rect x="85" y="70" width="30" height="10" fill="none" stroke="#000000" stroke-width="3" rx="5"/>
+  <line x1="90" y1="75" x2="110" y2="75" stroke="#000000" stroke-width="2"/>
+  
+  <!-- Cloud symbol (Azure) -->
+  <path d="M 40 45 Q 35 35 45 35 Q 50 25 60 35 Q 70 30 75 40 Q 80 35 75 45 Z" fill="none" stroke="#000000" stroke-width="3" stroke-dasharray="6,3"/>
+  <circle cx="57" cy="40" r="2" fill="#000000"/>
+  
+  <!-- AI/Brain symbol -->
+  <circle cx="160" cy="45" r="15" fill="none" stroke="#000000" stroke-width="3"/>
+  <path d="M 150 45 Q 160 35 170 45" fill="none" stroke="#000000" stroke-width="2" stroke-dasharray="4,2"/>
+  <path d="M 150 45 Q 160 55 170 45" fill="none" stroke="#000000" stroke-width="2" stroke-dasharray="4,2"/>
+  <circle cx="160" cy="45" r="3" fill="#000000"/>
+  
+  <!-- Tools inside toolbox -->
+  <!-- Wrench -->
+  <rect x="70" y="100" width="12" height="3" fill="#000000" rx="1"/>
+  <circle cx="76" cy="105" r="3" fill="none" stroke="#000000" stroke-width="2"/>
+  
+  <!-- Screwdriver -->
+  <line x1="90" y1="100" x2="90" y2="120" stroke="#000000" stroke-width="3"/>
+  <rect x="88" y="96" width="4" height="6" fill="#000000" rx="1"/>
+  
+  <!-- Key -->
+  <line x1="110" y1="105" x2="120" y2="105" stroke="#000000" stroke-width="3"/>
+  <circle cx="125" cy="105" r="4" fill="none" stroke="#000000" stroke-width="2"/>
+  <rect x="123" y="102" width="4" height="2" fill="#000000"/>
+  
+  <!-- Monitor/Dashboard -->
+  <rect x="40" y="160" width="30" height="20" fill="none" stroke="#000000" stroke-width="3" rx="3"/>
+  <rect x="42" y="162" width="26" height="12" fill="none" stroke="#000000" stroke-width="1"/>
+  <line x1="47" y1="165" x2="62" y2="165" stroke="#000000" stroke-width="1"/>
+  <line x1="47" y1="168" x2="58" y2="168" stroke="#000000" stroke-width="1"/>
+  <line x1="47" y1="171" x2="65" y2="171" stroke="#000000" stroke-width="1"/>
+  
+  <!-- Person/Mentor icon -->
+  <circle cx="160" cy="165" r="8" fill="none" stroke="#000000" stroke-width="3"/>
+  <path d="M 145 185 Q 160 175 175 185" fill="none" stroke="#000000" stroke-width="3"/>
+  
+  <!-- Connecting lines showing relationships -->
+  <line x1="60" y1="50" x2="85" y2="75" stroke="#000000" stroke-width="2" stroke-dasharray="3,2"/>
+  <line x1="145" y1="50" x2="120" y2="75" stroke="#000000" stroke-width="2" stroke-dasharray="3,2"/>
+  <line x1="70" y1="150" x2="90" y2="140" stroke="#000000" stroke-width="2" stroke-dasharray="3,2"/>
+  <line x1="150" y1="150" x2="130" y2="140" stroke="#000000" stroke-width="2" stroke-dasharray="3,2"/>
+</svg>
