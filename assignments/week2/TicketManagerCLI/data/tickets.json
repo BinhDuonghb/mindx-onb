@@ -1,0 +1,14 @@
+[
+  {
+    "id": "07e6be02-3bd7-4772-b0c3-4eb3c9eebe0c",
+    "title": "Task closed -> in-progress",
+    "description": "",
+    "status": "in-progress",
+    "priority": "medium",
+    "tags": [],
+    "created_at": "2026-10-12T17:32:19.413094",
+    "creator": null,
+    "assignee": null,
+    "estimated_time": null
+  }
+]
