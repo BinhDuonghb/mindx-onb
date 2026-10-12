@@ -4,7 +4,10 @@ from uuid import UUID
 from ticket_manager.config import TICKETS_FILE
 from data.db_client import DBClient
 from ticket_manager.models.ticket import Ticket
+from ticket_manager.seed_data import get_seed_data
 from ticket_manager.services.ticketService import TicketService
+
+
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -29,12 +32,13 @@ Examples:
   tickets create --title "New feature" --description "Add dark mode" --priority high
   tickets create --title "Bug" --tags "frontend,urgent" --priority high
   tickets create --title "Task" --creator "dev@example.com" --assignee "qa@example.com" --estimated_time 5.5
+  tickets create --load-seed-data                              # Load sample tickets
         """
     )
     create_parser.add_argument(
         "--title",
-        required=True,
-        help="Ticket title (required)"
+        required=False,
+        help="Ticket title (required unless --load-seed-data is used)"
     )
     create_parser.add_argument(
         "--description",
@@ -67,6 +71,11 @@ Examples:
         type=float,
         default=None,
         help="Estimated time in hours (optional)"
+    )
+    create_parser.add_argument(
+        "--load-seed-data",
+        action="store_true",
+        help="Load sample/seed tickets (ignores other options)"
     )
 
     # LIST command
@@ -153,6 +162,29 @@ Examples:
 
 def handle_create(parsed_args) -> int:
     """Handle create command."""
+    db_client = DBClient(TICKETS_FILE)
+    ticket_service = TicketService(db_client)
+
+    # Handle seed data loading
+    if parsed_args.load_seed_data:
+        seed_tickets = get_seed_data()
+        created_count = 0
+
+        for ticket in seed_tickets:
+            try:
+                ticket_service.create(ticket)
+                created_count += 1
+            except ValueError as e:
+                print(f"Error creating seed ticket '{ticket.title}': {str(e)}")
+
+        print(f"\nSuccessfully loaded {created_count}/{len(seed_tickets)} seed tickets.")
+        return 0
+
+    # Handle regular ticket creation
+    if not parsed_args.title:
+        print("Error: --title is required (unless --load-seed-data is used)")
+        return 1
+
     tags = [
         tag.strip()
         for tag in parsed_args.tags.split(",")
@@ -174,17 +206,16 @@ def handle_create(parsed_args) -> int:
         estimated_time=parsed_args.estimated_time
     )
 
-    db_client = DBClient(TICKETS_FILE)
-    ticket_service = TicketService(db_client)
-
-    created_ticket = ticket_service.create(ticket)
-
-    print(
-        f"Ticket created successfully "
-        f"with ID: {created_ticket.id}"
-    )
-
-    return 0
+    try:
+        created_ticket = ticket_service.create(ticket)
+        print(
+            f"Ticket created successfully "
+            f"with ID: {created_ticket.id}"
+        )
+        return 0
+    except ValueError as e:
+        print(f"Error: {str(e)}")
+        return 1
 
 
 def handle_list(parsed_args) -> int:

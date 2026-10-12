@@ -137,7 +137,7 @@ python main.py create --title "TITLE" [--description "DESCRIPTION"] [--priority 
 - `--description` (optional): Ticket description (default: empty)
 - `--priority` (optional): Priority level - `low`, `medium`, `high` (default: medium)
 - `--tags` (optional): Comma-separated tags (default: empty)
-
+- `--load-seed-data`: load seed data for test support (no need title for this)
 **Examples:**
 ```bash
 python main.py create --title "Fix login bug"
@@ -145,6 +145,8 @@ python main.py create --title "Fix login bug"
 python main.py create --title "New feature" --description "Add dark mode" --priority high
 
 python main.py create --title "Bug fix" --tags "frontend,urgent" --priority high --description "CSS issue on mobile"
+
+python main.py create --load-seed-data
 ```
 
 ### List Tickets

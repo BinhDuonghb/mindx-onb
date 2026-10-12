@@ -79,7 +79,7 @@ class TestCreateTicketCLI:
         result = run_cli_create(description="Missing title")
 
         assert result.returncode != 0
-        assert "required" in result.stderr.lower()
+        assert "required" in result.stdout.lower()
 
         # Verify no ticket was created
         db_client = DBClient(TICKETS_FILE)
@@ -375,7 +375,7 @@ class TestCreateTicketCLI:
         )
 
         assert result.returncode != 0
-        assert "error" in result.stderr.lower() or "invalid" in result.stderr.lower()
+        assert "error" in result.stdout.lower() or "invalid" in result.stdout.lower()
 
         # Verify no ticket was created
         db_client = DBClient(TICKETS_FILE)
@@ -393,7 +393,7 @@ class TestCreateTicketCLI:
         )
 
         assert result.returncode != 0
-        assert "error" in result.stderr.lower() or "invalid" in result.stderr.lower()
+        assert "error" in result.stdout.lower() or "invalid" in result.stdout.lower()
 
         # Verify no ticket was created
         db_client = DBClient(TICKETS_FILE)
