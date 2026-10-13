@@ -1,11 +1,16 @@
 import argparse
 from uuid import UUID
 
-from ticket_manager.config import TICKETS_FILE
+from ticket_manager.config import TICKETS_FILE, TEST_TICKETS_FILE
 from data.db_client import DBClient
 from ticket_manager.models.ticket import Ticket
 from ticket_manager.seed_data import get_seed_data
 from ticket_manager.services.ticketService import TicketService
+
+
+def get_tickets_file(use_test: bool):
+    """Return the appropriate tickets file path based on test flag."""
+    return TEST_TICKETS_FILE if use_test else TICKETS_FILE
 
 
 
@@ -15,6 +20,13 @@ def build_parser() -> argparse.ArgumentParser:
         prog="tickets",
         description="Ticket Manager CLI",
         epilog="Use 'tickets <command> -h' for help on a specific command"
+    )
+
+    # Global flag for test mode
+    parser.add_argument(
+        "-t", "--test",
+        action="store_true",
+        help="Use test database instead of production database"
     )
 
     subparsers = parser.add_subparsers(
@@ -160,9 +172,10 @@ Examples:
     return parser
 
 
-def handle_create(parsed_args) -> int:
+def handle_create(parsed_args, use_test: bool = False) -> int:
     """Handle create command."""
-    db_client = DBClient(TICKETS_FILE)
+    tickets_file = get_tickets_file(use_test)
+    db_client = DBClient(tickets_file)
     ticket_service = TicketService(db_client)
 
     # Handle seed data loading
@@ -218,9 +231,10 @@ def handle_create(parsed_args) -> int:
         return 1
 
 
-def handle_list(parsed_args) -> int:
+def handle_list(parsed_args, use_test: bool = False) -> int:
     """Handle list command."""
-    db_client = DBClient(TICKETS_FILE)
+    tickets_file = get_tickets_file(use_test)
+    db_client = DBClient(tickets_file)
     ticket_service = TicketService(db_client)
 
     # Get all tickets
@@ -254,7 +268,7 @@ def handle_list(parsed_args) -> int:
     return 0
 
 
-def handle_show(parsed_args) -> int:
+def handle_show(parsed_args, use_test: bool = False) -> int:
     """Handle show command."""
     try:
         ticket_id = UUID(parsed_args.id)
@@ -262,7 +276,8 @@ def handle_show(parsed_args) -> int:
         print(f"Error: Invalid UUID format: {parsed_args.id}")
         return 1
 
-    db_client = DBClient(TICKETS_FILE)
+    tickets_file = get_tickets_file(use_test)
+    db_client = DBClient(tickets_file)
     ticket_service = TicketService(db_client)
 
     ticket = ticket_service.get_by_id(ticket_id)
@@ -287,7 +302,7 @@ def handle_show(parsed_args) -> int:
     return 0
 
 
-def handle_update(parsed_args) -> int:
+def handle_update(parsed_args, use_test: bool = False) -> int:
     """Handle update command."""
     try:
         ticket_id = UUID(parsed_args.id)
@@ -295,7 +310,8 @@ def handle_update(parsed_args) -> int:
         print(f"Error: Invalid UUID format: {parsed_args.id}")
         return 1
 
-    db_client = DBClient(TICKETS_FILE)
+    tickets_file = get_tickets_file(use_test)
+    db_client = DBClient(tickets_file)
     ticket_service = TicketService(db_client)
 
     try:
@@ -310,7 +326,7 @@ def handle_update(parsed_args) -> int:
         return 1
 
 
-def handle_delete(parsed_args) -> int:
+def handle_delete(parsed_args, use_test: bool = False) -> int:
     """Handle delete command."""
     try:
         ticket_id = UUID(parsed_args.id)
@@ -318,7 +334,8 @@ def handle_delete(parsed_args) -> int:
         print(f"Error: Invalid UUID format: {parsed_args.id}")
         return 1
 
-    db_client = DBClient(TICKETS_FILE)
+    tickets_file = get_tickets_file(use_test)
+    db_client = DBClient(tickets_file)
     ticket_service = TicketService(db_client)
 
     try:
@@ -338,19 +355,21 @@ def run_cli(args=None) -> int:
         parser.print_help()
         return 0
 
+    use_test = getattr(parsed_args, 'test', False)
+
     if parsed_args.command == "create":
-        return handle_create(parsed_args)
+        return handle_create(parsed_args, use_test)
 
     if parsed_args.command == "list":
-        return handle_list(parsed_args)
+        return handle_list(parsed_args, use_test)
 
     if parsed_args.command == "show":
-        return handle_show(parsed_args)
+        return handle_show(parsed_args, use_test)
 
     if parsed_args.command == "update":
-        return handle_update(parsed_args)
+        return handle_update(parsed_args, use_test)
 
     if parsed_args.command == "delete":
-        return handle_delete(parsed_args)
+        return handle_delete(parsed_args, use_test)
 
     return 1

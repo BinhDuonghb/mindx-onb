@@ -2,7 +2,7 @@ import subprocess
 import sys
 from uuid import UUID
 
-from ticket_manager.config import TICKETS_FILE
+from ticket_manager.config import TEST_TICKETS_FILE
 from data.db_client import DBClient
 from ticket_manager.models.ticket import Ticket
 from ticket_manager.services.ticketService import TicketService
@@ -10,7 +10,7 @@ from ticket_manager.services.ticketService import TicketService
 
 def run_cli_update(ticket_id, **kwargs) -> subprocess.CompletedProcess:
     """Helper to run update command with given arguments."""
-    cmd = [sys.executable, "main.py", "update", str(ticket_id)]
+    cmd = [sys.executable, "main.py", "--test", "update", str(ticket_id)]
 
     for key, value in kwargs.items():
         if value is not None:
@@ -22,8 +22,8 @@ def run_cli_update(ticket_id, **kwargs) -> subprocess.CompletedProcess:
 
 def setup_tickets(tickets_data):
     """Helper to setup test tickets in the file."""
-    TICKETS_FILE.write_text("[]", encoding="utf-8")
-    db_client = DBClient(TICKETS_FILE)
+    TEST_TICKETS_FILE.write_text("[]", encoding="utf-8")
+    db_client = DBClient(TEST_TICKETS_FILE)
     ticket_service = TicketService(db_client)
 
     created = []
@@ -48,7 +48,7 @@ class TestUpdateTicketCLI:
 
         assert result.returncode == 0
 
-        db_client = DBClient(TICKETS_FILE)
+        db_client = DBClient(TEST_TICKETS_FILE)
         ticket_service = TicketService(db_client)
         updated = ticket_service.get_by_id(ticket_id)
 
@@ -65,7 +65,7 @@ class TestUpdateTicketCLI:
 
         assert result.returncode == 0
 
-        db_client = DBClient(TICKETS_FILE)
+        db_client = DBClient(TEST_TICKETS_FILE)
         ticket_service = TicketService(db_client)
         updated = ticket_service.get_by_id(tickets[0].id)
 
@@ -81,7 +81,7 @@ class TestUpdateTicketCLI:
 
         assert result.returncode == 0
 
-        db_client = DBClient(TICKETS_FILE)
+        db_client = DBClient(TEST_TICKETS_FILE)
         ticket_service = TicketService(db_client)
         updated = ticket_service.get_by_id(tickets[0].id)
 
@@ -89,7 +89,7 @@ class TestUpdateTicketCLI:
 
     def test_update_nonexistent_ticket_fails(self):
         """Should fail when ticket doesn't exist."""
-        TICKETS_FILE.write_text("[]", encoding="utf-8")
+        TEST_TICKETS_FILE.write_text("[]", encoding="utf-8")
 
         fake_uuid = UUID("00000000-0000-0000-0000-000000000000")
         result = run_cli_update(fake_uuid, status="closed")
@@ -139,7 +139,7 @@ class TestUpdateTicketCLI:
 
         run_cli_update(tickets[0].id, status="closed")
 
-        db_client = DBClient(TICKETS_FILE)
+        db_client = DBClient(TEST_TICKETS_FILE)
         ticket_service = TicketService(db_client)
 
         assert ticket_service.get_by_id(tickets[0].id).status == "closed"
@@ -160,7 +160,7 @@ class TestUpdateTicketCLI:
 
         run_cli_update(tickets[0].id, status="closed")
 
-        db_client = DBClient(TICKETS_FILE)
+        db_client = DBClient(TEST_TICKETS_FILE)
         ticket_service = TicketService(db_client)
         updated = ticket_service.get_by_id(tickets[0].id)
 
@@ -190,7 +190,7 @@ class TestUpdateTicketCLI:
                     result = run_cli_update(tickets[0].id, status=end_status)
                     assert result.returncode == 0
 
-                    db_client = DBClient(TICKETS_FILE)
+                    db_client = DBClient(TEST_TICKETS_FILE)
                     ticket_service = TicketService(db_client)
                     updated = ticket_service.get_by_id(tickets[0].id)
                     assert updated.status == end_status

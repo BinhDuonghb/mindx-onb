@@ -2,14 +2,14 @@ import subprocess
 import sys
 from uuid import UUID
 
-from ticket_manager.config import TICKETS_FILE
+from ticket_manager.config import TEST_TICKETS_FILE
 from data.db_client import DBClient
 from ticket_manager.services.ticketService import TicketService
 
 
 def run_cli_create(**kwargs) -> subprocess.CompletedProcess:
     """Helper to run create command with given arguments."""
-    cmd = [sys.executable, "main.py", "create"]
+    cmd = [sys.executable, "main.py", "--test", "create"]
 
     for key, value in kwargs.items():
         if value is not None:
@@ -24,7 +24,7 @@ class TestCreateTicketCLI:
 
     def test_create_ticket_happy_path(self):
         """Should create ticket with all arguments provided."""
-        TICKETS_FILE.write_text("[]", encoding="utf-8")
+        TEST_TICKETS_FILE.write_text("[]", encoding="utf-8")
 
         result = run_cli_create(
             title="Fix login bug",
@@ -34,9 +34,9 @@ class TestCreateTicketCLI:
         )
 
         assert result.returncode == 0, f"CLI failed: {result.stderr}"
-        assert TICKETS_FILE.exists()
+        assert TEST_TICKETS_FILE.exists()
 
-        db_client = DBClient(TICKETS_FILE)
+        db_client = DBClient(TEST_TICKETS_FILE)
         ticket_service = TicketService(db_client)
         tickets = ticket_service.get_all()
 
@@ -53,13 +53,13 @@ class TestCreateTicketCLI:
 
     def test_create_ticket_with_required_fields_only(self):
         """Should create ticket with only required title field."""
-        TICKETS_FILE.write_text("[]", encoding="utf-8")
+        TEST_TICKETS_FILE.write_text("[]", encoding="utf-8")
 
         result = run_cli_create(title="Simple Task")
 
         assert result.returncode == 0
 
-        db_client = DBClient(TICKETS_FILE)
+        db_client = DBClient(TEST_TICKETS_FILE)
         ticket_service = TicketService(db_client)
         tickets = ticket_service.get_all()
 
@@ -74,7 +74,7 @@ class TestCreateTicketCLI:
 
     def test_create_ticket_without_title_fails(self):
         """Should fail when title is not provided."""
-        TICKETS_FILE.write_text("[]", encoding="utf-8")
+        TEST_TICKETS_FILE.write_text("[]", encoding="utf-8")
 
         result = run_cli_create(description="Missing title")
 
@@ -82,14 +82,14 @@ class TestCreateTicketCLI:
         assert "required" in result.stdout.lower()
 
         # Verify no ticket was created
-        db_client = DBClient(TICKETS_FILE)
+        db_client = DBClient(TEST_TICKETS_FILE)
         ticket_service = TicketService(db_client)
         tickets = ticket_service.get_all()
         assert len(tickets) == 0
 
     def test_create_ticket_with_low_priority(self):
         """Should create ticket with low priority."""
-        TICKETS_FILE.write_text("[]", encoding="utf-8")
+        TEST_TICKETS_FILE.write_text("[]", encoding="utf-8")
 
         result = run_cli_create(
             title="Nice to have feature",
@@ -98,7 +98,7 @@ class TestCreateTicketCLI:
 
         assert result.returncode == 0
 
-        db_client = DBClient(TICKETS_FILE)
+        db_client = DBClient(TEST_TICKETS_FILE)
         ticket_service = TicketService(db_client)
         tickets = ticket_service.get_all()
 
@@ -106,13 +106,13 @@ class TestCreateTicketCLI:
 
     def test_create_ticket_with_default_priority(self):
         """Should use medium priority when not specified."""
-        TICKETS_FILE.write_text("[]", encoding="utf-8")
+        TEST_TICKETS_FILE.write_text("[]", encoding="utf-8")
 
         result = run_cli_create(title="Medium Priority Task")
 
         assert result.returncode == 0
 
-        db_client = DBClient(TICKETS_FILE)
+        db_client = DBClient(TEST_TICKETS_FILE)
         ticket_service = TicketService(db_client)
         tickets = ticket_service.get_all()
 
@@ -120,7 +120,7 @@ class TestCreateTicketCLI:
 
     def test_create_ticket_with_invalid_priority_fails(self):
         """Should fail with invalid priority value."""
-        TICKETS_FILE.write_text("[]", encoding="utf-8")
+        TEST_TICKETS_FILE.write_text("[]", encoding="utf-8")
 
         result = run_cli_create(
             title="Task",
@@ -132,7 +132,7 @@ class TestCreateTicketCLI:
 
     def test_create_ticket_with_empty_tags(self):
         """Should create ticket with empty tags string."""
-        TICKETS_FILE.write_text("[]", encoding="utf-8")
+        TEST_TICKETS_FILE.write_text("[]", encoding="utf-8")
 
         result = run_cli_create(
             title="No Tags Task",
@@ -141,7 +141,7 @@ class TestCreateTicketCLI:
 
         assert result.returncode == 0
 
-        db_client = DBClient(TICKETS_FILE)
+        db_client = DBClient(TEST_TICKETS_FILE)
         ticket_service = TicketService(db_client)
         tickets = ticket_service.get_all()
 
@@ -149,7 +149,7 @@ class TestCreateTicketCLI:
 
     def test_create_ticket_with_single_tag(self):
         """Should create ticket with a single tag."""
-        TICKETS_FILE.write_text("[]", encoding="utf-8")
+        TEST_TICKETS_FILE.write_text("[]", encoding="utf-8")
 
         result = run_cli_create(
             title="Single Tag Task",
@@ -158,7 +158,7 @@ class TestCreateTicketCLI:
 
         assert result.returncode == 0
 
-        db_client = DBClient(TICKETS_FILE)
+        db_client = DBClient(TEST_TICKETS_FILE)
         ticket_service = TicketService(db_client)
         tickets = ticket_service.get_all()
 
@@ -166,7 +166,7 @@ class TestCreateTicketCLI:
 
     def test_create_ticket_with_multiple_tags(self):
         """Should parse multiple comma-separated tags correctly."""
-        TICKETS_FILE.write_text("[]", encoding="utf-8")
+        TEST_TICKETS_FILE.write_text("[]", encoding="utf-8")
 
         result = run_cli_create(
             title="Multi Tag Task",
@@ -175,7 +175,7 @@ class TestCreateTicketCLI:
 
         assert result.returncode == 0
 
-        db_client = DBClient(TICKETS_FILE)
+        db_client = DBClient(TEST_TICKETS_FILE)
         ticket_service = TicketService(db_client)
         tickets = ticket_service.get_all()
 
@@ -183,7 +183,7 @@ class TestCreateTicketCLI:
 
     def test_create_ticket_with_tags_with_spaces(self):
         """Should trim whitespace from tags."""
-        TICKETS_FILE.write_text("[]", encoding="utf-8")
+        TEST_TICKETS_FILE.write_text("[]", encoding="utf-8")
 
         result = run_cli_create(
             title="Spaced Tags",
@@ -192,7 +192,7 @@ class TestCreateTicketCLI:
 
         assert result.returncode == 0
 
-        db_client = DBClient(TICKETS_FILE)
+        db_client = DBClient(TEST_TICKETS_FILE)
         ticket_service = TicketService(db_client)
         tickets = ticket_service.get_all()
 
@@ -201,7 +201,7 @@ class TestCreateTicketCLI:
 
     def test_create_multiple_tickets(self):
         """Should create multiple tickets with unique IDs."""
-        TICKETS_FILE.write_text("[]", encoding="utf-8")
+        TEST_TICKETS_FILE.write_text("[]", encoding="utf-8")
 
         result1 = run_cli_create(title="First Task")
         result2 = run_cli_create(title="Second Task")
@@ -211,7 +211,7 @@ class TestCreateTicketCLI:
         assert result2.returncode == 0
         assert result3.returncode == 0
 
-        db_client = DBClient(TICKETS_FILE)
+        db_client = DBClient(TEST_TICKETS_FILE)
         ticket_service = TicketService(db_client)
         tickets = ticket_service.get_all()
 
@@ -226,7 +226,7 @@ class TestCreateTicketCLI:
 
     def test_create_ticket_with_special_characters(self):
         """Should handle special characters in title and description."""
-        TICKETS_FILE.write_text("[]", encoding="utf-8")
+        TEST_TICKETS_FILE.write_text("[]", encoding="utf-8")
 
         result = run_cli_create(
             title="Fix: API response [500] error!",
@@ -235,7 +235,7 @@ class TestCreateTicketCLI:
 
         assert result.returncode == 0
 
-        db_client = DBClient(TICKETS_FILE)
+        db_client = DBClient(TEST_TICKETS_FILE)
         ticket_service = TicketService(db_client)
         tickets = ticket_service.get_all()
 
@@ -245,7 +245,7 @@ class TestCreateTicketCLI:
 
     def test_create_ticket_outputs_success_message(self):
         """Should print success message with ticket ID."""
-        TICKETS_FILE.write_text("[]", encoding="utf-8")
+        TEST_TICKETS_FILE.write_text("[]", encoding="utf-8")
 
         result = run_cli_create(title="Test Task")
 
@@ -255,13 +255,13 @@ class TestCreateTicketCLI:
 
     def test_create_ticket_default_status_is_open(self):
         """Should set status to 'open' by default."""
-        TICKETS_FILE.write_text("[]", encoding="utf-8")
+        TEST_TICKETS_FILE.write_text("[]", encoding="utf-8")
 
         result = run_cli_create(title="New Task")
 
         assert result.returncode == 0
 
-        db_client = DBClient(TICKETS_FILE)
+        db_client = DBClient(TEST_TICKETS_FILE)
         ticket_service = TicketService(db_client)
         tickets = ticket_service.get_all()
 
@@ -269,7 +269,7 @@ class TestCreateTicketCLI:
 
     def test_create_ticket_with_long_description(self):
         """Should handle long descriptions."""
-        TICKETS_FILE.write_text("[]", encoding="utf-8")
+        TEST_TICKETS_FILE.write_text("[]", encoding="utf-8")
 
         long_description = "This is a very long description. " * 20
         result = run_cli_create(
@@ -279,7 +279,7 @@ class TestCreateTicketCLI:
 
         assert result.returncode == 0
 
-        db_client = DBClient(TICKETS_FILE)
+        db_client = DBClient(TEST_TICKETS_FILE)
         ticket_service = TicketService(db_client)
         tickets = ticket_service.get_all()
 
@@ -287,7 +287,7 @@ class TestCreateTicketCLI:
 
     def test_create_ticket_with_creator_email(self):
         """Should create ticket with creator email."""
-        TICKETS_FILE.write_text("[]", encoding="utf-8")
+        TEST_TICKETS_FILE.write_text("[]", encoding="utf-8")
 
         result = run_cli_create(
             title="Task with Creator",
@@ -296,7 +296,7 @@ class TestCreateTicketCLI:
 
         assert result.returncode == 0
 
-        db_client = DBClient(TICKETS_FILE)
+        db_client = DBClient(TEST_TICKETS_FILE)
         ticket_service = TicketService(db_client)
         tickets = ticket_service.get_all()
 
@@ -304,7 +304,7 @@ class TestCreateTicketCLI:
 
     def test_create_ticket_with_assignee_email(self):
         """Should create ticket with assignee email."""
-        TICKETS_FILE.write_text("[]", encoding="utf-8")
+        TEST_TICKETS_FILE.write_text("[]", encoding="utf-8")
 
         result = run_cli_create(
             title="Task with Assignee",
@@ -313,7 +313,7 @@ class TestCreateTicketCLI:
 
         assert result.returncode == 0
 
-        db_client = DBClient(TICKETS_FILE)
+        db_client = DBClient(TEST_TICKETS_FILE)
         ticket_service = TicketService(db_client)
         tickets = ticket_service.get_all()
 
@@ -321,7 +321,7 @@ class TestCreateTicketCLI:
 
     def test_create_ticket_with_estimated_time(self):
         """Should create ticket with estimated time."""
-        TICKETS_FILE.write_text("[]", encoding="utf-8")
+        TEST_TICKETS_FILE.write_text("[]", encoding="utf-8")
 
         result = run_cli_create(
             title="Task with Time Estimate",
@@ -330,7 +330,7 @@ class TestCreateTicketCLI:
 
         assert result.returncode == 0
 
-        db_client = DBClient(TICKETS_FILE)
+        db_client = DBClient(TEST_TICKETS_FILE)
         ticket_service = TicketService(db_client)
         tickets = ticket_service.get_all()
 
@@ -338,7 +338,7 @@ class TestCreateTicketCLI:
 
     def test_create_ticket_with_all_new_fields(self):
         """Should create ticket with creator, assignee, and estimated_time."""
-        TICKETS_FILE.write_text("[]", encoding="utf-8")
+        TEST_TICKETS_FILE.write_text("[]", encoding="utf-8")
 
         result = run_cli_create(
             title="Full Task",
@@ -352,7 +352,7 @@ class TestCreateTicketCLI:
 
         assert result.returncode == 0
 
-        db_client = DBClient(TICKETS_FILE)
+        db_client = DBClient(TEST_TICKETS_FILE)
         ticket_service = TicketService(db_client)
         tickets = ticket_service.get_all()
 
@@ -367,7 +367,7 @@ class TestCreateTicketCLI:
 
     def test_create_ticket_with_invalid_creator_email_fails(self):
         """Should fail when creator email is invalid."""
-        TICKETS_FILE.write_text("[]", encoding="utf-8")
+        TEST_TICKETS_FILE.write_text("[]", encoding="utf-8")
 
         result = run_cli_create(
             title="Task",
@@ -378,14 +378,14 @@ class TestCreateTicketCLI:
         assert "error" in result.stdout.lower() or "invalid" in result.stdout.lower()
 
         # Verify no ticket was created
-        db_client = DBClient(TICKETS_FILE)
+        db_client = DBClient(TEST_TICKETS_FILE)
         ticket_service = TicketService(db_client)
         tickets = ticket_service.get_all()
         assert len(tickets) == 0
 
     def test_create_ticket_with_invalid_assignee_email_fails(self):
         """Should fail when assignee email is invalid."""
-        TICKETS_FILE.write_text("[]", encoding="utf-8")
+        TEST_TICKETS_FILE.write_text("[]", encoding="utf-8")
 
         result = run_cli_create(
             title="Task",
@@ -396,7 +396,7 @@ class TestCreateTicketCLI:
         assert "error" in result.stdout.lower() or "invalid" in result.stdout.lower()
 
         # Verify no ticket was created
-        db_client = DBClient(TICKETS_FILE)
+        db_client = DBClient(TEST_TICKETS_FILE)
         ticket_service = TicketService(db_client)
         tickets = ticket_service.get_all()
         assert len(tickets) == 0

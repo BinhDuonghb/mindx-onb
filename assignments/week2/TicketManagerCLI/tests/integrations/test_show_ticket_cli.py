@@ -2,7 +2,7 @@ import subprocess
 import sys
 from uuid import UUID
 
-from ticket_manager.config import TICKETS_FILE
+from ticket_manager.config import TEST_TICKETS_FILE
 from data.db_client import DBClient
 from ticket_manager.models.ticket import Ticket
 from ticket_manager.services.ticketService import TicketService
@@ -10,14 +10,14 @@ from ticket_manager.services.ticketService import TicketService
 
 def run_cli_show(ticket_id) -> subprocess.CompletedProcess:
     """Helper to run show command with ticket ID."""
-    cmd = [sys.executable, "main.py", "show", str(ticket_id)]
+    cmd = [sys.executable, "main.py", "--test", "show", str(ticket_id)]
     return subprocess.run(cmd, capture_output=True, text=True)
 
 
 def setup_tickets(tickets_data):
     """Helper to setup test tickets in the file."""
-    TICKETS_FILE.write_text("[]", encoding="utf-8")
-    db_client = DBClient(TICKETS_FILE)
+    TEST_TICKETS_FILE.write_text("[]", encoding="utf-8")
+    db_client = DBClient(TEST_TICKETS_FILE)
     ticket_service = TicketService(db_client)
 
     created = []
@@ -66,7 +66,7 @@ class TestShowTicketCLI:
 
     def test_show_nonexistent_ticket_fails(self):
         """Should fail when ticket ID doesn't exist."""
-        TICKETS_FILE.write_text("[]", encoding="utf-8")
+        TEST_TICKETS_FILE.write_text("[]", encoding="utf-8")
 
         fake_uuid = UUID("00000000-0000-0000-0000-000000000000")
         result = run_cli_show(fake_uuid)
