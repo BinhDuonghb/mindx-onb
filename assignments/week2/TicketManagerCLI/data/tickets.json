@@ -1,14 +1,273 @@
 [
   {
-    "id": "07e6be02-3bd7-4772-b0c3-4eb3c9eebe0c",
-    "title": "Task closed -> in-progress",
-    "description": "",
+    "id": "f31bd82f-3d44-40b6-8f14-6ee3f35940b3",
+    "title": "Fix login authentication bug",
+    "description": "Users are unable to login with correct credentials. Error 500 returned.",
+    "status": "open",
+    "priority": "high",
+    "tags": [
+      "bug",
+      "auth",
+      "critical"
+    ],
+    "created_at": "2026-10-12T20:14:54.069082",
+    "creator": "dev@company.com",
+    "assignee": "qa@company.com",
+    "estimated_time": 4.5
+  },
+  {
+    "id": "ce66fc08-9472-40b6-aefc-9f4c9b79e142",
+    "title": "Implement dark mode theme",
+    "description": "Add dark mode toggle to user preferences. Should respect system theme.",
+    "status": "open",
+    "priority": "medium",
+    "tags": [
+      "feature",
+      "frontend",
+      "ui"
+    ],
+    "created_at": "2026-10-12T20:14:54.069112",
+    "creator": "designer@company.com",
+    "assignee": "frontend@company.com",
+    "estimated_time": 8.0
+  },
+  {
+    "id": "2666d643-0a26-4342-a8d1-93fa5e1dd65f",
+    "title": "Optimize database query performance",
+    "description": "Dashboard page loads slowly. Profile queries and optimize N+1 problems.",
+    "status": "in-progress",
+    "priority": "high",
+    "tags": [
+      "performance",
+      "backend",
+      "database"
+    ],
+    "created_at": "2026-10-12T20:14:54.069115",
+    "creator": "devops@company.com",
+    "assignee": "senior-backend@company.com",
+    "estimated_time": 6.0
+  },
+  {
+    "id": "b413c999-d77d-4f43-8671-9703d5467af2",
+    "title": "Update API documentation",
+    "description": "Add missing endpoints to OpenAPI spec and update examples.",
+    "status": "open",
+    "priority": "low",
+    "tags": [
+      "documentation",
+      "api"
+    ],
+    "created_at": "2026-10-12T20:14:54.069118",
+    "creator": "tech-lead@company.com",
+    "assignee": "junior-dev@company.com",
+    "estimated_time": 3.0
+  },
+  {
+    "id": "34f43ca5-c191-44fa-b6df-ab46c95d7dee",
+    "title": "Set up CI/CD pipeline",
+    "description": "Implement automated testing and deployment to staging/production.",
+    "status": "closed",
+    "priority": "high",
+    "tags": [
+      "devops",
+      "infrastructure",
+      "automation"
+    ],
+    "created_at": "2026-10-12T20:14:54.069121",
+    "creator": "devops@company.com",
+    "assignee": "devops@company.com",
+    "estimated_time": 12.0
+  },
+  {
+    "id": "b5c5acc6-58a6-4fc0-8755-2c6cfda05628",
+    "title": "Fix memory leak in user service",
+    "description": "Memory usage increases over time. Investigate cached objects and connection pooling.",
+    "status": "in-progress",
+    "priority": "high",
+    "tags": [
+      "bug",
+      "performance",
+      "backend"
+    ],
+    "created_at": "2026-10-12T20:14:54.069123",
+    "creator": "senior-dev@company.com",
+    "assignee": "backend@company.com",
+    "estimated_time": 5.0
+  },
+  {
+    "id": "73fb794e-2db5-4bce-aecf-646e2d25629f",
+    "title": "Add unit tests for payment module",
+    "description": "Coverage for payment processing is below 60%. Add tests for edge cases.",
+    "status": "open",
+    "priority": "medium",
+    "tags": [
+      "testing",
+      "payment",
+      "quality"
+    ],
+    "created_at": "2026-10-12T20:14:54.069126",
+    "creator": "qa-lead@company.com",
+    "assignee": "qa@company.com",
+    "estimated_time": 7.0
+  },
+  {
+    "id": "173ab130-6549-482b-8ce9-8375bd8a738a",
+    "title": "Implement email notification system",
+    "description": "Send email notifications for important user actions. Integrate with SendGrid.",
+    "status": "open",
+    "priority": "medium",
+    "tags": [
+      "feature",
+      "notifications",
+      "backend"
+    ],
+    "created_at": "2026-10-12T20:14:54.069128",
+    "creator": "product@company.com",
+    "assignee": "backend@company.com",
+    "estimated_time": 9.0
+  },
+  {
+    "id": "9ac1019e-e92a-4a0d-be09-690a081d3db0",
+    "title": "Update dependencies and security patches",
+    "description": "Update npm packages to latest versions. Review and apply security patches.",
+    "status": "closed",
+    "priority": "high",
+    "tags": [
+      "maintenance",
+      "security",
+      "dependencies"
+    ],
+    "created_at": "2026-10-12T20:14:54.069131",
+    "creator": "devops@company.com",
+    "assignee": "frontend@company.com",
+    "estimated_time": 4.0
+  },
+  {
+    "id": "e715cf27-9c2c-4c23-93ee-2bb2a532aae7",
+    "title": "Design database schema for analytics",
+    "description": "Plan tables and relationships for event tracking and analytics.",
+    "status": "open",
+    "priority": "medium",
+    "tags": [
+      "database",
+      "analytics",
+      "design"
+    ],
+    "created_at": "2026-10-12T20:14:54.069136",
+    "creator": "architect@company.com",
+    "assignee": "senior-dev@company.com",
+    "estimated_time": 6.5
+  },
+  {
+    "id": "51999b99-a5e0-4e70-a866-f8a58f07ae3f",
+    "title": "Create user onboarding flow",
+    "description": "Design and implement step-by-step onboarding tutorial for new users.",
     "status": "in-progress",
     "priority": "medium",
-    "tags": [],
-    "created_at": "2026-10-12T17:32:19.413094",
-    "creator": null,
-    "assignee": null,
-    "estimated_time": null
+    "tags": [
+      "feature",
+      "frontend",
+      "ux"
+    ],
+    "created_at": "2026-10-12T20:14:54.069138",
+    "creator": "product@company.com",
+    "assignee": "frontend@company.com",
+    "estimated_time": 10.0
+  },
+  {
+    "id": "67ce922e-ea20-4568-a691-91ddc9d8670e",
+    "title": "Fix SSL certificate expiration warning",
+    "description": "Renew SSL certificate for production domain. Update certificate chain.",
+    "status": "closed",
+    "priority": "high",
+    "tags": [
+      "infrastructure",
+      "security",
+      "production"
+    ],
+    "created_at": "2026-10-12T20:14:54.069140",
+    "creator": "devops@company.com",
+    "assignee": "devops@company.com",
+    "estimated_time": 2.0
+  },
+  {
+    "id": "c83451e5-6d14-4db7-8e11-ae6b5cd622ee",
+    "title": "Implement rate limiting for API",
+    "description": "Prevent API abuse by implementing rate limiting. Use Redis for tracking.",
+    "status": "open",
+    "priority": "high",
+    "tags": [
+      "security",
+      "api",
+      "backend"
+    ],
+    "created_at": "2026-10-12T20:14:54.069141",
+    "creator": "security@company.com",
+    "assignee": "senior-dev@company.com",
+    "estimated_time": 5.5
+  },
+  {
+    "id": "21166554-1da3-4325-990d-5caace7fe55b",
+    "title": "Add search functionality to dashboard",
+    "description": "Allow users to search tickets and users. Implement full-text search with Elasticsearch.",
+    "status": "open",
+    "priority": "medium",
+    "tags": [
+      "feature",
+      "search",
+      "frontend"
+    ],
+    "created_at": "2026-10-12T20:14:54.069142",
+    "creator": "product@company.com",
+    "assignee": "frontend@company.com",
+    "estimated_time": 8.5
+  },
+  {
+    "id": "b8281be9-0a3e-4439-80a6-df1114f42686",
+    "title": "Improve error handling and logging",
+    "description": "Add structured logging. Implement better error messages and monitoring.",
+    "status": "in-progress",
+    "priority": "medium",
+    "tags": [
+      "quality",
+      "backend",
+      "monitoring"
+    ],
+    "created_at": "2026-10-12T20:14:54.069144",
+    "creator": "tech-lead@company.com",
+    "assignee": "senior-dev@company.com",
+    "estimated_time": 7.0
+  },
+  {
+    "id": "d082f90f-c401-4b9a-9818-a1441047d384",
+    "title": "Create admin dashboard",
+    "description": "Build admin panel for user management, analytics, and system configuration.",
+    "status": "open",
+    "priority": "low",
+    "tags": [
+      "feature",
+      "admin",
+      "frontend"
+    ],
+    "created_at": "2026-10-12T20:14:54.069145",
+    "creator": "product@company.com",
+    "assignee": "frontend@company.com",
+    "estimated_time": 15.0
+  },
+  {
+    "id": "4a97384a-70fe-4509-a133-f2e8d23063c0",
+    "title": "Migrate legacy code to new framework",
+    "description": "Refactor old authentication module to use new framework and patterns.",
+    "status": "closed",
+    "priority": "medium",
+    "tags": [
+      "refactor",
+      "backend",
+      "maintenance"
+    ],
+    "created_at": "2026-10-12T20:14:54.069147",
+    "creator": "tech-lead@company.com",
+    "assignee": "senior-dev@company.com",
+    "estimated_time": 11.0
   }
 ]

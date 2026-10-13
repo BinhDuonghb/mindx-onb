@@ -1,26 +1,25 @@
-**# Week 2: TDD Practice - Ticket Manager CLI**
+# Week 2: TDD Practice - Ticket Manager CLI
 
-**## Executive Summary**
+## Executive Summary
 
-Successfully completed Week 2 TDD practice by building a fully functional Ticket Manager CLI using Test-Driven Development methodology. The project demonstrates:
+Successfully completed Week 2 TDD practice by building a fully functional **Ticket Manager CLI** using Test-Driven Development methodology.
 
-\- **\*\*217 passing tests\*\*** (90 unit + 127 integration)
+The project demonstrates:
 
-\- Clean layered architecture with separation of concerns
+- **217 passing tests**: 90 unit tests + 127 integration tests
+- Clean layered architecture with clear separation of concerns
+- Controlled AI assistance with rigorous validation through testing
+- Comprehensive documentation and reflection on design decisions
 
-\- Controlled AI assistance with rigorous validation through testing
+---
 
-\- Comprehensive documentation and reflection on design decisions
+## Acceptance Criteria - Completion Status
 
-\---
+### 1. TDD Workflow Demonstrated
 
-**## Acceptance Criteria - Completion Status**
+**Status:** ✅ COMPLETE
 
-\*\*### 1. TDD Workflow Demonstrated
-
-**Status:** COMPLETE
-
-The project was developed through repeated **Red–Green–Refactor** cycles rather than by implementing the full application first and adding tests afterward.
+The project was developed through repeated **Red-Green-Refactor** cycles rather than by implementing the full application first and adding tests afterward.
 
 The development sequence was:
 
@@ -32,7 +31,7 @@ The development sequence was:
 
 ### Initial CLI Skeleton
 
-Before implementing business logic, I first created a base CLI with `argparse`.
+Before implementing business logic, I first created a base CLI using `argparse`.
 
 The CLI could recognize the main commands:
 
@@ -131,7 +130,7 @@ I then created `test_ticket_service.py`.
 - delete,
 - validate before persistence.
 
-This produced the following separation:
+The resulting dependency flow is:
 
 ```text
 CLI
@@ -155,11 +154,11 @@ I implemented `handle_create()` in the CLI layer.
 
 Its responsibility was limited to:
 
-1. reading parsed arguments,
-2. converting CLI-specific input such as comma-separated tags,
-3. creating the ticket input,
-4. calling `TicketService`,
-5. displaying the result.
+1. Reading parsed arguments.
+2. Converting CLI-specific input such as comma-separated tags.
+3. Creating the ticket input.
+4. Calling `TicketService`.
+5. Displaying the result.
 
 Once the create integration tests passed, the create feature reached the **Green** state.
 
@@ -188,468 +187,694 @@ Because these commands followed patterns already established by the create flow,
 
 However, each generated change was still validated by the existing test suite before being accepted.
 
-| Component           | Red                         | Green                                | Refactor                                                  |
-| ------------------- | --------------------------- | ------------------------------------ | --------------------------------------------------------- |
-| **DBClient**        | `test_db_client.py`         | Implement read/write/update/delete   | Remove hardcoding, allow configurable file path           |
-| **TicketValidator** | `test_validators.py`        | Implement validation rules           | Separate validation responsibilities and improve messages |
-| **TicketService**   | `test_ticket_service.py`    | Implement ticket-specific operations | Reuse `DBClient`, centralize validation                   |
-| **CLI Create**      | `test_create_ticket_cli.py` | Implement `handle_create()`          | Improve command structure and help text                   |
-| **CLI List**        | `test_list_ticket_cli.py`   | Implement `handle_list()`            | Improve output formatting                                 |
-| **CLI Show**        | `test_show_ticket_cli.py`   | Implement `handle_show()`            | Improve field display                                     |
-| **CLI Update**      | `test_update_ticket_cli.py` | Implement `handle_update()`          | Preserve unchanged fields and improve handler structure   |
-| **CLI Delete**      | `test_delete_ticket_cli.py` | Implement `handle_delete()`          | Clean up command flow                                     |
+| Component | Red | Green | Refactor |
+| --- | --- | --- | --- |
+| **DBClient** | `test_db_client.py` | Implement read/write/update/delete | Remove hardcoding and allow configurable file paths |
+| **TicketValidator** | `test_ticket_validator.py` | Implement validation rules | Separate validation responsibilities and improve messages |
+| **EmailValidator** | `test_email_validator.py` | Implement email validation | Isolate reusable email validation logic |
+| **TicketService** | `test_ticket_service.py` | Implement ticket-specific operations | Reuse `DBClient` and centralize validation |
+| **CLI Create** | `test_create_ticket_cli.py` | Implement `handle_create()` | Improve command structure and help text |
+| **CLI List** | `test_list_ticket_cli.py` | Implement `handle_list()` | Improve output formatting |
+| **CLI Show** | `test_show_ticket_cli.py` | Implement `handle_show()` | Improve field display |
+| **CLI Update** | `test_update_ticket_cli.py` | Implement `handle_update()` | Preserve unchanged fields and improve handler structure |
+| **CLI Delete** | `test_delete_ticket_cli.py` | Implement `handle_delete()` | Clean up command flow |
 
 **Key point:** tests were used to define expected behavior before or during implementation, and regression tests were rerun after refactoring.
 
-**Evidence:** See [REFLECTION.md](./REFLECTION.md) for the detailed design and AI usage discussion.
+**Evidence:** See [`REFLECTION.md`](./REFLECTION.md) for the detailed design and AI usage discussion.
 
------------|-----|-------|----------|
+---
 
-\| **\*\*DBClient\*\*** | test_db_client.py | Implement read/write/update/delete | Remove hardcoding, use config.py |
+### 2. CLI Tool Basic Functions Working
 
-\| **\*\*TicketValidator\*\*** | test_validators.py (90 tests) | email_validator.py, ticket_validator.py | Separate methods, improve messages |
+**Status:** ✅ COMPLETE + BONUS
 
-\| **\*\*TicketService\*\*** | test_ticket_service.py | Implement service logic | Integrate validators, add helper methods |
+All required commands are implemented and tested.
 
-\| **\*\*CLI Create\*\*** | test_create_ticket_cli.py | handle_create() in cli.py | Add help text, support new fields |
+#### Create Ticket
 
-\| **\*\*CLI List\*\*** | test_list_ticket_cli.py | handle_list() with filters | Improve output formatting |
+```bash
+tickets create \
+  --title "Fix login bug" \
+  --description "Users get 500 error" \
+  --priority high \
+  --tags "bug,backend" \
+  --creator "dev@example.com" \
+  --assignee "qa@example.com" \
+  --estimated_time 5.5
+```
 
-\| **\*\*CLI Show\*\*** | test_show_ticket_cli.py | handle_show() | Display all fields |
+#### List Tickets
 
-\| **\*\*CLI Update\*\*** | test_update_ticket_cli.py | handle_update() | Support new fields |
+```bash
+tickets list
+tickets list --status open
+tickets list --priority high
+tickets list --tag bug
+```
 
-\| **\*\*CLI Delete\*\*** | test_delete_ticket_cli.py | handle_delete() (bonus) | Clean up after deletion |
+#### Show Ticket Details
 
-**\*\*Evidence:\*\*** See [REFLECTION.md]\(./REFLECTION.md) for detailed cycle breakdown with code examples.
-
-\---
-
-**### 2. CLI Tool Basic Functions Working**
-
-**\*\*Status:\*\*** COMPLETE + BONUS
-
-All required commands implemented and tested:
-
-\`\`\`bash
-
-\# Create ticket with all fields including new ones
-
-tickets create --title "Fix login bug" \\
-
-  --description "Users get 500 error" \\
-
-  --priority high \\
-
-  --tags "bug,backend" \\
-
-  --creator "dev\@example.com" \\
-
-  --assignee "qa\@example.com" \\
-
-  --estimated_time 5.5
-
-\# List with filters
-
-tickets list                          # All tickets
-
-tickets list --status open            # Open tickets
-
-tickets list --priority high          # High priority
-
-tickets list --tag bug                # With 'bug' tag
-
-\# Show ticket details
-
+```bash
 tickets show 1c94e7a6-63d7-4ab9-b2ab-12b43dd741b9
+```
 
-\# Update ticket status
+#### Update Ticket
 
+```bash
 tickets update 1c94e7a6-63d7-4ab9-b2ab-12b43dd741b9 --status closed
+```
 
-\# Delete ticket (bonus)
+#### Delete Ticket
 
+```bash
 tickets delete 1c94e7a6-63d7-4ab9-b2ab-12b43dd741b9
+```
 
-\`\`\`
+The delete command was implemented as an additional feature beyond the core requirements.
 
-**\*\*Test Coverage:\*\*** 15 tests for create command, 17 for list, 11 for show, 14 for update, 18 for delete.
+---
 
-\---
+### 3. Unit Tests Cover Ticket Logic and Validation
 
-**### 3. Unit Tests Cover Ticket Logic & Validation**
+**Status:** ✅ COMPLETE
 
-**\*\*Status:\*\*** COMPLETE
-
-### Unit Tests Cover Ticket Logic & Validation
-
-**Status:** COMPLETE
-
-**Files:**
+#### Files
 
 - `tests/units/test_email_validator.py`
 - `tests/units/test_ticket_validator.py`
 
 **Total:** 90 unit tests
 
-**Coverage Areas:**
+#### Coverage Areas
 
-- Email validation
-  - valid and invalid formats
-  - missing `@`
-  - multiple `@`
-  - empty/whitespace input
-  - consecutive dots
-  - domain boundary rules
-  - local-part length
-  - maximum email length
-- Ticket title validation
-  - valid title
-  - minimum length
-  - too short
-  - too long
-  - empty/whitespace
-  - invalid type
-- Description validation
-  - valid description
-  - empty description
-  - too long
-  - invalid type
-- Priority validation
-  - `low`
-  - `medium`
-  - `high`
-  - invalid values
-- Status validation
-  - `open`
-  - `in-progress`
-  - `closed`
-  - invalid values
-- Tags validation
-  - empty tags
-  - single/multiple tags
-  - maximum number of tags
-  - invalid type
-  - empty tags
-  - tag length boundaries
-- Creator and assignee validation
-  - valid email
-  - optional `None`
-  - invalid email
-  - empty values
+##### Email Validation
 
-**Result:** 90 passed.
+- valid and invalid formats,
+- missing `@`,
+- multiple `@`,
+- empty and whitespace-only input,
+- consecutive dots,
+- domain boundary rules,
+- local-part length,
+- maximum email length.
 
-\---
+##### Ticket Title Validation
 
-**### ✅ 4. Integration Tests Cover JSON Storage & CLI**
+- valid title,
+- minimum length,
+- title too short,
+- title too long,
+- empty or whitespace-only title,
+- invalid data type.
 
-**\*\*Status:\*\*** COMPLETE
+##### Description Validation
 
-**\*\*Files:\*\*** 6 integration test files, 127 total tests
+- valid description,
+- empty description,
+- description too long,
+- invalid data type.
 
-\| File | Tests | Coverage |
+##### Priority Validation
 
-\|------|-------|----------|
+Supported values:
 
-\| test_db_client.py | 27 | Read/write/update/delete JSON, error handling |
+- `low`
+- `medium`
+- `high`
 
-\| test_create_ticket_cli.py | 21 | CLI create command, tag parsing, special characters |
+Tests also cover invalid priority values.
 
-\| test_list_ticket_cli.py | 17 | Filtering by status/priority/tag, combinations |
+##### Status Validation
 
-\| test_show_ticket_cli.py | 12 | Display ticket details, nonexistent tickets |
+Supported values:
 
-\| test_update_ticket_cli.py | 14 | Status transitions, field preservation |
+- `open`
+- `in-progress`
+- `closed`
 
-\| test_delete_ticket_cli.py | 18 | Delete operations, data integrity |
+Tests also cover invalid status values.
 
-\| test_ticket_service.py | 41 | Service CRUD, validation integration |
+##### Tags Validation
 
-**\*\*Test Results:\*\*** All 127 integration tests passing ✅
+- empty tag list,
+- single tag,
+- multiple tags,
+- maximum number of tags,
+- invalid type,
+- empty individual tags,
+- tag-length boundaries.
 
-\---
+##### Creator and Assignee Validation
 
-**### ✅ 5. Error Cases Tested**
+- valid email,
+- optional `None`,
+- invalid email,
+- empty values.
 
-**\*\*Status:\*\*** COMPLETE
+**Result:** 90 unit tests passing.
 
-**\*\*Invalid Input:\*\***
+---
 
-\- Invalid email format (test_create_with_invalid_creator_email)
+### 4. Integration Tests Cover JSON Storage and CLI
 
-\- Title too short/long (test_validate_title_too_short, test_validate_title_too_long)
+**Status:** ✅ COMPLETE
 
-\- Invalid priority/status (test_validate_priority_invalid, test_validate_status_invalid)
+Integration tests verify collaboration between multiple application components, including the CLI, service layer, validation layer, and JSON persistence.
 
-\- Description too long (test_create_with_invalid_description_too_long)
+| File | Coverage |
+| --- | --- |
+| `test_db_client.py` | JSON read/write/update/delete and error handling |
+| `test_create_ticket_cli.py` | Create command, tag parsing, validation, and special characters |
+| `test_list_ticket_cli.py` | Filtering by status, priority, tags, and filter combinations |
+| `test_show_ticket_cli.py` | Ticket detail display and nonexistent ticket handling |
+| `test_update_ticket_cli.py` | Updating fields, status changes, and field preservation |
+| `test_delete_ticket_cli.py` | Delete operations and data integrity |
+| `test_ticket_service.py` | Service CRUD operations and validation integration |
 
-**\*\*Ticket Not Found:\*\***
+**Total:** 127 integration tests passing.
 
-\- Nonexistent UUID for show/update/delete operations
+---
 
-\- Appropriate error messages returned
+### 5. Error Cases Tested
 
-**\*\*JSON File Issues:\*\***
+**Status:** ✅ COMPLETE
 
-\- Corrupted JSON handling (test_handles_corrupted_json_gracefully)
+The project includes tests for normal flows as well as failure and edge cases.
 
-\- Missing file auto-creation (test_file_is_created_if_not_exists)
+#### Invalid Input
 
-\---
+Examples include:
 
-**### ✅ 6. Setup Instructions Documented**
+- invalid creator or assignee email,
+- title too short,
+- title too long,
+- invalid priority,
+- invalid status,
+- description exceeding the maximum length,
+- invalid tag values.
 
-**\*\*Status:\*\*** COMPLETE
+Example test cases:
 
-**\*\*File:\*\*** \`README.md\` with comprehensive sections:
+```text
+test_create_with_invalid_creator_email
+test_validate_title_too_short
+test_validate_title_too_long
+test_validate_priority_invalid
+test_validate_status_invalid
+test_create_with_invalid_description_too_long
+```
 
-\- Features overview
+#### Ticket Not Found
 
-\- Project structure diagram
+Nonexistent ticket IDs are tested for:
 
-\- Installation and setup instructions
+- `show`,
+- `update`,
+- `delete`.
 
-\- Usage examples for all commands
+The CLI returns an appropriate error rather than crashing.
 
-\- Testing instructions
+#### JSON File Issues
 
-\- Architecture explanation
+Tests also cover:
 
-\---
+- corrupted JSON,
+- missing JSON files,
+- automatic file creation,
+- preservation of stored data.
 
-**### ✅ 7. Can Answer Questions About TDD, Test Types, and AI Usage**
+Example tests:
 
-**\*\*Status:\*\*** COMPLETE
+```text
+test_handles_corrupted_json_gracefully
+test_file_is_created_if_not_exists
+```
 
-**\*\*File:\*\*** \`REFLECTION.md\` with detailed answers to:
+---
 
-\- Why TDD was used and benefits experienced
+### 6. Setup Instructions Documented
 
-\- Why both unit and integration tests
+**Status:** ✅ COMPLETE
 
-\- Why three levels of validation
+The project includes a `README.md` containing:
 
-\- How AI was used responsibly with guardrails
+- features overview,
+- project structure,
+- installation instructions,
+- setup instructions,
+- usage examples,
+- testing commands,
+- architecture explanation.
 
-\- Concrete examples of how tests caught AI mistakes
+---
 
-\---
+### 7. Understanding of TDD, Test Types, and AI Usage
 
-**## Project Statistics**
+**Status:** ✅ COMPLETE
 
-\| Metric | Count |
+The project includes a `REFLECTION.md` containing discussion of:
 
-\|--------|-------|
+- why TDD was used,
+- benefits experienced from TDD,
+- why both unit and integration tests were needed,
+- why validation was separated into different responsibilities,
+- how AI was used during development,
+- guardrails applied to AI-generated code,
+- concrete cases where tests caught problems in AI-generated implementations.
 
-\| **\*\*Total Tests\*\*** | 223 |
+---
 
-\| Unit Tests | 90 |
+## Project Statistics
 
-\| Integration Tests | 127 |
+| Metric | Count |
+| --- | ---: |
+| **Total Tests** | **217** |
+| Unit Tests | 90 |
+| Integration Tests | 127 |
+| Test Pass Rate | 100% |
+| Source Files | 12 |
+| Test Files | 7 |
+| Approximate Lines of Code | ~1,200 |
 
-\| Test Pass Rate | 100% ✅ |
+---
 
-\| Source Files | 12 |
+## Architecture Overview
 
-\| Test Files | 7 |
-
-\| Lines of Code | \~1,200 |
-
-\---
-
-**## Architecture Overview**
-
-\`\`\`
-
+```text
 ┌─────────────────────────────────────┐
-
-│       CLI Layer (cli.py)            │
-
-│  handle_create, handle_list, ...    │
-
-└────────────────┬────────────────────┘
-
-                 ↓
-
+│          CLI Layer                  │
+│          cli.py                     │
+│                                     │
+│ handle_create()                     │
+│ handle_list()                       │
+│ handle_show()                       │
+│ handle_update()                     │
+│ handle_delete()                     │
+└──────────────────┬──────────────────┘
+                   │
+                   ▼
 ┌─────────────────────────────────────┐
+│          Service Layer              │
+│       ticketService.py              │
+│                                     │
+│ create / read / update / delete     │
+└──────────────────┬──────────────────┘
+                   │
+        ┌──────────┴──────────┐
+        ▼                     ▼
+┌───────────────────┐   ┌───────────────────┐
+│ Validation Layer  │   │    Data Layer     │
+│                   │   │                   │
+│ TicketValidator   │   │    DBClient       │
+│ EmailValidator    │   │                   │
+│                   │   │ read()            │
+│                   │   │ write()           │
+│                   │   │ update()          │
+│                   │   │ delete()          │
+└───────────────────┘   └─────────┬─────────┘
+                                  │
+                                  ▼
+                        ┌────────────────────┐
+                        │   tickets.json     │
+                        └────────────────────┘
+```
 
-│   Service Layer (ticketService.py)  │
+### Responsibility of Each Layer
 
-│  create, read, update, delete ops   │
+**CLI Layer**
 
-└────────────────┬────────────────────┘
+Responsible for:
 
-                 ↓
+- parsing command-line arguments,
+- converting CLI-specific inputs,
+- invoking application services,
+- displaying results and errors.
 
-┌──────────────────────────┬──────────────────────────┐
+**Service Layer**
 
-│  Validation Layer        │   Data Layer             │
+Responsible for:
 
-│  (validators.py)         │   (db_client.py)         │
+- ticket-specific business operations,
+- coordinating validation,
+- interacting with the persistence layer.
 
-│  - EmailValidator        │   - read()               │
+**Validation Layer**
 
-│  - TicketValidator       │   - write()              │
+Responsible for:
 
-│                          │   - update()             │
+- ticket-field business rules,
+- reusable email validation.
 
-│                          │   - delete()             │
+**Data Layer**
 
-└──────────────────────────┴──────────────────────────┘
+Responsible for:
 
-                 ↓
+- reading JSON data,
+- writing JSON data,
+- updating stored data,
+- deleting stored data,
+- managing the storage file.
 
-┌─────────────────────────────────────┐
+---
 
-│      JSON File (tickets.json)        │
+## Features Beyond the Original Requirements
 
-└─────────────────────────────────────┘
+### 1. Delete Command
 
-\`\`\`
+The application supports full CRUD behavior by adding:
 
-\---
+```bash
+tickets delete <ticket-id>
+```
 
-**## New Features Beyond Requirements**
+### 2. Extended Ticket Model
 
-1\. **\*\*Delete Command\*\*** — Full CRUD support
+Additional ticket fields were introduced:
 
-2\. **\*\*Extended Ticket Model\*\*** — creator, assignee, estimated_time fields
+- `creator`,
+- `assignee`,
+- `estimated_time`.
 
-3\. **\*\*Enhanced Validation\*\*** — Strict email validation with edge case handling
+### 3. Enhanced Validation
 
-4\. **\*\*Comprehensive Help\*\*** — Usage examples in CLI epilog
+The project includes stricter validation for:
 
-\---
+- email addresses,
+- title boundaries,
+- description length,
+- tags,
+- status values,
+- priority values.
 
-**## Key Design Decisions**
+### 4. Improved CLI Help
 
-**### Layered Validation (Three Levels)**
+The CLI includes clearer command descriptions and usage examples.
 
-1\. **\*\*CLI Argument Parsing\*\*** — Catch obvious errors immediately (argparse choices)
+---
 
-2\. **\*\*Service Layer Validation\*\*** — Enforce business rules (TicketValidator)
+## Key Design Decisions
 
-3\. **\*\*Email Validator\*\*** — Reusable, strict email validation
+### Separate Validation Responsibilities
 
-**\*\*Why?\*\*** Defense in depth. Each layer catches different classes of errors.
+Validation is applied at appropriate boundaries.
 
-**### Test Structure Strategy**
+#### CLI Argument Parsing
 
-\- **\*\*Unit Tests (90):\*\*** Validators tested in isolation, fast feedback, catch logic errors
+`argparse` catches command-line-specific errors early.
 
-\- **\*\*Integration Tests (127):\*\*** Full command flow tested, catch architecture errors
+For example, fields with a fixed set of CLI options can use `choices`.
 
-**\*\*Why both?\*\*** Different failure modes require different test types.
+#### TicketValidator
 
-\---
+`TicketValidator` enforces ticket-domain rules independently of the CLI.
 
-**## Controlled AI Usage**
+This is important because `TicketService` may also be used directly by tests or future application interfaces.
 
-**\*\*What I Used AI For:\*\***
+#### EmailValidator
 
-\- Feature research (ChatGPT: "What should a ticket manager CLI have?")
+Email validation was separated into its own validator because both `creator` and `assignee` use the same rule.
 
-\- Test generation (Claude Code: generate test files)
+This avoids duplication and makes email validation independently testable.
 
-\- Implementation (Claude Code: generate validators, service, CLI handlers)
+### Why Multiple Validation Layers?
 
-**\*\*Guardrails Applied:\*\***
+The layers do not exist simply to repeat the same checks.
 
-\- Ran tests immediately after AI-generated code
+Instead, they protect different boundaries:
 
-\- Reviewed code for error handling and structure adherence
+```text
+CLI input
+   ↓
+argparse validation
+   ↓
+TicketService
+   ↓
+TicketValidator / EmailValidator
+   ↓
+DBClient
+```
 
-\- Did NOT accept all AI code blindly
+This means business rules remain enforced even if `TicketService` is called without using the CLI.
 
-**\*\*How Tests Caught AI Mistakes:\*\***
+---
 
-1\. **\*\*Email regex too permissive\*\*** — Tests for consecutive dots, boundary dots failed → refined validator
+## Test Structure Strategy
 
-2\. **\*\*Missing validator call\*\*** — Service layer test failed → added validation integration
+### Unit Tests
 
-\---
+The **90 unit tests** focus mainly on small validation rules in isolation.
 
-\*\*
+Benefits include:
 
-### Configuration
+- fast execution,
+- precise failure messages,
+- easy identification of edge cases,
+- reduced dependency on filesystem or CLI behavior.
 
-The application uses local JSON storage by default.
+### Integration Tests
+
+The **127 integration tests** validate collaboration between application components.
+
+They cover:
+
+```text
+CLI
+ ↓
+TicketService
+ ↓
+Validators
+ ↓
+DBClient
+ ↓
+Temporary JSON storage
+```
+
+Integration tests help detect problems that unit tests cannot, such as:
+
+- incorrect argument routing,
+- incorrect tag parsing,
+- service and persistence integration errors,
+- incorrect data preservation during updates,
+- output and exit-code problems.
+
+### Why Both?
+
+Unit and integration tests target different failure modes.
+
+Unit tests answer:
+
+> Does this individual rule or component behave correctly?
+
+Integration tests answer:
+
+> Do these components work correctly together from the application's external interface?
+
+---
+
+## Controlled AI Usage
+
+AI was used as a development assistant, but AI-generated output was not treated as automatically correct.
+
+### AI Tools Used
+
+- **ChatGPT** for feature exploration and design discussion.
+- **Claude Code** for test scaffolding and implementation assistance.
+
+### AI-Assisted Tasks
+
+AI was used for:
+
+- identifying possible ticket-manager features,
+- suggesting edge cases,
+- generating initial test scaffolding,
+- generating implementation suggestions,
+- reviewing possible validation rules,
+- assisting with repetitive CLI handlers.
+
+### Guardrails Applied
+
+The following guardrails were used:
+
+- tests were run immediately after AI-generated changes,
+- implementation was reviewed before being accepted,
+- tests remained the source of truth,
+- AI-generated code was modified when it did not satisfy the expected behavior,
+- refactoring was followed by regression-test execution.
+
+### Examples of Tests Catching AI Mistakes
+
+#### Email Regex Too Permissive
+
+An initial email validation implementation accepted invalid edge cases.
+
+Tests involving:
+
+- consecutive dots,
+- invalid boundary dots,
+- malformed domains
+
+failed.
+
+The validator was then corrected until the tests passed.
+
+#### Missing Validation in TicketService
+
+An implementation initially allowed the service layer to persist data without invoking the required validator.
+
+The service integration tests failed.
+
+Validation was then added to the service flow:
+
+```text
+TicketService
+    ↓
+TicketValidator
+    ↓
+DBClient
+```
+
+This demonstrated an important controlled-AI principle:
+
+> AI can propose implementation code, but automated tests determine whether the implementation actually satisfies the defined behavior.
+
+---
+
+## Configuration
+
+The application uses local JSON storage by default:
 
 ```text
 data/tickets.json
 ```
 
-Core constraints are defined in the application code and validators, including:
+Core constraints are defined in the application validators, including:
 
 - allowed ticket statuses,
-- allowed priorities,
+- allowed ticket priorities,
 - title length rules,
+- description rules,
 - tag constraints,
 - optional extended-field validation.
 
-`DBClient` accepts a file path so tests can use isolated JSON files instead of relying on the production storage file.
+`DBClient` accepts a file path so tests can use isolated temporary JSON files rather than depending on the production storage file.
+
+This improves:
+
+- test isolation,
+- repeatability,
+- maintainability,
+- separation between production and test data.
 
 ---
 
-## How to Run\*\*
+## How to Run
 
-\`\`\`bash
+### Create a Virtual Environment
 
-\# Setup
-
+```bash
 python -m venv .venv
+```
 
-source .venv/bin/activate  # or .venv\Scripts\activate on Windows
+### Activate the Environment
 
+Linux/macOS:
+
+```bash
+source .venv/bin/activate
+```
+
+Windows:
+
+```bash
+.venv\Scripts\activate
+```
+
+### Install Dependencies
+
+```bash
 pip install -r requirements.txt
+```
 
-\# Run tests
+### Run All Tests
 
-python -m pytest tests/ -v   # All tests
+Verbose mode:
 
-python -m pytest tests/ -q   # Summary
+```bash
+python -m pytest tests/ -v
+```
 
-\# Run CLI
+Summary mode:
 
+```bash
+python -m pytest tests/ -q
+```
+
+### Run the CLI
+
+Create a ticket:
+
+```bash
 python main.py create --title "My task" --priority high
+```
 
+List open tickets:
+
+```bash
 python main.py list --status open
+```
 
-\`\`\`
+---
 
-\---
+## Files Overview
 
-**## Files Overview**
+### Core Application
 
-**### Core Application**
+- `main.py` — application entry point
+- `ticket_manager/cli.py` — CLI parsing and command handlers
+- `ticket_manager/services/ticketService.py` — ticket business logic
+- `ticket_manager/models/ticket.py` — Ticket model
+- `ticket_manager/validators/email_validator.py` — reusable email validation
+- `ticket_manager/validators/ticket_validator.py` — ticket-field validation
+- `data/db_client.py` — JSON persistence
 
-\- \`main.py\` — Entry point
+### Documentation
 
-\- \`ticket_manager/cli.py\` — Command handlers
+- `README.md` — setup and usage guide
+- `REFLECTION.md` — TDD process, design decisions, and AI usage
+- `week2.md` — Week 2 completion report
 
-\- \`ticket_manager/services/ticketService.py\` — Business logic
+### Tests
 
-\- \`ticket_manager/models/ticket.py\` — Ticket model
+- `tests/units/test_email_validator.py`
+- `tests/units/test_ticket_validator.py`
+- `tests/integrations/test_db_client.py`
+- `tests/integrations/test_create_ticket_cli.py`
+- `tests/integrations/test_list_ticket_cli.py`
+- `tests/integrations/test_show_ticket_cli.py`
+- `tests/integrations/test_update_ticket_cli.py`
+- `tests/integrations/test_delete_ticket_cli.py`
+- `tests/integrations/test_ticket_service.py`
 
-\- \`ticket_manager/validators/\` — Email and field validators
+**Total:** 217 tests
 
-\- \`data/db_client.py\` — JSON persistence
+- 90 unit tests
+- 127 integration tests
 
-**### Documentation**
+---
 
-\- \`README.md\` — User guide
+## Final Status
 
-\- \`REFLECTION.md\` — TDD process and design decisions
+**Status:** ✅ COMPLETE AND TESTED
 
-\- \`week2.md\` — This completion report
+The Ticket Manager CLI satisfies the Week 2 objectives by demonstrating:
 
-**### Tests (217 total)**
-
-\- \`tests/units/test\_\*.py\` — 90 unit tests
-
-\- \`tests/integrations/test\_\*.py\` — 127 integration tests
-
-\---
-
-**\*\*Status:\*\*** ✅ COMPLETE AND TESTED
+- repeated Red-Green-Refactor TDD cycles,
+- working CLI functionality,
+- JSON persistence,
+- isolated business-rule tests,
+- full-flow integration tests,
+- error-case coverage,
+- clear architectural separation,
+- documented setup and usage,
+- controlled and validated AI assistance.
