@@ -6,7 +6,7 @@ Successfully completed Week 2 TDD practice by building a fully functional **Tick
 
 The project demonstrates:
 
-- **217 passing tests**: 90 unit tests + 127 integration tests
+- **231 passing tests**: 90 unit tests + 141 integration tests
 - Clean layered architecture with clear separation of concerns
 - Controlled AI assistance with rigorous validation through testing
 - Comprehensive documentation and reflection on design decisions
@@ -201,7 +201,7 @@ However, each generated change was still validated by the existing test suite be
 
 **Key point:** tests were used to define expected behavior before or during implementation, and regression tests were rerun after refactoring.
 
-**Evidence:** See [`REFLECTION.md`](./REFLECTION.md) for the detailed design and AI usage discussion.
+**Evidence:** See [`TicketManagerCLI/REFLECTION.md`](./TicketManagerCLI/REFLECTION.md) for the detailed design and AI usage discussion.
 
 ---
 
@@ -449,12 +449,12 @@ The project includes a `REFLECTION.md` containing discussion of:
 
 | Metric | Count |
 | --- | ---: |
-| **Total Tests** | **217** |
+| **Total Tests** | **231** |
 | Unit Tests | 90 |
-| Integration Tests | 127 |
+| Integration Tests | 141 |
 | Test Pass Rate | 100% |
 | Source Files | 12 |
-| Test Files | 7 |
+| Test Files | 9 |
 | Approximate Lines of Code | ~1,200 |
 
 ---
@@ -856,10 +856,10 @@ python main.py list --status open
 - `tests/integrations/test_delete_ticket_cli.py`
 - `tests/integrations/test_ticket_service.py`
 
-**Total:** 217 tests
+**Total:** 231 tests
 
 - 90 unit tests
-- 127 integration tests
+- 141 integration tests
 
 ---
 

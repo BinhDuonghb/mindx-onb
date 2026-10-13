@@ -36,30 +36,37 @@ TicketManagerCLI/
 ├── README.md                         # This file
 ├── pytest.ini                        # pytest configuration
 ├── data/
+│   ├── db_client.py                 # Database client (JSON persistence)
 │   └── tickets.json                 # Ticket storage (auto-created)
 ├── ticket_manager/
 │   ├── __init__.py
 │   ├── cli.py                       # CLI command handlers
 │   ├── config.py                    # Configuration and storage setup
-│   ├── db_client.py                 # Database client (JSON persistence)
 │   ├── models/
 │   │   └── ticket.py                # Ticket dataclass model
+│   ├── validators/
+│   │   ├── email_validator.py       # Email validation logic
+│   │   └── ticket_validator.py      # Ticket field validation
 │   └── services/
 │       └── ticketService.py         # Business logic for ticket operations
 └── tests/
+    ├── units/
+    │   ├── test_email_validator.py      # Email validation tests
+    │   └── test_ticket_validator.py     # Ticket field validation tests
     └── integrations/
-        ├── test_create_ticket_cli.py    # Create command tests (15+ cases)
+        ├── test_cli_error_handling.py   # CLI error handling tests
+        ├── test_create_ticket_cli.py    # Create command tests (30+ cases)
+        ├── test_delete_ticket_cli.py    # Delete command tests (18+ cases)
         ├── test_list_ticket_cli.py      # List command tests (17+ cases)
         ├── test_show_ticket_cli.py      # Show command tests (11+ cases)
         ├── test_update_ticket_cli.py    # Update command tests (14+ cases)
-        ├── test_delete_ticket_cli.py    # Delete command tests (18+ cases)
         ├── test_db_client.py            # DBClient tests
         └── test_ticket_service.py       # TicketService tests
 ```
 
 ## Requirements
 
-- Python 3.9+
+- Python 3.10+ (tested and verified with Python 3.13.3; Python 3.12+ recommended)
 - pip (Python package manager)
 
 ## Setup

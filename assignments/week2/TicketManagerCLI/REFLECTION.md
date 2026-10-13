@@ -169,13 +169,23 @@ The system validates tickets at **three levels**:
 
 ### Test Structure: Unit vs. Integration
 
-**Unit Tests (90 tests in `test_validators.py`):**
+**Unit Tests (90 tests in separate validator files):**
+- `tests/units/test_email_validator.py` — email validation edge cases
+- `tests/units/test_ticket_validator.py` — ticket field validation rules
 - Test validators in isolation with hardcoded inputs
 - Fast (no file I/O, no subprocess calls)
 - Easy to debug (failure points to exact validation logic)
 - Cover edge cases that integration tests might miss
 
-**Integration Tests (127 tests across 6 files):**
+**Integration Tests (141 tests across 8 files):**
+- `test_db_client.py` — JSON persistence and error handling
+- `test_create_ticket_cli.py` — create command end-to-end
+- `test_list_ticket_cli.py` — list command with filters
+- `test_show_ticket_cli.py` — show command with UUID lookup
+- `test_update_ticket_cli.py` — update command with status changes
+- `test_delete_ticket_cli.py` — delete command with data integrity
+- `test_ticket_service.py` — service layer CRUD operations
+- `test_cli_error_handling.py` — corrupted JSON and error messages
 - Test full command flow: CLI → Service → DB → JSON file
 - Slower but verify pieces work together
 - Catch interface/data-format bugs (e.g., did CLI pass the right argument type to Service?)
