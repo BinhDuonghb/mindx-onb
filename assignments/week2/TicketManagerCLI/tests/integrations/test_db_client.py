@@ -11,10 +11,15 @@ def db_client(use_temp_test_database):
 
 
 class TestDBClientRead:
-    """Test reading operations."""
+    """
+    Test DBClient.read() contract.
+
+    DBClient is the data layer — it does NOT handle missing files gracefully.
+    It raises exceptions; the CLI layer catches them and shows user-friendly messages.
+    """
 
     def test_read_empty_file_returns_empty_list(self, db_client):
-        """Should return empty list when file is empty."""
+        """Should return empty list when file exists but is empty."""
         tickets = db_client.read()
         assert tickets == []
 
@@ -32,9 +37,35 @@ class TestDBClientRead:
         assert tickets[0]["title"] == "Ticket 1"
         assert tickets[1]["title"] == "Ticket 2"
 
+    def test_read_missing_file_raises_file_not_found(self, use_temp_test_database):
+        """Should raise FileNotFoundError when file doesn't exist."""
+        # Delete the file
+        if use_temp_test_database.exists():
+            use_temp_test_database.unlink()
+
+        db_client = DBClient(use_temp_test_database)
+
+        # DBClient does NOT auto-create files
+        with pytest.raises(FileNotFoundError):
+            db_client.read()
+
+    def test_read_corrupted_json_raises_json_decode_error(self, db_client, use_temp_test_database):
+        """Should raise JSONDecodeError when file contains invalid JSON."""
+        use_temp_test_database.write_text("{ invalid json }", encoding="utf-8")
+
+        # DBClient does NOT auto-recover corrupted files
+        with pytest.raises(json.JSONDecodeError):
+            db_client.read()
+
 
 class TestDBClientWrite:
-    """Test write operations."""
+    """
+    Test DBClient.write() contract.
+
+    DBClient.write() calls read() internally, so it inherits the same error behavior:
+    - Raises FileNotFoundError if file doesn't exist
+    - Raises JSONDecodeError if file contains invalid JSON
+    """
 
     def test_write_single_ticket_to_empty_file(self, db_client, use_temp_test_database):
         """Should write a single ticket to empty file."""
@@ -80,6 +111,28 @@ class TestDBClientWrite:
 
         assert data[0]["description"] == "A detailed description"
         assert data[0]["tags"] == ["bug", "backend"]
+
+    def test_write_to_missing_file_raises_file_not_found(self, use_temp_test_database):
+        """Should raise FileNotFoundError when writing to missing file."""
+        # Delete the file
+        if use_temp_test_database.exists():
+            use_temp_test_database.unlink()
+
+        db_client = DBClient(use_temp_test_database)
+        ticket = {"id": 1, "title": "New Ticket"}
+
+        # DBClient does NOT auto-create files
+        with pytest.raises(FileNotFoundError):
+            db_client.write(ticket)
+
+    def test_write_to_corrupted_json_raises_json_decode_error(self, db_client, use_temp_test_database):
+        """Should raise JSONDecodeError when writing to file with invalid JSON."""
+        use_temp_test_database.write_text("{ invalid json }", encoding="utf-8")
+        ticket = {"id": 1, "title": "New Ticket"}
+
+        # DBClient does NOT auto-recover
+        with pytest.raises(json.JSONDecodeError):
+            db_client.write(ticket)
 
 
 class TestDBClientUpdate:

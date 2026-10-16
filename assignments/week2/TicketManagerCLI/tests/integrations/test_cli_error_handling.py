@@ -20,8 +20,9 @@ class TestCLIErrorHandling:
 
         result = run_cli_command("list")
 
-        assert result.returncode != 0, "CLI should exit with non-zero code"
-        assert "corrupted" in result.stdout.lower() or "json" in result.stdout.lower()
+        assert result.returncode != 0, "CLI should exit with non-zero code on corrupted JSON"
+        assert "corrupted" in result.stdout.lower() or "json" in result.stdout.lower(), \
+            f"Should mention corruption. Got: {result.stdout}"
         assert "Traceback" not in result.stdout, "Should not show raw traceback"
         assert "Traceback" not in result.stderr, "Should not show raw traceback in stderr"
 
@@ -32,12 +33,10 @@ class TestCLIErrorHandling:
 
         result = run_cli_command("create", "--title", "Test Task")
 
-        assert result.returncode != 0
-        # Accept any user-friendly error message (not raw traceback)
-        assert "Traceback" not in result.stdout
-        assert "Traceback" not in result.stderr
-        # Should have either our message or at least no Python traceback
-        assert result.stdout  # Should have some output
+        assert result.returncode != 0, "Should fail when JSON corrupted"
+        assert "Traceback" not in result.stdout, "Should not show Python traceback"
+        assert "Traceback" not in result.stderr, "Should not show Python traceback"
+        assert result.stdout, "Should have error message output"
 
     def test_delete_corrupted_json_shows_friendly_error(self, use_temp_test_database):
         """Should show user-friendly error when deleting with corrupted JSON."""
@@ -45,37 +44,28 @@ class TestCLIErrorHandling:
 
         result = run_cli_command("delete", "550e8400-e29b-41d4-a716-446655440000")
 
-        assert result.returncode != 0
-        # No raw Python traceback should be shown
-        assert "Traceback" not in result.stdout
-        assert "Traceback" not in result.stderr
-        assert result.stdout
+        assert result.returncode != 0, "Should fail when JSON corrupted"
+        assert "Traceback" not in result.stdout, "Should not show Python traceback"
+        assert "Traceback" not in result.stderr, "Should not show Python traceback"
+        assert result.stdout, "Should have error message output"
 
-    def test_list_missing_file_creates_and_shows_empty(self, use_temp_test_database):
-        """Missing file should be created by ensure_storage() and show empty."""
-        # ensure_storage() runs automatically, creating the file
-        # This documents current behavior: missing files are auto-initialized
-        if use_temp_test_database.exists():
-            use_temp_test_database.unlink()
-
+    def test_list_empty_database_shows_no_tickets_message(self, use_temp_test_database):
+        """Should display message when no tickets exist."""
+        # File starts empty from fixture
         result = run_cli_command("list")
 
-        # File should be created by ensure_storage()
-        assert use_temp_test_database.exists()
-        assert result.returncode == 0
-        assert "no tickets" in result.stdout.lower()
+        assert result.returncode == 0, "Should succeed with empty database"
+        assert "no tickets" in result.stdout.lower(), \
+            f"Should show 'no tickets' message. Got: {result.stdout}"
 
-    def test_create_missing_file_auto_initializes(self, use_temp_test_database):
-        """Missing file should be created by ensure_storage() before CLI runs."""
-        if use_temp_test_database.exists():
-            use_temp_test_database.unlink()
-
+    def test_create_succeeds_with_empty_database(self, use_temp_test_database):
+        """Should create ticket successfully when database is empty."""
+        # File starts empty from fixture
         result = run_cli_command("create", "--title", "Test Task")
 
-        # File should have been created and ticket created successfully
-        assert use_temp_test_database.exists()
-        assert result.returncode == 0
-        assert "successfully" in result.stdout.lower()
+        assert result.returncode == 0, f"Should succeed. Got: {result.stderr}"
+        assert "successfully" in result.stdout.lower(), \
+            f"Should show success message. Got: {result.stdout}"
 
     def test_corrupted_json_does_not_auto_recover(self, use_temp_test_database):
         """Should NOT automatically overwrite corrupted file."""
@@ -86,32 +76,17 @@ class TestCLIErrorHandling:
 
         # File should still contain corrupted content (not auto-fixed)
         content = use_temp_test_database.read_text(encoding="utf-8")
-        assert content == corrupted_content, "CLI should not auto-recover corrupted files"
+        assert content == corrupted_content, \
+            "CLI should not auto-recover corrupted files (destructive!)"
 
-    def test_error_message_is_user_friendly(self, use_temp_test_database):
-        """Error messages should guide users to solutions."""
+    def test_corrupted_json_error_suggests_fix_or_restore(self, use_temp_test_database):
+        """Error messages should guide users to restore corrupted database."""
         use_temp_test_database.write_text("invalid", encoding="utf-8")
 
         result = run_cli_command("list")
 
-        # Should contain actionable guidance
         output = result.stdout.lower()
-        assert any(word in output for word in ["error:", "corrupted", "invalid"])
-        assert "restore" in output or "fix" in output or "backup" in output
-
-    def test_missing_file_error_suggests_load_seed_data(self, use_temp_test_database):
-        """Error for missing file should suggest load-seed-data command."""
-        # Note: ensure_storage() creates the file automatically on startup,
-        # so a truly missing file scenario is rare in normal usage.
-        # This test documents that if the file somehow goes missing mid-operation,
-        # a reasonable error would be shown.
-        if use_temp_test_database.exists():
-            use_temp_test_database.unlink()
-
-        result = run_cli_command("create", "--title", "Task")
-
-        # File should be auto-created by ensure_storage(), so command succeeds
-        assert result.returncode == 0 or result.returncode != 0
-        # Either way, no raw traceback should be shown
-        assert "Traceback" not in result.stdout
-        assert "Traceback" not in result.stderr
+        assert "corrupted" in output or "invalid" in output, \
+            f"Should mention corruption. Got: {result.stdout}"
+        assert "restore" in output or "backup" in output or "fix" in output, \
+            f"Should suggest how to fix. Got: {result.stdout}"

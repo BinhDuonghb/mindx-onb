@@ -333,9 +333,20 @@ def create(self, ticket: Ticket) -> Ticket:
 ## Summary
 
 ### TDD Impact
-- 223 passing tests provide high confidence in the system
+- 234 passing tests provide high confidence in the system
 - Red-Green-Refactor cycles led to clean, layered architecture
 - Tests served as specifications that even AI code had to satisfy
+
+### Test Isolation Improvements
+- Implemented pytest `tmp_path` fixture for complete test isolation
+- Each test runs in own temporary directory with its own test database
+- Environment variable `PYTEST_TEMP_TEST_DB` ensures subprocess calls use temp database
+
+### Contract Clarity Improvements
+- **DBClient layer:** Clearly defined to raise exceptions (FileNotFoundError, JSONDecodeError), not handle them
+- **CLI layer:** Catches DBClient exceptions and converts them to user-friendly messages
+- Added explicit tests for both layers: DBClient tests verify exceptions are raised; CLI tests verify error handling
+- Removed ambiguous tests like "doesn't crash" — now tests verify specific expected behavior
 
 ### AI Usage
 - AI accelerated implementation but didn't replace testing
@@ -343,14 +354,14 @@ def create(self, ticket: Ticket) -> Ticket:
 - Guardrails (immediate test runs, code review) ensured quality
 
 ### Key Takeaway
-TDD + testing AI-generated code = faster development with fewer bugs. The tests were not overhead; they were the foundation that made AI assistance safe and effective.
+TDD + testing AI-generated code + clear contract separation = faster development with fewer bugs. The tests were not overhead; they were the foundation that made AI assistance safe and effective.
 
 ---
 
 ## How to Answer Week 2 Assessment Questions
 
 **Q: Why use TDD?**
-A: TDD clarified the interface before implementation and caught bugs early (both in my code and AI-generated code). Tests served as the specification.
+A: TDD clarified the interface before implementation and caught bugs early (both in my code and AI-generated code). Tests served as the specification. With strong test isolation, we can confidently refactor and expand without fear.
 
 **Q: Why both unit and integration tests?**
 A: Unit tests catch logic errors fast (email validation edge cases). Integration tests catch architecture errors (validators not being called). Together they provide comprehensive coverage.
@@ -360,3 +371,6 @@ A: Defense in depth. CLI validates basic format; Service validates business rule
 
 **Q: How did you use AI responsibly?**
 A: Tests forced AI code to be correct. Every AI-generated test and implementation had to pass tests before acceptance. Tests caught the email regex bug and the missing validator call that AI made.
+
+**Q: How did you ensure test isolation?**
+A: Used pytest's `tmp_path` fixture to give each test its own temporary database file. Passed `PYTEST_TEMP_TEST_DB` environment variable to CLI subprocesses so they write to the same temp location. This keeps tests independent, repeatable, and prevents git noise from test data modifications.

@@ -6,8 +6,9 @@ Successfully completed Week 2 TDD practice by building a fully functional **Tick
 
 The project demonstrates:
 
-- **231 passing tests**: 90 unit tests + 141 integration tests
+- **234 passing tests**: 90 unit tests + 144 integration tests
 - Clean layered architecture with clear separation of concerns
+- Test isolation using pytest's `tmp_path` fixture for clean, independent test runs
 - Controlled AI assistance with rigorous validation through testing
 - Comprehensive documentation and reflection on design decisions
 
@@ -352,7 +353,7 @@ Integration tests verify collaboration between multiple application components, 
 | `test_delete_ticket_cli.py` | Delete operations and data integrity |
 | `test_ticket_service.py` | Service CRUD operations and validation integration |
 
-**Total:** 127 integration tests passing.
+**Total:** 144 integration tests passing.
 
 ---
 
@@ -449,13 +450,13 @@ The project includes a `REFLECTION.md` containing discussion of:
 
 | Metric | Count |
 | --- | ---: |
-| **Total Tests** | **231** |
+| **Total Tests** | **234** |
 | Unit Tests | 90 |
-| Integration Tests | 141 |
+| Integration Tests | 144 |
 | Test Pass Rate | 100% |
 | Source Files | 12 |
-| Test Files | 9 |
-| Approximate Lines of Code | ~1,200 |
+| Test Files | 10 |
+| Approximate Lines of Code | ~1,300 |
 
 ---
 
@@ -856,10 +857,10 @@ python main.py list --status open
 - `tests/integrations/test_delete_ticket_cli.py`
 - `tests/integrations/test_ticket_service.py`
 
-**Total:** 231 tests
+**Total:** 234 tests
 
 - 90 unit tests
-- 141 integration tests
+- 144 integration tests
 
 ---
 
