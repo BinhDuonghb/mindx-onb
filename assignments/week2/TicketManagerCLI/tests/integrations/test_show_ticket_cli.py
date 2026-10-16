@@ -2,7 +2,6 @@ import subprocess
 import sys
 from uuid import UUID
 
-from ticket_manager.config import TEST_TICKETS_FILE
 from data.db_client import DBClient
 from ticket_manager.models.ticket import Ticket
 from ticket_manager.services.ticketService import TicketService
@@ -14,10 +13,9 @@ def run_cli_show(ticket_id) -> subprocess.CompletedProcess:
     return subprocess.run(cmd, capture_output=True, text=True)
 
 
-def setup_tickets(tickets_data):
+def setup_tickets(db_path, tickets_data):
     """Helper to setup test tickets in the file."""
-    TEST_TICKETS_FILE.write_text("[]", encoding="utf-8")
-    db_client = DBClient(TEST_TICKETS_FILE)
+    db_client = DBClient(db_path)
     ticket_service = TicketService(db_client)
 
     created = []
@@ -31,9 +29,9 @@ def setup_tickets(tickets_data):
 class TestShowTicketCLI:
     """Test the show ticket CLI command."""
 
-    def test_show_ticket_displays_all_fields(self):
+    def test_show_ticket_displays_all_fields(self, use_temp_test_database):
         """Should display all ticket fields."""
-        tickets = setup_tickets([
+        tickets = setup_tickets(use_temp_test_database, [
             {
                 "title": "Important Bug",
                 "description": "System is down",
@@ -52,9 +50,9 @@ class TestShowTicketCLI:
         assert "high" in result.stdout.lower()
         assert "open" in result.stdout.lower()
 
-    def test_show_ticket_with_uuid(self):
+    def test_show_ticket_with_uuid(self, use_temp_test_database):
         """Should accept UUID as ticket ID."""
-        tickets = setup_tickets([
+        tickets = setup_tickets(use_temp_test_database, [
             {"title": "Test Task"},
         ])
 
@@ -64,19 +62,17 @@ class TestShowTicketCLI:
         assert result.returncode == 0
         assert "Test Task" in result.stdout
 
-    def test_show_nonexistent_ticket_fails(self):
+    def test_show_nonexistent_ticket_fails(self, use_temp_test_database):
         """Should fail when ticket ID doesn't exist."""
-        TEST_TICKETS_FILE.write_text("[]", encoding="utf-8")
-
         fake_uuid = UUID("00000000-0000-0000-0000-000000000000")
         result = run_cli_show(fake_uuid)
 
         assert result.returncode != 0
         assert "not found" in result.stderr.lower() or "not found" in result.stdout.lower()
 
-    def test_show_ticket_displays_description(self):
+    def test_show_ticket_displays_description(self, use_temp_test_database):
         """Should display full description."""
-        tickets = setup_tickets([
+        tickets = setup_tickets(use_temp_test_database, [
             {
                 "title": "Feature Request",
                 "description": "Add dark mode to the application for better user experience",
@@ -88,9 +84,9 @@ class TestShowTicketCLI:
         assert result.returncode == 0
         assert "Add dark mode" in result.stdout
 
-    def test_show_ticket_displays_priority(self):
+    def test_show_ticket_displays_priority(self, use_temp_test_database):
         """Should display ticket priority."""
-        tickets = setup_tickets([
+        tickets = setup_tickets(use_temp_test_database, [
             {"title": "Low Priority Task", "priority": "low"},
         ])
 
@@ -99,9 +95,9 @@ class TestShowTicketCLI:
         assert result.returncode == 0
         assert "low" in result.stdout.lower()
 
-    def test_show_ticket_displays_status(self):
+    def test_show_ticket_displays_status(self, use_temp_test_database):
         """Should display ticket status."""
-        tickets = setup_tickets([
+        tickets = setup_tickets(use_temp_test_database, [
             {"title": "Closed Task", "status": "closed"},
         ])
 
@@ -110,9 +106,9 @@ class TestShowTicketCLI:
         assert result.returncode == 0
         assert "closed" in result.stdout.lower()
 
-    def test_show_ticket_displays_tags(self):
+    def test_show_ticket_displays_tags(self, use_temp_test_database):
         """Should display all ticket tags."""
-        tickets = setup_tickets([
+        tickets = setup_tickets(use_temp_test_database, [
             {
                 "title": "Tagged Task",
                 "tags": ["bug", "frontend", "urgent"],
@@ -126,9 +122,9 @@ class TestShowTicketCLI:
         assert "frontend" in result.stdout
         assert "urgent" in result.stdout
 
-    def test_show_ticket_displays_id(self):
+    def test_show_ticket_displays_id(self, use_temp_test_database):
         """Should display the ticket ID."""
-        tickets = setup_tickets([
+        tickets = setup_tickets(use_temp_test_database, [
             {"title": "Task with ID"},
         ])
 
@@ -138,9 +134,9 @@ class TestShowTicketCLI:
         assert result.returncode == 0
         assert str(ticket_id) in result.stdout
 
-    def test_show_ticket_with_empty_description(self):
+    def test_show_ticket_with_empty_description(self, use_temp_test_database):
         """Should handle empty description gracefully."""
-        tickets = setup_tickets([
+        tickets = setup_tickets(use_temp_test_database, [
             {"title": "No Description Task", "description": ""},
         ])
 
@@ -149,9 +145,9 @@ class TestShowTicketCLI:
         assert result.returncode == 0
         assert "No Description Task" in result.stdout
 
-    def test_show_ticket_with_no_tags(self):
+    def test_show_ticket_with_no_tags(self, use_temp_test_database):
         """Should handle ticket with no tags."""
-        tickets = setup_tickets([
+        tickets = setup_tickets(use_temp_test_database, [
             {"title": "Untagged Task", "tags": []},
         ])
 
@@ -160,15 +156,15 @@ class TestShowTicketCLI:
         assert result.returncode == 0
         assert "Untagged Task" in result.stdout
 
-    def test_show_invalid_id_format_fails(self):
+    def test_show_invalid_id_format_fails(self, use_temp_test_database):
         """Should fail with invalid UUID format."""
         result = run_cli_show("not-a-uuid")
 
         assert result.returncode != 0
 
-    def test_show_ticket_displays_created_at(self):
+    def test_show_ticket_displays_created_at(self, use_temp_test_database):
         """Should display ticket creation timestamp."""
-        tickets = setup_tickets([
+        tickets = setup_tickets(use_temp_test_database, [
             {"title": "Task with Timestamp"},
         ])
 

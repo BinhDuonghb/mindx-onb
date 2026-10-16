@@ -2,7 +2,6 @@ import subprocess
 import sys
 from uuid import UUID
 
-from ticket_manager.config import TEST_TICKETS_FILE
 from data.db_client import DBClient
 from ticket_manager.models.ticket import Ticket
 from ticket_manager.services.ticketService import TicketService
@@ -20,10 +19,9 @@ def run_cli_list(**kwargs) -> subprocess.CompletedProcess:
     return subprocess.run(cmd, capture_output=True, text=True)
 
 
-def setup_tickets(tickets_data):
+def setup_tickets(db_path, tickets_data):
     """Helper to setup test tickets in the file."""
-    TEST_TICKETS_FILE.write_text("[]", encoding="utf-8")
-    db_client = DBClient(TEST_TICKETS_FILE)
+    db_client = DBClient(db_path)
     ticket_service = TicketService(db_client)
 
     created = []
@@ -37,17 +35,15 @@ def setup_tickets(tickets_data):
 class TestListTicketCLI:
     """Test the list ticket CLI command."""
 
-    def test_list_empty_tickets(self):
+    def test_list_empty_tickets(self, use_temp_test_database):
         """Should display message when no tickets exist."""
-        TEST_TICKETS_FILE.write_text("[]", encoding="utf-8")
-
         result = run_cli_list()
 
         assert result.returncode == 0
 
-    def test_list_all_tickets(self):
+    def test_list_all_tickets(self, use_temp_test_database):
         """Should list all tickets when no filters applied."""
-        setup_tickets([
+        setup_tickets(use_temp_test_database, [
             {"title": "Task 1", "status": "open", "priority": "high"},
             {"title": "Task 2", "status": "closed", "priority": "low"},
             {"title": "Task 3", "status": "open", "priority": "medium"},
@@ -60,9 +56,9 @@ class TestListTicketCLI:
         assert "Task 2" in result.stdout
         assert "Task 3" in result.stdout
 
-    def test_list_filter_by_status_open(self):
+    def test_list_filter_by_status_open(self, use_temp_test_database):
         """Should filter tickets by open status."""
-        setup_tickets([
+        setup_tickets(use_temp_test_database, [
             {"title": "Open Task 1", "status": "open"},
             {"title": "Closed Task", "status": "closed"},
             {"title": "Open Task 2", "status": "open"},
@@ -75,9 +71,9 @@ class TestListTicketCLI:
         assert "Open Task 2" in result.stdout
         assert "Closed Task" not in result.stdout
 
-    def test_list_filter_by_status_closed(self):
+    def test_list_filter_by_status_closed(self, use_temp_test_database):
         """Should filter tickets by closed status."""
-        setup_tickets([
+        setup_tickets(use_temp_test_database, [
             {"title": "Open Task", "status": "open"},
             {"title": "Closed Task 1", "status": "closed"},
             {"title": "Closed Task 2", "status": "closed"},
@@ -90,9 +86,9 @@ class TestListTicketCLI:
         assert "Closed Task 2" in result.stdout
         assert "Open Task" not in result.stdout
 
-    def test_list_filter_by_priority_high(self):
+    def test_list_filter_by_priority_high(self, use_temp_test_database):
         """Should filter tickets by high priority."""
-        setup_tickets([
+        setup_tickets(use_temp_test_database, [
             {"title": "High Priority Task 1", "priority": "high"},
             {"title": "Low Priority Task", "priority": "low"},
             {"title": "High Priority Task 2", "priority": "high"},
@@ -105,9 +101,9 @@ class TestListTicketCLI:
         assert "High Priority Task 2" in result.stdout
         assert "Low Priority Task" not in result.stdout
 
-    def test_list_filter_by_priority_medium(self):
+    def test_list_filter_by_priority_medium(self, use_temp_test_database):
         """Should filter tickets by medium priority."""
-        setup_tickets([
+        setup_tickets(use_temp_test_database, [
             {"title": "High Priority", "priority": "high"},
             {"title": "Medium Priority 1", "priority": "medium"},
             {"title": "Medium Priority 2", "priority": "medium"},
@@ -120,9 +116,9 @@ class TestListTicketCLI:
         assert "Medium Priority 2" in result.stdout
         assert "High Priority" not in result.stdout
 
-    def test_list_filter_by_priority_low(self):
+    def test_list_filter_by_priority_low(self, use_temp_test_database):
         """Should filter tickets by low priority."""
-        setup_tickets([
+        setup_tickets(use_temp_test_database, [
             {"title": "High Priority", "priority": "high"},
             {"title": "Low Priority 1", "priority": "low"},
             {"title": "Low Priority 2", "priority": "low"},
@@ -135,9 +131,9 @@ class TestListTicketCLI:
         assert "Low Priority 2" in result.stdout
         assert "High Priority" not in result.stdout
 
-    def test_list_filter_by_tag(self):
+    def test_list_filter_by_tag(self, use_temp_test_database):
         """Should filter tickets by tag."""
-        setup_tickets([
+        setup_tickets(use_temp_test_database, [
             {"title": "Bug Task 1", "tags": ["bug", "frontend"]},
             {"title": "Feature Task", "tags": ["feature"]},
             {"title": "Bug Task 2", "tags": ["bug", "backend"]},
@@ -150,9 +146,9 @@ class TestListTicketCLI:
         assert "Bug Task 2" in result.stdout
         assert "Feature Task" not in result.stdout
 
-    def test_list_filter_by_multiple_tags(self):
+    def test_list_filter_by_multiple_tags(self, use_temp_test_database):
         """Should handle filtering by different tags."""
-        setup_tickets([
+        setup_tickets(use_temp_test_database, [
             {"title": "Frontend Bug", "tags": ["bug", "frontend"]},
             {"title": "Backend Bug", "tags": ["bug", "backend"]},
             {"title": "Urgent Feature", "tags": ["feature", "urgent"]},
@@ -164,9 +160,9 @@ class TestListTicketCLI:
         assert "Backend Bug" in result.stdout
         assert "Frontend Bug" not in result.stdout
 
-    def test_list_with_status_and_priority_filters(self):
+    def test_list_with_status_and_priority_filters(self, use_temp_test_database):
         """Should handle multiple filters together."""
-        setup_tickets([
+        setup_tickets(use_temp_test_database, [
             {"title": "Open High", "status": "open", "priority": "high"},
             {"title": "Open Low", "status": "open", "priority": "low"},
             {"title": "Closed High", "status": "closed", "priority": "high"},
@@ -179,9 +175,9 @@ class TestListTicketCLI:
         assert "Open Low" not in result.stdout
         assert "Closed High" not in result.stdout
 
-    def test_list_with_all_filters(self):
+    def test_list_with_all_filters(self, use_temp_test_database):
         """Should handle all filters simultaneously."""
-        setup_tickets([
+        setup_tickets(use_temp_test_database, [
             {
                 "title": "Matching Ticket",
                 "status": "open",
@@ -207,21 +203,21 @@ class TestListTicketCLI:
         assert result.returncode == 0
         assert "Matching Ticket" in result.stdout
 
-    def test_list_invalid_status_fails(self):
+    def test_list_invalid_status_fails(self, use_temp_test_database):
         """Should fail with invalid status value."""
         result = run_cli_list(status="invalid-status")
 
         assert result.returncode != 0
 
-    def test_list_invalid_priority_fails(self):
+    def test_list_invalid_priority_fails(self, use_temp_test_database):
         """Should fail with invalid priority value."""
         result = run_cli_list(priority="critical")
 
         assert result.returncode != 0
 
-    def test_list_no_results_with_filter(self):
+    def test_list_no_results_with_filter(self, use_temp_test_database):
         """Should handle no results from filter gracefully."""
-        setup_tickets([
+        setup_tickets(use_temp_test_database, [
             {"title": "Open Task", "status": "open"},
             {"title": "Closed Task", "status": "closed"},
         ])
@@ -230,9 +226,9 @@ class TestListTicketCLI:
 
         assert result.returncode == 0
 
-    def test_list_displays_ticket_info(self):
+    def test_list_displays_ticket_info(self, use_temp_test_database):
         """Should display relevant ticket information."""
-        setup_tickets([
+        setup_tickets(use_temp_test_database, [
             {
                 "title": "Important Bug",
                 "description": "System down",

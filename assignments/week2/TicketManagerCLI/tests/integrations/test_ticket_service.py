@@ -1,30 +1,20 @@
 import pytest
 from uuid import UUID
-from ticket_manager.config import TEST_TICKETS_FILE
 from data.db_client import DBClient
 from ticket_manager.models.ticket import Ticket
 from ticket_manager.services.ticketService import TicketService
 
 
 @pytest.fixture
-def db_client():
+def db_client(use_temp_test_database):
     """Initialize DBClient with fresh storage for each test."""
-    TEST_TICKETS_FILE.write_text("[]", encoding="utf-8")
-    return DBClient(TEST_TICKETS_FILE)
+    return DBClient(use_temp_test_database)
 
 
 @pytest.fixture
 def ticket_service(db_client):
     """Initialize TicketService with a clean DBClient."""
     return TicketService(db_client)
-
-
-@pytest.fixture(autouse=True)
-def cleanup_tickets_file():
-    """Ensure tickets file is clean before each test."""
-    TEST_TICKETS_FILE.write_text("[]", encoding="utf-8")
-    yield
-    # Don't reset after to allow data persistence inspection
 
 
 class TestTicketServiceCreate:
