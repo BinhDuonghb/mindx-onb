@@ -1,0 +1,273 @@
+[
+  {
+    "id": "483cedde-4d54-44a2-84dc-845badd8369b",
+    "title": "Fix login authentication bug",
+    "description": "Users are unable to login with correct credentials. Error 500 returned.",
+    "status": "open",
+    "priority": "high",
+    "tags": [
+      "bug",
+      "auth",
+      "critical"
+    ],
+    "created_at": "2026-10-13T22:07:57.765841",
+    "creator": "dev@company.com",
+    "assignee": "qa@company.com",
+    "estimated_time": 4.5
+  },
+  {
+    "id": "24ac9a17-e2b4-411f-a8ed-d79a2e7c362e",
+    "title": "Implement dark mode theme",
+    "description": "Add dark mode toggle to user preferences. Should respect system theme.",
+    "status": "open",
+    "priority": "medium",
+    "tags": [
+      "feature",
+      "frontend",
+      "ui"
+    ],
+    "created_at": "2026-10-13T22:07:57.766191",
+    "creator": "designer@company.com",
+    "assignee": "frontend@company.com",
+    "estimated_time": 8.0
+  },
+  {
+    "id": "7a74255d-37be-4e97-9d5c-a356cb0847a2",
+    "title": "Optimize database query performance",
+    "description": "Dashboard page loads slowly. Profile queries and optimize N+1 problems.",
+    "status": "in-progress",
+    "priority": "high",
+    "tags": [
+      "performance",
+      "backend",
+      "database"
+    ],
+    "created_at": "2026-10-13T22:07:57.766194",
+    "creator": "devops@company.com",
+    "assignee": "senior-backend@company.com",
+    "estimated_time": 6.0
+  },
+  {
+    "id": "f7cf60b4-2efa-4394-8d87-d00486eb6330",
+    "title": "Update API documentation",
+    "description": "Add missing endpoints to OpenAPI spec and update examples.",
+    "status": "open",
+    "priority": "low",
+    "tags": [
+      "documentation",
+      "api"
+    ],
+    "created_at": "2026-10-13T22:07:57.766197",
+    "creator": "tech-lead@company.com",
+    "assignee": "junior-dev@company.com",
+    "estimated_time": 3.0
+  },
+  {
+    "id": "92db3987-1c8e-4303-aca1-b96af95f1ff1",
+    "title": "Set up CI/CD pipeline",
+    "description": "Implement automated testing and deployment to staging/production.",
+    "status": "closed",
+    "priority": "high",
+    "tags": [
+      "devops",
+      "infrastructure",
+      "automation"
+    ],
+    "created_at": "2026-10-13T22:07:57.766198",
+    "creator": "devops@company.com",
+    "assignee": "devops@company.com",
+    "estimated_time": 12.0
+  },
+  {
+    "id": "2606e17f-2a7d-4356-baff-9f7248c5484c",
+    "title": "Fix memory leak in user service",
+    "description": "Memory usage increases over time. Investigate cached objects and connection pooling.",
+    "status": "in-progress",
+    "priority": "high",
+    "tags": [
+      "bug",
+      "performance",
+      "backend"
+    ],
+    "created_at": "2026-10-13T22:07:57.766200",
+    "creator": "senior-dev@company.com",
+    "assignee": "backend@company.com",
+    "estimated_time": 5.0
+  },
+  {
+    "id": "726c37c4-1b90-414d-8eef-660c4ebe6f27",
+    "title": "Add unit tests for payment module",
+    "description": "Coverage for payment processing is below 60%. Add tests for edge cases.",
+    "status": "open",
+    "priority": "medium",
+    "tags": [
+      "testing",
+      "payment",
+      "quality"
+    ],
+    "created_at": "2026-10-13T22:07:57.766201",
+    "creator": "qa-lead@company.com",
+    "assignee": "qa@company.com",
+    "estimated_time": 7.0
+  },
+  {
+    "id": "0534f0f7-9acb-4ba1-ad66-3e0c1d569487",
+    "title": "Implement email notification system",
+    "description": "Send email notifications for important user actions. Integrate with SendGrid.",
+    "status": "open",
+    "priority": "medium",
+    "tags": [
+      "feature",
+      "notifications",
+      "backend"
+    ],
+    "created_at": "2026-10-13T22:07:57.766203",
+    "creator": "product@company.com",
+    "assignee": "backend@company.com",
+    "estimated_time": 9.0
+  },
+  {
+    "id": "81ff08a2-0215-42b9-9694-dc7fd0d54065",
+    "title": "Update dependencies and security patches",
+    "description": "Update npm packages to latest versions. Review and apply security patches.",
+    "status": "closed",
+    "priority": "high",
+    "tags": [
+      "maintenance",
+      "security",
+      "dependencies"
+    ],
+    "created_at": "2026-10-13T22:07:57.766207",
+    "creator": "devops@company.com",
+    "assignee": "frontend@company.com",
+    "estimated_time": 4.0
+  },
+  {
+    "id": "bec0306c-a3ca-4eaa-a0bb-1d9817b1e52d",
+    "title": "Design database schema for analytics",
+    "description": "Plan tables and relationships for event tracking and analytics.",
+    "status": "open",
+    "priority": "medium",
+    "tags": [
+      "database",
+      "analytics",
+      "design"
+    ],
+    "created_at": "2026-10-13T22:07:57.766208",
+    "creator": "architect@company.com",
+    "assignee": "senior-dev@company.com",
+    "estimated_time": 6.5
+  },
+  {
+    "id": "b2f6e99a-2512-4e22-ac13-65334e423839",
+    "title": "Create user onboarding flow",
+    "description": "Design and implement step-by-step onboarding tutorial for new users.",
+    "status": "in-progress",
+    "priority": "medium",
+    "tags": [
+      "feature",
+      "frontend",
+      "ux"
+    ],
+    "created_at": "2026-10-13T22:07:57.766210",
+    "creator": "product@company.com",
+    "assignee": "frontend@company.com",
+    "estimated_time": 10.0
+  },
+  {
+    "id": "fa0f9dc5-4d8d-46a5-878d-3d1861b5add6",
+    "title": "Fix SSL certificate expiration warning",
+    "description": "Renew SSL certificate for production domain. Update certificate chain.",
+    "status": "closed",
+    "priority": "high",
+    "tags": [
+      "infrastructure",
+      "security",
+      "production"
+    ],
+    "created_at": "2026-10-13T22:07:57.766211",
+    "creator": "devops@company.com",
+    "assignee": "devops@company.com",
+    "estimated_time": 2.0
+  },
+  {
+    "id": "b321d167-3de0-4aa7-9d81-940ca52f3d3a",
+    "title": "Implement rate limiting for API",
+    "description": "Prevent API abuse by implementing rate limiting. Use Redis for tracking.",
+    "status": "open",
+    "priority": "high",
+    "tags": [
+      "security",
+      "api",
+      "backend"
+    ],
+    "created_at": "2026-10-13T22:07:57.766213",
+    "creator": "security@company.com",
+    "assignee": "senior-dev@company.com",
+    "estimated_time": 5.5
+  },
+  {
+    "id": "00875757-5119-424f-91a4-e3584d47deaf",
+    "title": "Add search functionality to dashboard",
+    "description": "Allow users to search tickets and users. Implement full-text search with Elasticsearch.",
+    "status": "open",
+    "priority": "medium",
+    "tags": [
+      "feature",
+      "search",
+      "frontend"
+    ],
+    "created_at": "2026-10-13T22:07:57.766214",
+    "creator": "product@company.com",
+    "assignee": "frontend@company.com",
+    "estimated_time": 8.5
+  },
+  {
+    "id": "4ef497b1-4d5c-4de5-a6e2-f23b8eea79f5",
+    "title": "Improve error handling and logging",
+    "description": "Add structured logging. Implement better error messages and monitoring.",
+    "status": "in-progress",
+    "priority": "medium",
+    "tags": [
+      "quality",
+      "backend",
+      "monitoring"
+    ],
+    "created_at": "2026-10-13T22:07:57.766216",
+    "creator": "tech-lead@company.com",
+    "assignee": "senior-dev@company.com",
+    "estimated_time": 7.0
+  },
+  {
+    "id": "cf42f125-7436-4664-bea5-08c8e107a45b",
+    "title": "Create admin dashboard",
+    "description": "Build admin panel for user management, analytics, and system configuration.",
+    "status": "open",
+    "priority": "low",
+    "tags": [
+      "feature",
+      "admin",
+      "frontend"
+    ],
+    "created_at": "2026-10-13T22:07:57.766217",
+    "creator": "product@company.com",
+    "assignee": "frontend@company.com",
+    "estimated_time": 15.0
+  },
+  {
+    "id": "b97c1c1d-99a2-4556-a208-ecd904da505f",
+    "title": "Migrate legacy code to new framework",
+    "description": "Refactor old authentication module to use new framework and patterns.",
+    "status": "closed",
+    "priority": "medium",
+    "tags": [
+      "refactor",
+      "backend",
+      "maintenance"
+    ],
+    "created_at": "2026-10-13T22:07:57.766219",
+    "creator": "tech-lead@company.com",
+    "assignee": "senior-dev@company.com",
+    "estimated_time": 11.0
+  }
+]
