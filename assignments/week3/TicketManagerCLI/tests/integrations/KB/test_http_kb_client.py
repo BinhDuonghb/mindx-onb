@@ -65,7 +65,7 @@ def test_http_search_by_query(http_kb_client):
 
 def test_http_search_respects_top_k(http_kb_client):
     """Should respect top_k limit in search."""
-    query = KBQuery(query="", top_k=2)  # empty query matches all
+    query = KBQuery(query="e", top_k=2)  # "e" matches many documents
 
     results = http_kb_client.search(query)
 
@@ -139,8 +139,11 @@ def test_http_list_no_match(http_kb_client):
 
 def test_http_add_new_document(http_kb_client):
     """Should add a new document to HTTP API."""
+    import time
+    unique_id = f"doc-http-{int(time.time() * 1000)}"
+
     new_doc = Document(
-        id="doc-http-001",
+        id=unique_id,
         title="HTTP Test Document",
         content="This is a test document",
         node_path="/test/http",
@@ -149,12 +152,12 @@ def test_http_add_new_document(http_kb_client):
 
     result = http_kb_client.add(new_doc)
 
-    assert result.id == "doc-http-001"
+    assert result.id == unique_id
     assert result.title == "HTTP Test Document"
 
     # Verify it's retrievable
-    retrieved = http_kb_client.retrieve("doc-http-001")
-    assert retrieved.id == "doc-http-001"
+    retrieved = http_kb_client.retrieve(unique_id)
+    assert retrieved.id == unique_id
 
 
 def test_http_add_duplicate_raises_error(http_kb_client):
@@ -173,8 +176,11 @@ def test_http_add_duplicate_raises_error(http_kb_client):
 
 def test_http_add_makes_document_listable(http_kb_client):
     """Should make added document appear in list."""
+    import time
+    unique_id = f"doc-http-listable-{int(time.time() * 1000)}"
+
     new_doc = Document(
-        id="doc-http-002",
+        id=unique_id,
         title="Listable Document",
         content="Should appear in list",
         node_path="/test/listable",
@@ -184,4 +190,4 @@ def test_http_add_makes_document_listable(http_kb_client):
     http_kb_client.add(new_doc)
     documents = http_kb_client.list(node_path="/test/listable")
 
-    assert any(doc.id == "doc-http-002" for doc in documents)
+    assert any(doc.id == unique_id for doc in documents)
