@@ -253,3 +253,137 @@ def test_add_duplicate_document_raises_error(kb_client):
 
     with pytest.raises(ValueError, match="already exists"):
         kb_client.add(duplicate)
+
+
+# ============================================================================
+# PERSISTENCE TESTS
+# ============================================================================
+
+
+def test_load_from_valid_persist_file(tmp_path):
+    """Should load documents from valid JSON persist file."""
+    persist_file = tmp_path / "kb_data.json"
+
+    # Create a persist file with documents
+    persist_file.write_text(
+        '''[
+            {"id": "doc-A", "title": "Doc A", "content": "Content A", "node_path": "/a", "tags": ["a"]},
+            {"id": "doc-B", "title": "Doc B", "content": "Content B", "node_path": "/b", "tags": ["b"]}
+        ]''',
+        encoding="utf-8"
+    )
+
+    client = MockKBClient(persist_file=persist_file)
+
+    assert len(client._documents) == 2
+    assert client.retrieve("doc-A").title == "Doc A"
+    assert client.retrieve("doc-B").title == "Doc B"
+
+
+def test_load_from_nonexistent_persist_file_initializes_with_samples(tmp_path):
+    """Should initialize with sample documents if persist file doesn't exist."""
+    persist_file = tmp_path / "kb_data.json"
+
+    client = MockKBClient(persist_file=persist_file)
+
+    # Should create file with sample documents
+    assert persist_file.exists()
+    assert len(client._documents) == 3
+    assert "doc-001" in client._documents
+    assert "doc-002" in client._documents
+    assert "doc-003" in client._documents
+
+
+def test_load_from_invalid_json_reinitializes_with_samples(tmp_path, capsys):
+    """Should reinitialize with samples if persist file contains invalid JSON."""
+    persist_file = tmp_path / "kb_data.json"
+
+    # Create invalid JSON
+    persist_file.write_text("{ invalid json }", encoding="utf-8")
+
+    client = MockKBClient(persist_file=persist_file)
+
+    # Should have reinitialized with samples
+    assert len(client._documents) == 3
+    assert "doc-001" in client._documents
+
+    # Should print warning
+    captured = capsys.readouterr()
+    assert "Warning" in captured.out
+    assert "Invalid JSON" in captured.out
+
+
+def test_load_from_persist_file_with_non_array_raises_error(tmp_path):
+    """Should raise ValueError if persist file contains non-array JSON."""
+    persist_file = tmp_path / "kb_data.json"
+
+    # Create JSON object instead of array
+    persist_file.write_text('{"documents": []}', encoding="utf-8")
+
+    with pytest.raises(ValueError, match="must contain a JSON array"):
+        MockKBClient(persist_file=persist_file)
+
+
+def test_load_from_persist_file_with_invalid_document_structure_raises_error(tmp_path):
+    """Should raise ValueError if documents lack required fields."""
+    persist_file = tmp_path / "kb_data.json"
+
+    # Missing required 'content' field
+    persist_file.write_text(
+        '''[
+            {"id": "doc-A", "title": "Doc A", "node_path": "/a", "tags": ["a"]}
+        ]''',
+        encoding="utf-8"
+    )
+
+    with pytest.raises(ValueError, match="Invalid document structure"):
+        MockKBClient(persist_file=persist_file)
+
+
+def test_add_persists_to_file(tmp_path):
+    """Should persist added documents to JSON file."""
+    persist_file = tmp_path / "kb_data.json"
+
+    # Create client and add a document
+    client = MockKBClient(persist_file=persist_file)
+    new_doc = Document(
+        id="doc-new",
+        title="New Doc",
+        content="New Content",
+        node_path="/new",
+        tags=["new"],
+    )
+    client.add(new_doc)
+
+    # Read file directly
+    import json
+    with open(persist_file, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    # Should contain original samples + new doc
+    assert len(data) == 4
+    assert any(d["id"] == "doc-new" for d in data)
+
+
+def test_load_persisted_data_from_previous_session(tmp_path):
+    """Should load data added in previous session."""
+    persist_file = tmp_path / "kb_data.json"
+
+    # Simulate first session: create client and add document
+    client1 = MockKBClient(persist_file=persist_file)
+    new_doc = Document(
+        id="doc-session1",
+        title="From Session 1",
+        content="Content from session 1",
+        node_path="/session1",
+        tags=["session1"],
+    )
+    client1.add(new_doc)
+
+    # Simulate second session: create new client, should load persisted data
+    client2 = MockKBClient(persist_file=persist_file)
+
+    # Should be able to retrieve document from first session
+    retrieved = client2.retrieve("doc-session1")
+    assert retrieved.title == "From Session 1"
+    assert retrieved.content == "Content from session 1"

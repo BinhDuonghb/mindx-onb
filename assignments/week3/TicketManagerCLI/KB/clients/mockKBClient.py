@@ -112,9 +112,10 @@ class MockKBClient(KBClient):
         """
         Load documents from persist file.
 
+        If file doesn't exist or contains invalid JSON, initialize with sample documents.
+
         Raises:
-            FileNotFoundError: If the file doesn't exist.
-            json.JSONDecodeError: If the file contains invalid JSON.
+            ValueError: If file contains invalid document structure.
         """
         if not self.persist_file:
             return
@@ -125,12 +126,33 @@ class MockKBClient(KBClient):
             self._documents = {doc.id: doc for doc in documents}
             self._save()
         else:
-            with open(self.persist_file, "r", encoding="utf-8") as f:
-                data = json.load(f)
-            self._documents = {
-                doc_dict["id"]: Document(**doc_dict)
-                for doc_dict in data
-            }
+            try:
+                with open(self.persist_file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+            except json.JSONDecodeError as e:
+                # File exists but contains invalid JSON, reinitialize with samples
+                print(f"Warning: Invalid JSON in {self.persist_file}, reinitializing with sample documents")
+                documents = deepcopy(SAMPLE_DOCUMENTS)
+                self._documents = {doc.id: doc for doc in documents}
+                self._save()
+                return
+
+            # Validate that data is a list
+            if not isinstance(data, list):
+                raise ValueError(
+                    f"Persist file must contain a JSON array, got {type(data).__name__}"
+                )
+
+            # Load documents with validation
+            try:
+                self._documents = {
+                    doc_dict["id"]: Document(**doc_dict)
+                    for doc_dict in data
+                }
+            except (KeyError, TypeError) as e:
+                raise ValueError(
+                    f"Invalid document structure in persist file: {str(e)}"
+                )
 
     def _save(self) -> None:
         """
