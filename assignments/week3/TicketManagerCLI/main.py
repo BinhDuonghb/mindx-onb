@@ -1,4 +1,4 @@
-from ticket_manager.cli import run_cli
+from cli import run_cli
 from ticket_manager.config import ensure_storage
 
 

@@ -4,7 +4,7 @@ import json
 from ticket_manager.config import TICKETS_FILE, TEST_TICKETS_FILE
 from data.db_client import DBClient
 from ticket_manager.services.ticketService import TicketService
-from ticket_manager.commands.base import BaseCommand
+from cli.commands.base import BaseCommand
 
 
 class ListCommand(BaseCommand):

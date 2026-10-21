@@ -7,7 +7,7 @@ from data.db_client import DBClient
 from ticket_manager.models.ticket import Ticket
 from ticket_manager.seed_data import get_seed_data
 from ticket_manager.services.ticketService import TicketService
-from ticket_manager.commands.base import BaseCommand
+from cli.commands.base import BaseCommand
 
 
 class CreateCommand(BaseCommand):
