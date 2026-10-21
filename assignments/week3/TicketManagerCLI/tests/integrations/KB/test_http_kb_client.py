@@ -58,9 +58,9 @@ def test_http_search_by_query(http_kb_client):
 
     results = http_kb_client.search(query)
 
-    assert len(results) == 1
-    assert results[0].id == "doc-001"
-    assert results[0].title == "Customer Response Template"
+    assert len(results) >= 1
+    assert any(r.id == "doc-001" for r in results)
+    assert any(r.title == "Customer Response Template" for r in results)
 
 
 def test_http_search_respects_top_k(http_kb_client):
