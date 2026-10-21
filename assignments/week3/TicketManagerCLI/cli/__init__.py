@@ -54,17 +54,35 @@ def run_cli(args=None) -> int:
 
     use_test = getattr(parsed_args, 'test', False)
 
-    # Map commands to command classes
+    # Handle KB commands (nested structure)
+    if parsed_args.command == "kb":
+        kb_command = getattr(parsed_args, 'kb_command', None)
+
+        if kb_command is None:
+            parser.parse_args([parsed_args.command, "-h"])
+            return 0
+
+        # Map KB subcommands to command classes
+        kb_commands = {
+            "search": KBSearchCommand(),
+            "list": KBListCommand(),
+            "retrieve": KBRetrieveCommand(),
+            "add": KBAddCommand(),
+        }
+
+        command = kb_commands.get(kb_command)
+        if command:
+            return command.execute(parsed_args, use_test)
+
+        return 1
+
+    # Handle ticket commands
     commands = {
         "create": CreateCommand(),
         "list": ListCommand(),
         "show": ShowCommand(),
         "update": UpdateCommand(),
         "delete": DeleteCommand(),
-        "kb-search": KBSearchCommand(),
-        "kb-list": KBListCommand(),
-        "kb-retrieve": KBRetrieveCommand(),
-        "kb-add": KBAddCommand(),
     }
 
     command = commands.get(parsed_args.command)

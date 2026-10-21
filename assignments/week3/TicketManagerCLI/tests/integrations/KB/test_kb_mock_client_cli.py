@@ -27,14 +27,14 @@ def _get_mock_env():
 
 
 def run_cli_kb_search(query: str, top_k: int = 5) -> subprocess.CompletedProcess:
-    """Helper to run kb-search command with given arguments."""
-    cmd = [sys.executable, "main.py", "kb-search", query, "--top-k", str(top_k)]
+    """Helper to run kb search command with given arguments."""
+    cmd = [sys.executable, "main.py", "kb", "search", query, "--top-k", str(top_k)]
     return subprocess.run(cmd, capture_output=True, text=True, env=_get_mock_env())
 
 
 def run_cli_kb_list(node_path: str = None, limit: int = 10) -> subprocess.CompletedProcess:
-    """Helper to run kb-list command with given arguments."""
-    cmd = [sys.executable, "main.py", "kb-list"]
+    """Helper to run kb list command with given arguments."""
+    cmd = [sys.executable, "main.py", "kb", "list"]
 
     if node_path:
         cmd.extend(["--node", node_path])
@@ -45,15 +45,15 @@ def run_cli_kb_list(node_path: str = None, limit: int = 10) -> subprocess.Comple
 
 
 def run_cli_kb_retrieve(doc_id: str) -> subprocess.CompletedProcess:
-    """Helper to run kb-retrieve command with given arguments."""
-    cmd = [sys.executable, "main.py", "kb-retrieve", doc_id]
+    """Helper to run kb retrieve command with given arguments."""
+    cmd = [sys.executable, "main.py", "kb", "retrieve", doc_id]
     return subprocess.run(cmd, capture_output=True, text=True, env=_get_mock_env())
 
 
 def run_cli_kb_add(doc_id: str, title: str, content: str, node_path: str, tags: str = "") -> subprocess.CompletedProcess:
-    """Helper to run kb-add command with given arguments."""
+    """Helper to run kb add command with given arguments."""
     cmd = [
-        sys.executable, "main.py", "kb-add",
+        sys.executable, "main.py", "kb", "add",
         "--id", doc_id,
         "--title", title,
         "--content", content,

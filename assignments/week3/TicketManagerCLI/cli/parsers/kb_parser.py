@@ -3,15 +3,28 @@
 
 def add_kb_commands(subparsers):
     """Add knowledge base commands to the parser."""
+    # KB parent command
+    kb_parser = subparsers.add_parser(
+        "kb",
+        help="Knowledge base operations",
+        epilog="Use 'tickets kb <command> -h' for help on a specific command"
+    )
+
+    # KB subparsers
+    kb_subparsers = kb_parser.add_subparsers(
+        dest="kb_command",
+        help="KB subcommands"
+    )
+
     # KB SEARCH command
-    kb_search_parser = subparsers.add_parser(
-        "kb-search",
+    kb_search_parser = kb_subparsers.add_parser(
+        "search",
         help="Search knowledge base documents",
         epilog="""
 Examples:
-  tickets kb-search "Template"
-  tickets kb-search "CI/CD" --top-k 5
-  tickets kb-search "email" --top-k 10
+  tickets kb search "Template"
+  tickets kb search "response" --top-k 3
+  tickets kb search "email" --top-k 10
         """
     )
     kb_search_parser.add_argument(
@@ -26,14 +39,14 @@ Examples:
     )
 
     # KB LIST command
-    kb_list_parser = subparsers.add_parser(
-        "kb-list",
+    kb_list_parser = kb_subparsers.add_parser(
+        "list",
         help="List knowledge base documents",
         epilog="""
 Examples:
-  tickets kb-list                                     # List all documents
-  tickets kb-list --node /templates/email            # List by path prefix
-  tickets kb-list --node /team/devops --limit 5      # Combine filters
+  tickets kb list                                     # List all documents
+  tickets kb list --node /templates/email            # List by path prefix
+  tickets kb list --node /team/devops --limit 5      # Combine filters
         """
     )
     kb_list_parser.add_argument(
@@ -50,13 +63,13 @@ Examples:
     )
 
     # KB RETRIEVE command
-    kb_retrieve_parser = subparsers.add_parser(
-        "kb-retrieve",
+    kb_retrieve_parser = kb_subparsers.add_parser(
+        "retrieve",
         help="Retrieve a knowledge base document by ID",
         epilog="""
 Examples:
-  tickets kb-retrieve doc-001
-  tickets kb-retrieve doc-002
+  tickets kb retrieve doc-001
+  tickets kb retrieve doc-002
         """
     )
     kb_retrieve_parser.add_argument(
@@ -65,12 +78,12 @@ Examples:
     )
 
     # KB ADD command
-    kb_add_parser = subparsers.add_parser(
-        "kb-add",
+    kb_add_parser = kb_subparsers.add_parser(
+        "add",
         help="Add a new document to knowledge base",
         epilog="""
 Examples:
-  tickets kb-add --id doc-new-001 --title "New Template" --content "Template content" --node /templates/email --tags "template,email"
+  tickets kb add --id doc-new-001 --title "New Template" --content "Template content" --node /templates/email --tags "template,email"
         """
     )
     kb_add_parser.add_argument(
@@ -99,3 +112,4 @@ Examples:
         default="",
         help="Comma-separated tags (optional, default: empty)"
     )
+
