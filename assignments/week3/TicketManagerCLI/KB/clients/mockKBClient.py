@@ -1,3 +1,6 @@
+
+from copy import deepcopy
+
 from KB.clients.base import KBClient
 from KB.models.document import Document
 from KB.models.search import KBQuery, SearchResult
@@ -5,30 +8,38 @@ from KB.mock_data import SAMPLE_DOCUMENTS
 
 
 class MockKBClient(KBClient):
-    """Mock KB client with in-memory storage for testing."""
+    """In-memory implementation of the Knowledge Base client."""
 
     def __init__(self):
-        """Initialize with sample data."""
-        self._documents = {doc.id: doc for doc in SAMPLE_DOCUMENTS}
+        """Initialize with an independent copy of sample documents."""
+        documents = deepcopy(SAMPLE_DOCUMENTS)
+        self._documents = {doc.id: doc for doc in documents}
 
     def retrieve(self, doc_id: str) -> Document:
         """Retrieve a document by ID."""
-        if doc_id not in self._documents:
+        document = self._documents.get(doc_id)
+
+        if document is None:
             raise ValueError(f"Document {doc_id} not found")
-        return self._documents[doc_id]
+
+        return document
 
     def search(self, query: KBQuery) -> list[SearchResult]:
-        """Search documents by query in title, content, and tags."""
+        """Search document titles, content, and tags."""
+        keyword = query.query.strip().casefold()
         results = []
-        query_lower = query.query.lower()
 
         for doc in self._documents.values():
-            # Check if query matches title, content, or tags (case-insensitive)
-            title_match = query_lower in doc.title.lower()
-            content_match = query_lower in doc.content.lower()
-            tags_match = any(query_lower in tag.lower() for tag in doc.tags)
+            searchable_text = [
+                doc.title,
+                doc.content,
+                *doc.tags,
+            ]
 
-            if title_match or content_match or tags_match:
+            if any(
+                keyword in text.casefold()
+                for text in searchable_text
+            ):
                 results.append(
                     SearchResult(
                         id=doc.id,
@@ -37,28 +48,44 @@ class MockKBClient(KBClient):
                     )
                 )
 
-        # Respect top_k limit
-        return results[: query.top_k]
+        return results[:query.top_k]
+
+    def _matches_node_path(
+        self,
+        doc: Document,
+        node_path: str,
+    ) -> bool:
+        """Check whether a document belongs to a node or its descendants."""
+        normalized_path = node_path.rstrip("/")
+
+        return (
+            doc.node_path == normalized_path
+            or doc.node_path.startswith(normalized_path + "/")
+        )
 
     def list(
         self,
         node_path: str | None = None,
         limit: int = 10,
     ) -> list[Document]:
-        """List documents, optionally filtered by node_path prefix."""
-        results = []
+        """List documents, optionally filtered by node path."""
+        documents = self._documents.values()
 
-        for doc in self._documents.values():
-            # Filter by node_path prefix if provided
-            if node_path is None or doc.node_path.startswith(node_path):
-                results.append(doc)
+        if node_path is not None:
+            documents = (
+                doc
+                for doc in documents
+                if self._matches_node_path(doc, node_path)
+            )
 
-        # Respect limit
-        return results[:limit]
+        return list(documents)[:limit]
 
     def add(self, document: Document) -> Document:
-        """Add a new document."""
+        """Add a document, rejecting duplicate IDs."""
         if document.id in self._documents:
-            raise ValueError(f"Document {document.id} already exists")
+            raise ValueError(
+                f"Document {document.id} already exists"
+            )
+
         self._documents[document.id] = document
         return document
