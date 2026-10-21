@@ -18,7 +18,7 @@ def create_kb_client():
         return MockKBClient(persist_file=persist_file)
 
     if config.client_type == "http":
-        return HTTPKBClient(base_url=config.api_url) # havent implemented yet
+        return HTTPKBClient(base_url=config.api_url)
 
     raise ValueError(
         f"Unsupported client type: {config.client_type}"
