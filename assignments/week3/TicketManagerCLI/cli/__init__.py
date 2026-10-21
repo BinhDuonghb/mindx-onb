@@ -7,8 +7,13 @@ from cli.commands import (
     ShowCommand,
     UpdateCommand,
     DeleteCommand,
+    KBSearchCommand,
+    KBListCommand,
+    KBRetrieveCommand,
+    KBAddCommand,
 )
 from cli.parsers.ticket_parser import add_ticket_commands
+from cli.parsers.kb_parser import add_kb_commands
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -33,6 +38,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     # Add ticket and KB commands from separate modules
     add_ticket_commands(subparsers)
+    add_kb_commands(subparsers)
 
     return parser
 
@@ -55,6 +61,10 @@ def run_cli(args=None) -> int:
         "show": ShowCommand(),
         "update": UpdateCommand(),
         "delete": DeleteCommand(),
+        "kb-search": KBSearchCommand(),
+        "kb-list": KBListCommand(),
+        "kb-retrieve": KBRetrieveCommand(),
+        "kb-add": KBAddCommand(),
     }
 
     command = commands.get(parsed_args.command)
@@ -64,4 +74,4 @@ def run_cli(args=None) -> int:
     return 1
 
 
-__all__ = ["run_cli", "build_parser", "add_ticket_commands"]
+__all__ = ["run_cli", "build_parser", "add_ticket_commands", "add_kb_commands"]

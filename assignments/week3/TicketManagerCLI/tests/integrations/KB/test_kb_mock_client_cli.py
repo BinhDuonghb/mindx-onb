@@ -2,22 +2,34 @@
 import os
 import subprocess
 import sys
+import tempfile
+from pathlib import Path
 import pytest
 
 
 @pytest.fixture
-def kb_mock_env(monkeypatch):
-    """Set environment to use MockKBClient for KB commands."""
+def kb_mock_env(monkeypatch, tmp_path):
+    """Set environment to use MockKBClient with persistent file for test."""
+    persist_file = tmp_path / "kb_mock_data.json"
     monkeypatch.setenv("KB_CLIENT", "mock")
+    monkeypatch.setenv("KB_MOCK_PERSIST_FILE", str(persist_file))
     return monkeypatch
+
+
+def _get_mock_env():
+    """Get environment dict with mock client settings."""
+    env = os.environ.copy()
+    env["KB_CLIENT"] = "mock"
+    # Get persist file from current environment if set
+    if persist_file := os.getenv("KB_MOCK_PERSIST_FILE"):
+        env["KB_MOCK_PERSIST_FILE"] = persist_file
+    return env
 
 
 def run_cli_kb_search(query: str, top_k: int = 5) -> subprocess.CompletedProcess:
     """Helper to run kb-search command with given arguments."""
     cmd = [sys.executable, "main.py", "kb-search", query, "--top-k", str(top_k)]
-    env = os.environ.copy()
-    env["KB_CLIENT"] = "mock"
-    return subprocess.run(cmd, capture_output=True, text=True, env=env)
+    return subprocess.run(cmd, capture_output=True, text=True, env=_get_mock_env())
 
 
 def run_cli_kb_list(node_path: str = None, limit: int = 10) -> subprocess.CompletedProcess:
@@ -29,17 +41,13 @@ def run_cli_kb_list(node_path: str = None, limit: int = 10) -> subprocess.Comple
 
     cmd.extend(["--limit", str(limit)])
 
-    env = os.environ.copy()
-    env["KB_CLIENT"] = "mock"
-    return subprocess.run(cmd, capture_output=True, text=True, env=env)
+    return subprocess.run(cmd, capture_output=True, text=True, env=_get_mock_env())
 
 
 def run_cli_kb_retrieve(doc_id: str) -> subprocess.CompletedProcess:
     """Helper to run kb-retrieve command with given arguments."""
     cmd = [sys.executable, "main.py", "kb-retrieve", doc_id]
-    env = os.environ.copy()
-    env["KB_CLIENT"] = "mock"
-    return subprocess.run(cmd, capture_output=True, text=True, env=env)
+    return subprocess.run(cmd, capture_output=True, text=True, env=_get_mock_env())
 
 
 def run_cli_kb_add(doc_id: str, title: str, content: str, node_path: str, tags: str = "") -> subprocess.CompletedProcess:
@@ -55,9 +63,7 @@ def run_cli_kb_add(doc_id: str, title: str, content: str, node_path: str, tags: 
     if tags:
         cmd.extend(["--tags", tags])
 
-    env = os.environ.copy()
-    env["KB_CLIENT"] = "mock"
-    return subprocess.run(cmd, capture_output=True, text=True, env=env)
+    return subprocess.run(cmd, capture_output=True, text=True, env=_get_mock_env())
 
 
 # ============================================================================
