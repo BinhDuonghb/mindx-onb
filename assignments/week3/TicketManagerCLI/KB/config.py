@@ -1,5 +1,6 @@
 import os
 from dataclasses import dataclass
+from pathlib import Path
 
 
 @dataclass
@@ -7,6 +8,11 @@ class KBConfig:
     client_type: str
     api_url: str | None = None
 
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+DATA_DIR = BASE_DIR / "data"
+
+PERSIST_FILE = DATA_DIR / "kb_mock_data.json"
 
 def load_config() -> KBConfig:
     client_type = os.getenv("KB_CLIENT", "mock").strip().lower()
