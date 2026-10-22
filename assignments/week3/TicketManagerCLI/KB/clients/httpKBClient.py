@@ -36,13 +36,7 @@ class HTTPKBClient(KBClient):
             data = response.json()
 
             # Convert API response format to Python format
-            return Document(
-                id=data["id"],
-                title=data["title"],
-                content=data["content"],
-                node_path=data["nodePath"],
-                tags=data["tags"]
-            )
+            return self._to_document(data)
 
         except requests.RequestException as e:
             raise ValueError(f"Failed to retrieve document: {str(e)}")
@@ -100,13 +94,7 @@ class HTTPKBClient(KBClient):
             documents = []
             for doc_data in data.get("results", []):
                 documents.append(
-                    Document(
-                        id=doc_data["id"],
-                        title=doc_data["title"],
-                        content=doc_data["content"],
-                        node_path=doc_data["nodePath"],
-                        tags=doc_data["tags"]
-                    )
+                    self._to_document(doc_data)
                 )
 
             return documents
@@ -138,3 +126,12 @@ class HTTPKBClient(KBClient):
 
         except requests.RequestException as e:
             raise ValueError(f"Add failed: {str(e)}")
+
+    def _to_document(self, data: dict) -> Document:
+        return Document(
+            id=data["id"],
+            title=data["title"],
+            content=data["content"],
+            node_path=data["nodePath"],
+            tags=data["tags"],
+        )
