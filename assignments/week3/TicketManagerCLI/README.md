@@ -1,6 +1,6 @@
-# Ticket Manager CLI
+# Ticket Manager CLI with Knowledge Base Integration
 
-A command-line ticket management system written in Python. Create, list, show, update, and delete tickets with filtering capabilities.
+A command-line ticket management system with integrated Knowledge Base support. Create, list, show, update, and delete tickets; plus search and manage a knowledge base of documents.
 
 ## Table of Contents
 
@@ -9,16 +9,15 @@ A command-line ticket management system written in Python. Create, list, show, u
 - [Requirements](#requirements)
 - [Setup](#setup)
 - [Usage](#usage)
-  - [Create Ticket](#create-ticket)
-  - [List Tickets](#list-tickets)
-  - [Show Ticket](#show-ticket)
-  - [Update Ticket](#update-ticket)
-  - [Delete Ticket](#delete-ticket)
+  - [Ticket Commands](#ticket-commands)
+  - [Knowledge Base Commands](#knowledge-base-commands)
 - [Examples](#examples)
 - [Testing](#testing)
+- [Architecture](#architecture)
 
 ## Features
 
+### Ticket Management
 - **Create tickets** with title, description, priority, and tags
 - **List tickets** with optional filtering by status, priority, or tag
 - **Show ticket** details by UUID
@@ -26,7 +25,14 @@ A command-line ticket management system written in Python. Create, list, show, u
 - **Delete tickets** by UUID
 - Persistent storage using JSON files
 - UUID-based ticket identification
-- Comprehensive CLI help system
+
+### Knowledge Base Management
+- **Search documents** by keyword with configurable result limit
+- **List documents** by path hierarchy with filtering
+- **Retrieve full documents** with all metadata
+- **Add new documents** to the knowledge base
+- Support for both mock and HTTP KB clients
+- Environment-based client switching for development/production
 
 ## Project Structure
 
@@ -35,12 +41,27 @@ TicketManagerCLI/
 ├── main.py                          # Entry point
 ├── README.md                         # This file
 ├── pytest.ini                        # pytest configuration
+├── conftest.py                       # pytest fixtures and configuration
+├── run_tests.py                      # Test runner with logging
+├── requirements.txt                  # Python dependencies
+│
+├── cli/
+│   ├── commands/                     # Command implementations
+│   │   ├── kb_add.py
+│   │   ├── kb_list.py
+│   │   ├── kb_retrieve.py
+│   │   ├── kb_search.py
+│   │   └── ... (ticket commands)
+│   └── parsers/
+│       ├── kb_parser.py              # KB argument parser
+│       └── ... (ticket parsers)
+│
 ├── data/
 │   ├── db_client.py                 # Database client (JSON persistence)
 │   └── tickets.json                 # Ticket storage (auto-created)
+│
 ├── ticket_manager/
 │   ├── __init__.py
-│   ├── cli.py                       # CLI command handlers
 │   ├── config.py                    # Configuration and storage setup
 │   ├── models/
 │   │   └── ticket.py                # Ticket dataclass model
@@ -49,32 +70,54 @@ TicketManagerCLI/
 │   │   └── ticket_validator.py      # Ticket field validation
 │   └── services/
 │       └── ticketService.py         # Business logic for ticket operations
+│
+├── KB/
+│   ├── clients/
+│   │   ├── base.py                  # Base client interface
+│   │   ├── mockKBClient.py          # In-memory mock KB client
+│   │   └── httpKBClient.py          # HTTP client for real KB API
+│   ├── models/
+│   │   ├── document.py              # Document domain models
+│   │   └── search.py                # Search result models
+│   ├── config.py                    # KB configuration
+│   ├── factory.py                   # Client factory
+│   └── mock_data.py                 # Mock test data
+│
 └── tests/
     ├── units/
-    │   ├── test_email_validator.py      # Email validation tests
-    │   └── test_ticket_validator.py     # Ticket field validation tests
-    └── integrations/
-        ├── test_cli_error_handling.py   # CLI error handling tests
-        ├── test_create_ticket_cli.py    # Create command tests (30+ cases)
-        ├── test_delete_ticket_cli.py    # Delete command tests (18+ cases)
-        ├── test_list_ticket_cli.py      # List command tests (17+ cases)
-        ├── test_show_ticket_cli.py      # Show command tests (11+ cases)
-        ├── test_update_ticket_cli.py    # Update command tests (14+ cases)
-        ├── test_db_client.py            # DBClient tests
-        └── test_ticket_service.py       # TicketService tests
+    │   ├── test_email_validator.py
+    │   └── test_ticket_validator.py
+    ├── integrations/
+    │   ├── test_cli_error_handling.py
+    │   ├── test_create_ticket_cli.py
+    │   ├── test_delete_ticket_cli.py
+    │   ├── test_list_ticket_cli.py
+    │   ├── test_show_ticket_cli.py
+    │   ├── test_update_ticket_cli.py
+    │   ├── test_db_client.py
+    │   ├── test_ticket_service.py
+    │   └── KB/
+    │       ├── test_kb_mock_client.py
+    │       ├── test_kb_http_client.py
+    │       ├── test_kb_mock_client_cli.py
+    │       └── test_http_kb_client_cli.py
+    └── e2e/
+        ├── test_kb_service_e2e.py    # End-to-end KB service integration tests
+        └── README.md                 # E2E test documentation
 ```
 
 ## Requirements
 
-- Python 3.10+ (tested and verified with Python 3.13.3; Python 3.12+ recommended)
+- Python 3.10+ (tested and verified with Python 3.13.3)
 - pip (Python package manager)
+- Node.js 18+ (for running KBService backend)
 
 ## Setup
 
 ### 1. Clone or Navigate to Project
 
 ```bash
-cd D:\Study\mindx\mindx-onb\assignments\week2\TicketManagerCLI
+cd d:\Study\mindx\mindx-onb\assignments\week3\TicketManagerCLI
 ```
 
 ### 2. Create Virtual Environment
@@ -106,13 +149,41 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 5. Verify Installation
+### 5. Setup Knowledge Base Service (Optional)
+
+For KB commands to work with real API, install and start KBService:
+
+```bash
+cd ../KBService
+npm install
+npm run build
+npm start
+```
+
+KBService will listen on `http://localhost:8000`
+
+### 6. Configure KB Client
+
+Set environment variables in PowerShell or add to `.env`:
+
+**Use Mock Client (default, no KBService needed):**
+```bash
+set KB_CLIENT=mock
+```
+
+**Use HTTP Client (requires running KBService):**
+```bash
+set KB_CLIENT=http
+set KB_API_URL=http://localhost:8000
+```
+
+### 7. Verify Installation
 
 ```bash
 python main.py -h
 ```
 
-You should see the main help message with available commands.
+You should see help for both ticket and KB commands.
 
 ## Usage
 
@@ -122,310 +193,360 @@ You should see the main help message with available commands.
 # Main help
 python main.py -h
 
-# Command-specific help
-python main.py create -h
-python main.py list -h
-python main.py show -h
-python main.py update -h
-python main.py delete -h
+# Ticket commands help
+python main.py ticket -h
+python main.py ticket create -h
+python main.py ticket list -h
+
+# Knowledge Base commands help
+python main.py kb -h
+python main.py kb search -h
+python main.py kb list -h
+python main.py kb retrieve -h
+python main.py kb add -h
 ```
+
+## Ticket Commands
 
 ### Create Ticket
 
-Create a new ticket with a title and optional description, priority, and tags.
+Create a new ticket with a title and optional fields.
 
-**Command:**
 ```bash
-python main.py create --title "TITLE" [--description "DESCRIPTION"] [--priority PRIORITY] [--tags TAGS]
+python main.py ticket create --title "TITLE" [OPTIONS]
 ```
 
-**Arguments:**
+**Options:**
 - `--title` (required): Ticket title
-- `--description` (optional): Ticket description (default: empty)
-- `--priority` (optional): Priority level - `low`, `medium`, `high` (default: medium)
-- `--tags` (optional): Comma-separated tags (default: empty)
-- `--load-seed-data`: load seed data for test support (no need title for this)
+- `--description`: Ticket description (default: empty)
+- `--priority`: Priority level - `low`, `medium`, `high` (default: medium)
+- `--tags`: Comma-separated tags (default: empty)
+- `--load-seed-data`: Load seed data for testing
+
 **Examples:**
 ```bash
-python main.py create --title "Fix login bug"
+python main.py ticket create --title "Fix login bug"
 
-python main.py create --title "New feature" --description "Add dark mode" --priority high
+python main.py ticket create --title "New feature" --description "Add dark mode" \
+  --priority high
 
-python main.py create --title "Bug fix" --tags "frontend,urgent" --priority high --description "CSS issue on mobile"
-
-python main.py create --load-seed-data
+python main.py ticket create --load-seed-data
 ```
 
 ### List Tickets
 
 List all tickets or filter by status, priority, or tag.
 
-**Command:**
 ```bash
-python main.py list [--status STATUS] [--priority PRIORITY] [--tag TAG]
+python main.py ticket list [OPTIONS]
 ```
 
-**Arguments:**
-- `--status` (optional): Filter by status - `open`, `in-progress`, `closed`
-- `--priority` (optional): Filter by priority - `low`, `medium`, `high`
-- `--tag` (optional): Filter by tag name
+**Options:**
+- `--status`: Filter by status - `open`, `in-progress`, `closed`
+- `--priority`: Filter by priority - `low`, `medium`, `high`
+- `--tag`: Filter by tag name
 
 **Examples:**
 ```bash
-# List all tickets
-python main.py list
-
-# List open tickets
-python main.py list --status open
-
-# List high priority tickets
-python main.py list --priority high
-
-# List tickets with 'bug' tag
-python main.py list --tag bug
-
-# Combine filters
-python main.py list --status open --priority high --tag urgent
+python main.py ticket list
+python main.py ticket list --status open --priority high
 ```
 
 ### Show Ticket
 
 Display detailed information about a specific ticket.
 
-**Command:**
 ```bash
-python main.py show TICKET_UUID
+python main.py ticket show TICKET_UUID
 ```
-
-**Arguments:**
-- `TICKET_UUID` (required): The UUID of the ticket to display
-
-**Examples:**
-```bash
-python main.py show 1c94e7a6-63d7-4ab9-b2ab-12b43dd741b9
-
-python main.py show 550e8400-e29b-41d4-a716-446655440000
-```
-
-**Output includes:**
-- Ticket ID (UUID)
-- Title
-- Description
-- Status
-- Priority
-- Tags
-- Creation timestamp
 
 ### Update Ticket
 
 Update a ticket's status.
 
-**Command:**
 ```bash
-python main.py update TICKET_UUID --status STATUS
-```
-
-**Arguments:**
-- `TICKET_UUID` (required): The UUID of the ticket to update
-- `--status` (required): New status - `open`, `in-progress`, `closed`
-
-**Examples:**
-```bash
-# Mark ticket as in progress
-python main.py update 1c94e7a6-63d7-4ab9-b2ab-12b43dd741b9 --status in-progress
-
-# Close a ticket
-python main.py update 550e8400-e29b-41d4-a716-446655440000 --status closed
-
-# Reopen a ticket
-python main.py update 1c94e7a6-63d7-4ab9-b2ab-12b43dd741b9 --status open
+python main.py ticket update TICKET_UUID --status STATUS
 ```
 
 ### Delete Ticket
 
 Delete a ticket permanently.
 
-**Command:**
 ```bash
-python main.py delete TICKET_UUID
+python main.py ticket delete TICKET_UUID
 ```
 
-**Arguments:**
-- `TICKET_UUID` (required): The UUID of the ticket to delete
+## Knowledge Base Commands
+
+Knowledge Base commands work with both mock client (in-memory) and HTTP client (real API).
+
+### Search Documents
+
+Search documents by keyword.
+
+```bash
+python main.py kb search "QUERY" [--top-k K]
+```
+
+**Options:**
+- `QUERY` (required): Search term
+- `--top-k`: Number of results (default: 5)
 
 **Examples:**
 ```bash
-python main.py delete 1c94e7a6-63d7-4ab9-b2ab-12b43dd741b9
+python main.py kb search "template"
+python main.py kb search "customer response" --top-k 10
+```
 
-python main.py delete 550e8400-e29b-41d4-a716-446655440000
+### List Documents
+
+List documents by path hierarchy.
+
+```bash
+python main.py kb list [--node PATH] [--limit N]
+```
+
+**Options:**
+- `--node`: Node path filter (e.g., `/templates/email`)
+- `--limit`: Maximum results (default: 10)
+
+**Examples:**
+```bash
+python main.py kb list
+python main.py kb list --node /templates/email --limit 20
+```
+
+### Retrieve Document
+
+Get full details of a specific document.
+
+```bash
+python main.py kb retrieve DOC_ID
+```
+
+**Examples:**
+```bash
+python main.py kb retrieve doc-001
+python main.py kb retrieve e2e-doc-12345
+```
+
+### Add Document
+
+Add a new document to the knowledge base.
+
+```bash
+python main.py kb add --id ID --title TITLE --content CONTENT \
+  --node PATH [--tags TAGS]
+```
+
+**Options:**
+- `--id` (required): Document identifier
+- `--title` (required): Document title
+- `--content` (required): Document content
+- `--node` (required): Node path (e.g., `/templates/email`)
+- `--tags`: Comma-separated tags
+
+**Examples:**
+```bash
+python main.py kb add --id new-001 --title "Email Template" \
+  --content "Dear customer..." --node /templates/email --tags "template,email"
 ```
 
 ## Examples
 
-### Workflow Example
+### Ticket Workflow
 
 ```bash
 # 1. Create a bug ticket
-python main.py create --title "Login page CSS broken" \
+python main.py ticket create --title "Login page CSS broken" \
   --description "CSS not loading on mobile devices" \
-  --priority high \
-  --tags "bug,frontend,mobile"
+  --priority high --tags "bug,frontend,mobile"
 
-# Output: Ticket created successfully with ID: 1c94e7a6-63d7-4ab9-b2ab-12b43dd741b9
-
-# 2. List all open tickets
-python main.py list --status open
+# 2. List open high-priority tickets
+python main.py ticket list --status open --priority high
 
 # 3. Show ticket details
-python main.py show 1c94e7a6-63d7-4ab9-b2ab-12b43dd741b9
+python main.py ticket show <UUID>
 
 # 4. Update status to in-progress
-python main.py update 1c94e7a6-63d7-4ab9-b2ab-12b43dd741b9 --status in-progress
+python main.py ticket update <UUID> --status in-progress
 
-# 5. List high priority tickets
-python main.py list --priority high
-
-# 6. Update status to closed when done
-python main.py update 1c94e7a6-63d7-4ab9-b2ab-12b43dd741b9 --status closed
-
-# 7. Delete the ticket (optional)
-python main.py delete 1c94e7a6-63d7-4ab9-b2ab-12b43dd741b9
+# 5. Close the ticket when done
+python main.py ticket update <UUID> --status closed
 ```
 
-### Filtering Examples
+### Knowledge Base Workflow
 
 ```bash
-# Find all bugs
-python main.py list --tag bug
+# 1. Search for email templates
+python main.py kb search "response" --top-k 5
 
-# Find urgent tasks that are open
-python main.py list --tag urgent --status open
+# 2. List templates in a path
+python main.py kb list --node /templates/email
 
-# Find all high priority frontend issues
-python main.py list --priority high --tag frontend
+# 3. Retrieve a specific template
+python main.py kb retrieve doc-001
 
-# Find all in-progress tasks
-python main.py list --status in-progress
+# 4. Add a new template
+python main.py kb add --id new-template --title "Custom Template" \
+  --content "Custom content here" --node /templates/custom \
+  --tags "custom,template"
 ```
 
 ## Testing
 
-The project includes comprehensive integration tests covering all CLI commands.
+The project includes comprehensive integration tests covering both ticket and KB commands, plus end-to-end tests that orchestrate the full service lifecycle.
 
 ### Run All Tests
 
 ```bash
-pytest tests/integrations/ -v
+python run_tests.py ./tests -v
 ```
 
-### Run Specific Test File
+### Run Ticket Tests
 
 ```bash
-# Test create command
-pytest tests/integrations/test_create_ticket_cli.py -v
+python run_tests.py ./tests/integrations -v
+```
 
-# Test list command
-pytest tests/integrations/test_list_ticket_cli.py -v
+### Run KB Tests
 
-# Test show command
-pytest tests/integrations/test_show_ticket_cli.py -v
+```bash
+python run_tests.py ./tests/integrations/KB -v
+```
 
-# Test update command
-pytest tests/integrations/test_update_ticket_cli.py -v
+### Run E2E Tests (with KBService)
 
-# Test delete command
-pytest tests/integrations/test_delete_ticket_cli.py -v
+E2E tests automatically build and start KBService, run CLI commands, then stop the service.
+
+```bash
+python run_tests.py ./tests/e2e/test_kb_service_e2e.py -v
+```
+
+**Prerequisites:** Node.js installed (KBService will be built automatically)
+
+**Output Example:**
+```
+[E2E] Building KBService...
+[E2E] Starting KBService...
+[E2E] KBService is ready!
+tests/e2e/test_kb_service_e2e.py::TestKBServiceE2E::test_service_starts_successfully PASSED
+tests/e2e/test_kb_service_e2e.py::TestKBServiceE2E::test_e2e_add_and_retrieve_document PASSED
+tests/e2e/test_kb_service_e2e.py::TestKBServiceE2E::test_e2e_add_list_and_search PASSED
+tests/e2e/test_kb_service_e2e.py::TestKBServiceE2E::test_e2e_multiple_operations_sequence PASSED
+tests/e2e/test_kb_service_e2e.py::TestKBServiceE2E::test_e2e_empty_search_returns_gracefully PASSED
+tests/e2e/test_kb_service_e2e.py::TestKBServiceE2E::test_e2e_retrieve_nonexistent_returns_error PASSED
+[E2E] Stopping KBService...
+[E2E] KBService stopped.
+============================== 6 passed in 6.11s ==============================
 ```
 
 ### Run Specific Test
 
 ```bash
-pytest tests/integrations/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_happy_path -v
+python -m pytest tests/integrations/KB/test_http_kb_client_cli.py::test_http_kb_search_by_query_returns_results -v
 ```
 
 ### Test Coverage
 
-The test suite includes **60+ test cases** covering:
-- Happy path scenarios
-- Edge cases
-- Error handling
-- Input validation
-- Data persistence
-- Filter combinations
-- Special characters
-- UUID validation
+**Ticket Tests:** 100+ test cases covering all CRUD operations, filtering, validation, error handling
 
-## Data Storage
+**KB Tests:** 81 test cases covering search, list, retrieve, add with both mock and HTTP clients:
+- Mock Client: 27 tests (basic operations + persistence)
+- Mock CLI: 22 tests (command parsing and output)
+- HTTP Client: 14 tests (real API integration)
+- HTTP CLI: 18 tests (end-to-end CLI workflows)
 
-Tickets are stored in `data/tickets.json` in JSON format:
-
-```json
-[
-  {
-    "id": "1c94e7a6-63d7-4ab9-b2ab-12b43dd741b9",
-    "title": "Fix login bug",
-    "description": "Login returns 500",
-    "status": "open",
-    "priority": "high",
-    "tags": ["bug", "backend"],
-    "created_at": "2026-10-12T16:00:01.777187"
-  },
-  {
-    "id": "550e8400-e29b-41d4-a716-446655440000",
-    "title": "Add dark mode",
-    "description": "",
-    "status": "in-progress",
-    "priority": "medium",
-    "tags": ["feature", "frontend"],
-    "created_at": "2026-10-12T16:05:30.123456"
-  }
-]
-```
+**E2E Tests:** 6 tests covering full service lifecycle:
+- Service startup and health check
+- Document add and retrieve
+- Document add, list, and search workflow
+- Multiple sequential operations
+- Error handling (empty results, nonexistent documents)
 
 ## Architecture
 
-### Components
-
-1. **CLI (`cli.py`)**: Command-line interface with argument parsing and command handlers
-2. **TicketService (`services/ticketService.py`)**: Business logic layer for CRUD operations
-3. **DBClient (`db_client.py`)**: Persistence layer for JSON file operations
-4. **Ticket Model (`models/ticket.py`)**: Data model using Python dataclass
-5. **Config (`config.py`)**: Configuration and storage initialization
-
-### Data Flow
+### Layers
 
 ```
-CLI Input
-  ↓
-Parser (argparse)
-  ↓
-Handler Function (create/list/show/update/delete)
-  ↓
-TicketService
-  ↓
-DBClient
-  ↓
-JSON File (tickets.json)
+┌─────────────────────┐
+│   CLI Commands      │ (user input parsing)
+├─────────────────────┤
+│   Handlers          │ (command logic)
+├─────────────────────┤
+│   Services          │ (business logic)
+├─────────────────────┤
+│   Clients/Storage   │ (data access)
+└─────────────────────┘
+```
+
+### KB Integration
+
+```
+┌──────────────────┐
+│  CLI KB Commands │
+├──────────────────┤
+│  KB Client Iface │
+├────┬─────────────┤
+│    │ (switched)  │
+├────▼──────┐      │
+│ MockKB    │ HTTPKBClient
+│ Client    │  ↓ HTTP
+│ (memory)  │  ↓ (real API)
+│           │ KBService
+└───────────┴─────┘
+```
+
+### Client Switching
+
+Environment variable `KB_CLIENT` determines which implementation to use:
+
+```python
+# In KB/config.py
+if os.getenv("KB_CLIENT") == "http":
+    client = HTTPKBClient(api_url)
+else:
+    client = MockKBClient()  # default
 ```
 
 ## Troubleshooting
 
-### "Module not found" error
+### KB Commands Show "No Client"
 
-Make sure `pytest.ini` is in the project root with:
-```ini
-[pytest]
-pythonpath = .
+Ensure `KB_CLIENT` environment variable is set:
+```bash
+set KB_CLIENT=mock  # or http
 ```
 
-### UUID validation error
+### HTTP Client Connection Refused
 
-Ensure you're using a valid UUID format when using `show`, `update`, or `delete` commands. UUIDs look like: `550e8400-e29b-41d4-a716-446655440000`
+- Verify KBService is running: `curl http://localhost:8000/health`
+- Check `KB_API_URL` is correct: `echo %KB_API_URL%`
+- Ensure Node.js is installed for building KBService
 
-### No tickets found
+### E2E Tests Timeout
 
-- Create a ticket first with `create` command
-- Check that you're using correct filter values (status: open/in-progress/closed, priority: low/medium/high)
+- Port 8000 may be in use: `netstat -ano | findstr :8000`
+- KBService build may be slow: check `npm run build` completes successfully
+- Try increasing `KB_SERVICE_START_TIMEOUT` in test file
+
+### Mock Client vs HTTP Client Behavior Differs
+
+- Mock client uses predefined test data
+- HTTP client queries real service
+- For debugging, run same query with both and compare results
+- Check test data initialization in respective client files
+
+## Data Storage
+
+### Tickets
+
+Tickets are stored in `data/tickets.json` in JSON format.
+
+### Knowledge Base
+
+- **Mock client:** In-memory storage, lost on restart
+- **HTTP client:** Persisted by KBService (in-memory or configurable backend)
 
 ## License
 
