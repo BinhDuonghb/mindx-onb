@@ -1,0 +1,172 @@
+
+======================================================================
+Test run: 2026-10-20 23:52:51
+Command: D:\Study\mindx\mindx-onb\assignments\week3\TicketManagerCLI\.venv\Scripts\python.exe -m pytest .\tests\integrations\KB\ -v --tb=short
+======================================================================
+
+============================= test session starts =============================
+platform win32 -- Python 3.13.3, pytest-9.1.1, pluggy-1.6.0 -- D:\Study\mindx\mindx-onb\assignments\week3\TicketManagerCLI\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: D:\Study\mindx\mindx-onb\assignments\week3\TicketManagerCLI
+configfile: pytest.ini
+collecting ... collected 20 items
+
+tests/integrations/KB/test_kb_mock_client.py::test_retrieve_existing_document_returns_document FAILED [  5%]
+tests/integrations/KB/test_kb_mock_client.py::test_retrieve_nonexistent_document_raises_error FAILED [ 10%]
+tests/integrations/KB/test_kb_mock_client.py::test_retrieve_returns_full_document_with_content FAILED [ 15%]
+tests/integrations/KB/test_kb_mock_client.py::test_search_by_title_returns_matching_documents FAILED [ 20%]
+tests/integrations/KB/test_kb_mock_client.py::test_search_by_content_returns_matching_documents FAILED [ 25%]
+tests/integrations/KB/test_kb_mock_client.py::test_search_by_tag_returns_matching_documents FAILED [ 30%]
+tests/integrations/KB/test_kb_mock_client.py::test_search_is_case_insensitive FAILED [ 35%]
+tests/integrations/KB/test_kb_mock_client.py::test_search_respects_top_k_limit FAILED [ 40%]
+tests/integrations/KB/test_kb_mock_client.py::test_search_returns_search_result_objects FAILED [ 45%]
+tests/integrations/KB/test_kb_mock_client.py::test_search_returns_empty_list_when_no_matches FAILED [ 50%]
+tests/integrations/KB/test_kb_mock_client.py::test_list_returns_all_documents_when_no_filter FAILED [ 55%]
+tests/integrations/KB/test_kb_mock_client.py::test_list_filters_by_node_path_prefix FAILED [ 60%]
+tests/integrations/KB/test_kb_mock_client.py::test_list_filters_by_exact_node_path FAILED [ 65%]
+tests/integrations/KB/test_kb_mock_client.py::test_list_respects_limit FAILED [ 70%]
+tests/integrations/KB/test_kb_mock_client.py::test_list_default_limit_is_ten FAILED [ 75%]
+tests/integrations/KB/test_kb_mock_client.py::test_list_returns_full_document_objects FAILED [ 80%]
+tests/integrations/KB/test_kb_mock_client.py::test_add_new_document_returns_document FAILED [ 85%]
+tests/integrations/KB/test_kb_mock_client.py::test_add_document_makes_it_retrievable FAILED [ 90%]
+tests/integrations/KB/test_kb_mock_client.py::test_add_document_appears_in_list FAILED [ 95%]
+tests/integrations/KB/test_kb_mock_client.py::test_add_duplicate_document_raises_error FAILED [100%]
+
+================================== FAILURES ===================================
+______________ test_retrieve_existing_document_returns_document _______________
+tests\integrations\KB\test_kb_mock_client.py:25: in test_retrieve_existing_document_returns_document
+    assert document is not None
+E   assert None is not None
+_______________ test_retrieve_nonexistent_document_raises_error _______________
+tests\integrations\KB\test_kb_mock_client.py:35: in test_retrieve_nonexistent_document_raises_error
+    with pytest.raises(ValueError, match="not found"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+______________ test_retrieve_returns_full_document_with_content _______________
+tests\integrations\KB\test_kb_mock_client.py:43: in test_retrieve_returns_full_document_with_content
+    assert document.id == "doc-002"
+           ^^^^^^^^^^^
+E   AttributeError: 'NoneType' object has no attribute 'id'
+_______________ test_search_by_title_returns_matching_documents _______________
+tests\integrations\KB\test_kb_mock_client.py:61: in test_search_by_title_returns_matching_documents
+    assert len(results) == 1
+           ^^^^^^^^^^^^
+E   TypeError: object of type 'NoneType' has no len()
+______________ test_search_by_content_returns_matching_documents ______________
+tests\integrations\KB\test_kb_mock_client.py:72: in test_search_by_content_returns_matching_documents
+    assert len(results) == 1
+           ^^^^^^^^^^^^
+E   TypeError: object of type 'NoneType' has no len()
+________________ test_search_by_tag_returns_matching_documents ________________
+tests\integrations\KB\test_kb_mock_client.py:82: in test_search_by_tag_returns_matching_documents
+    assert len(results) == 1
+           ^^^^^^^^^^^^
+E   TypeError: object of type 'NoneType' has no len()
+_______________________ test_search_is_case_insensitive _______________________
+tests\integrations\KB\test_kb_mock_client.py:92: in test_search_is_case_insensitive
+    assert len(results) == 1
+           ^^^^^^^^^^^^
+E   TypeError: object of type 'NoneType' has no len()
+______________________ test_search_respects_top_k_limit _______________________
+tests\integrations\KB\test_kb_mock_client.py:102: in test_search_respects_top_k_limit
+    assert len(results) <= 2
+           ^^^^^^^^^^^^
+E   TypeError: object of type 'NoneType' has no len()
+__________________ test_search_returns_search_result_objects __________________
+tests\integrations\KB\test_kb_mock_client.py:111: in test_search_returns_search_result_objects
+    assert len(results) == 1
+           ^^^^^^^^^^^^
+E   TypeError: object of type 'NoneType' has no len()
+_______________ test_search_returns_empty_list_when_no_matches ________________
+tests\integrations\KB\test_kb_mock_client.py:127: in test_search_returns_empty_list_when_no_matches
+    assert results == []
+E   assert None == []
+_______________ test_list_returns_all_documents_when_no_filter ________________
+tests\integrations\KB\test_kb_mock_client.py:139: in test_list_returns_all_documents_when_no_filter
+    assert len(documents) == 3
+           ^^^^^^^^^^^^^^
+E   TypeError: object of type 'NoneType' has no len()
+____________________ test_list_filters_by_node_path_prefix ____________________
+tests\integrations\KB\test_kb_mock_client.py:149: in test_list_filters_by_node_path_prefix
+    assert len(documents) == 1
+           ^^^^^^^^^^^^^^
+E   TypeError: object of type 'NoneType' has no len()
+____________________ test_list_filters_by_exact_node_path _____________________
+tests\integrations\KB\test_kb_mock_client.py:158: in test_list_filters_by_exact_node_path
+    assert len(documents) == 1
+           ^^^^^^^^^^^^^^
+E   TypeError: object of type 'NoneType' has no len()
+__________________________ test_list_respects_limit ___________________________
+tests\integrations\KB\test_kb_mock_client.py:166: in test_list_respects_limit
+    assert len(documents) <= 2
+           ^^^^^^^^^^^^^^
+E   TypeError: object of type 'NoneType' has no len()
+_______________________ test_list_default_limit_is_ten ________________________
+tests\integrations\KB\test_kb_mock_client.py:174: in test_list_default_limit_is_ten
+    assert len(documents) == 3
+           ^^^^^^^^^^^^^^
+E   TypeError: object of type 'NoneType' has no len()
+___________________ test_list_returns_full_document_objects ___________________
+tests\integrations\KB\test_kb_mock_client.py:181: in test_list_returns_full_document_objects
+    assert len(documents) >= 1
+           ^^^^^^^^^^^^^^
+E   TypeError: object of type 'NoneType' has no len()
+___________________ test_add_new_document_returns_document ____________________
+tests\integrations\KB\test_kb_mock_client.py:207: in test_add_new_document_returns_document
+    assert result.id == "doc-004"
+           ^^^^^^^^^
+E   AttributeError: 'NoneType' object has no attribute 'id'
+___________________ test_add_document_makes_it_retrievable ____________________
+tests\integrations\KB\test_kb_mock_client.py:224: in test_add_document_makes_it_retrievable
+    assert retrieved.id == "doc-005"
+           ^^^^^^^^^^^^
+E   AttributeError: 'NoneType' object has no attribute 'id'
+______________________ test_add_document_appears_in_list ______________________
+tests\integrations\KB\test_kb_mock_client.py:241: in test_add_document_appears_in_list
+    assert any(doc.id == "doc-006" for doc in documents)
+                                              ^^^^^^^^^
+E   TypeError: 'NoneType' object is not iterable
+__________________ test_add_duplicate_document_raises_error ___________________
+tests\integrations\KB\test_kb_mock_client.py:254: in test_add_duplicate_document_raises_error
+    with pytest.raises(ValueError, match="already exists"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+=========================== short test summary info ===========================
+FAILED tests/integrations/KB/test_kb_mock_client.py::test_retrieve_existing_document_returns_document
+FAILED tests/integrations/KB/test_kb_mock_client.py::test_retrieve_nonexistent_document_raises_error
+FAILED tests/integrations/KB/test_kb_mock_client.py::test_retrieve_returns_full_document_with_content
+FAILED tests/integrations/KB/test_kb_mock_client.py::test_search_by_title_returns_matching_documents
+FAILED tests/integrations/KB/test_kb_mock_client.py::test_search_by_content_returns_matching_documents
+FAILED tests/integrations/KB/test_kb_mock_client.py::test_search_by_tag_returns_matching_documents
+FAILED tests/integrations/KB/test_kb_mock_client.py::test_search_is_case_insensitive
+FAILED tests/integrations/KB/test_kb_mock_client.py::test_search_respects_top_k_limit
+FAILED tests/integrations/KB/test_kb_mock_client.py::test_search_returns_search_result_objects
+FAILED tests/integrations/KB/test_kb_mock_client.py::test_search_returns_empty_list_when_no_matches
+FAILED tests/integrations/KB/test_kb_mock_client.py::test_list_returns_all_documents_when_no_filter
+FAILED tests/integrations/KB/test_kb_mock_client.py::test_list_filters_by_node_path_prefix
+FAILED tests/integrations/KB/test_kb_mock_client.py::test_list_filters_by_exact_node_path
+FAILED tests/integrations/KB/test_kb_mock_client.py::test_list_respects_limit
+FAILED tests/integrations/KB/test_kb_mock_client.py::test_list_default_limit_is_ten
+FAILED tests/integrations/KB/test_kb_mock_client.py::test_list_returns_full_document_objects
+FAILED tests/integrations/KB/test_kb_mock_client.py::test_add_new_document_returns_document
+FAILED tests/integrations/KB/test_kb_mock_client.py::test_add_document_makes_it_retrievable
+FAILED tests/integrations/KB/test_kb_mock_client.py::test_add_document_appears_in_list
+FAILED tests/integrations/KB/test_kb_mock_client.py::test_add_duplicate_document_raises_error
+============================= 20 failed in 0.17s ==============================
+
+======================================================================
+Test run: 2026-10-20 23:59:51
+Command: D:\Study\mindx\mindx-onb\assignments\week3\TicketManagerCLI\.venv\Scripts\python.exe -m pytest .testsintegrationsKB -v --tb=short
+======================================================================
+
+============================= test session starts =============================
+platform win32 -- Python 3.13.3, pytest-9.1.1, pluggy-1.6.0
+rootdir: D:\Study\mindx\mindx-onb\assignments\week3\TicketManagerCLI
+configfile: pytest.ini
+collected 0 items
+
+============================ no tests ran in 0.00s ============================
+
+--- STDERR ---
+ERROR: file or directory not found: .testsintegrationsKB -v
+

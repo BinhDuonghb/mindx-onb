@@ -1,0 +1,562 @@
+
+======================================================================
+Test run: 2026-10-22 22:50:51
+Command: D:\Study\mindx\mindx-onb\assignments\week3\TicketManagerCLI\.venv\Scripts\python.exe -m pytest pytest tests/e2e/test_kb_service_e2e.py -v -s
+======================================================================
+
+============================= test session starts =============================
+platform win32 -- Python 3.13.3, pytest-9.1.1, pluggy-1.6.0 -- D:\Study\mindx\mindx-onb\assignments\week3\TicketManagerCLI\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: D:\Study\mindx\mindx-onb\assignments\week3\TicketManagerCLI
+configfile: pytest.ini
+collecting ... collected 0 items
+
+============================ no tests ran in 0.00s ============================
+
+--- STDERR ---
+ERROR: file or directory not found: pytest
+
+
+======================================================================
+Test run: 2026-10-22 22:51:53
+Command: D:\Study\mindx\mindx-onb\assignments\week3\TicketManagerCLI\.venv\Scripts\python.exe -m pytest .tests/e2e/test_kb_service_e2e.py -v -s
+======================================================================
+
+============================= test session starts =============================
+platform win32 -- Python 3.13.3, pytest-9.1.1, pluggy-1.6.0 -- D:\Study\mindx\mindx-onb\assignments\week3\TicketManagerCLI\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: D:\Study\mindx\mindx-onb\assignments\week3\TicketManagerCLI
+configfile: pytest.ini
+collecting ... collected 0 items
+
+============================ no tests ran in 0.00s ============================
+
+--- STDERR ---
+ERROR: file or directory not found: .tests/e2e/test_kb_service_e2e.py
+
+
+======================================================================
+Test run: 2026-10-22 22:52:09
+Command: D:\Study\mindx\mindx-onb\assignments\week3\TicketManagerCLI\.venv\Scripts\python.exe -m pytest ./tests/e2e/test_kb_service_e2e.py -v -s
+======================================================================
+
+============================= test session starts =============================
+platform win32 -- Python 3.13.3, pytest-9.1.1, pluggy-1.6.0 -- D:\Study\mindx\mindx-onb\assignments\week3\TicketManagerCLI\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: D:\Study\mindx\mindx-onb\assignments\week3\TicketManagerCLI
+configfile: pytest.ini
+collecting ... collected 6 items
+
+tests/e2e/test_kb_service_e2e.py::TestKBServiceE2E::test_service_starts_successfully 
+[E2E] Building KBService...
+[E2E] Starting KBService...
+[E2E] KBService is ready!
+PASSED
+tests/e2e/test_kb_service_e2e.py::TestKBServiceE2E::test_e2e_add_and_retrieve_document PASSED
+tests/e2e/test_kb_service_e2e.py::TestKBServiceE2E::test_e2e_add_list_and_search PASSED
+tests/e2e/test_kb_service_e2e.py::TestKBServiceE2E::test_e2e_multiple_operations_sequence FAILED
+tests/e2e/test_kb_service_e2e.py::TestKBServiceE2E::test_e2e_empty_search_returns_gracefully PASSED
+tests/e2e/test_kb_service_e2e.py::TestKBServiceE2E::test_e2e_retrieve_nonexistent_returns_error PASSED
+[E2E] Stopping KBService...
+[E2E] KBService stopped.
+
+
+================================== FAILURES ===================================
+___________ TestKBServiceE2E.test_e2e_multiple_operations_sequence ____________
+
+self = <tests.e2e.test_kb_service_e2e.TestKBServiceE2E object at 0x0000027B8BD07490>
+kb_service_process = <Popen: returncode: None args: 'npm start'>
+kb_cli_env = {'ALLUSERSPROFILE': 'C:\\ProgramData', 'ANTHROPIC_API_KEY': 'sk-or-v1-9aa20c2907de7499806c7604aa9412dabe3a3902cb6c7aa9...'ANTHROPIC_BASE_URL': 'https://openrouter.ai/api/v1', 'ANTHROPIC_MODEL': 'nvidia/nemotron-3-ultra-550b-a55b:free', ...}
+
+    def test_e2e_multiple_operations_sequence(self, kb_service_process, kb_cli_env):
+        """Should handle a sequence of add, list, retrieve, search operations."""
+        doc_ids = []
+    
+        # Add multiple documents
+        for i in range(3):
+            unique_id = f"e2e-seq-{i}-{int(time.time() * 1000)}"
+            doc_ids.append(unique_id)
+    
+            result = run_cli_kb_add(
+                doc_id=unique_id,
+                title=f"Sequential Document {i}",
+                content=f"This is sequential document number {i}",
+                node_path="/e2e/sequence",
+                tags=f"seq,test,{i}",
+                env=kb_cli_env
+            )
+    
+            assert result.returncode == 0, \
+                f"Failed to add document {i}: {result.stderr}"
+    
+        # List all documents in the path
+        list_result = run_cli_kb_list(node_path="/e2e/sequence", env=kb_cli_env)
+        assert list_result.returncode == 0
+    
+        # Verify all documents are listed
+        for doc_id in doc_ids:
+>           assert doc_id in list_result.stdout, \
+                f"Document {doc_id} not found in list"
+E           AssertionError: Document e2e-seq-1-1792684328250 not found in list
+E           assert 'e2e-seq-1-1792684328250' in '\nFound 10 document(s):\n\nID: e2e-seq-0-1792683879073\nTitle: Sequential Document 0\nPath: /e2e/sequence\nTags: seq, test, 0\n--------------------------------------------------\nID: e2e-seq-1-1792683879339\nTitle: Sequential Document 1\nPath: /e2e/sequence\nTags: seq, test, 1\n--------------------------------------------------\nID: e2e-seq-2-1792683879614\nTitle: Sequential Document 2\nPath: /e2e/sequence\nTags: seq, test, 2\n--------------------------------------------------\nID: e2e-seq-0-1792684056283\nTitle: Sequential Document 0\nPath: /e2e/sequence\nTags: seq, test, 0\n--------------------------------------------------\nID: e2e-seq-1-1792684056556\nTitle: Sequential Document 1\nPath: /e2e/sequence\nTags: seq, test, 1\n--------------------------------------------------\nID: e2e-seq-2-1792684056821\nTitle: Sequential Document 2\nPath: /e2e/sequence\nTags: seq, test, 2\n--------------------------------------------------\nID: e2e-seq-0-1792684211626\nTitle: Sequential Document 0\nPath: /e2e/sequence\nTags: seq, test, 0\n--------------------------------------------------\nID: e2e-seq-1-1792684211967\nTitle: Sequential Document 1\nPath: /e2e/sequence\nTags: seq, test, 1\n--------------------------------------------------\nID: e2e-seq-2-1792684212339\nTitle: Sequential Document 2\nPath: /e2e/sequence\nTags: seq, test, 2\n--------------------------------------------------\nID: e2e-seq-0-1792684327973\nTitle: Sequential Document 0\nPath: /e2e/sequence\nTags: seq, test, 0\n--------------------------------------------------\n'
+E            +  where '\nFound 10 document(s):\n\nID: e2e-seq-0-1792683879073\nTitle: Sequential Document 0\nPath: /e2e/sequence\nTags: seq, test, 0\n--------------------------------------------------\nID: e2e-seq-1-1792683879339\nTitle: Sequential Document 1\nPath: /e2e/sequence\nTags: seq, test, 1\n--------------------------------------------------\nID: e2e-seq-2-1792683879614\nTitle: Sequential Document 2\nPath: /e2e/sequence\nTags: seq, test, 2\n--------------------------------------------------\nID: e2e-seq-0-1792684056283\nTitle: Sequential Document 0\nPath: /e2e/sequence\nTags: seq, test, 0\n--------------------------------------------------\nID: e2e-seq-1-1792684056556\nTitle: Sequential Document 1\nPath: /e2e/sequence\nTags: seq, test, 1\n--------------------------------------------------\nID: e2e-seq-2-1792684056821\nTitle: Sequential Document 2\nPath: /e2e/sequence\nTags: seq, test, 2\n--------------------------------------------------\nID: e2e-seq-0-1792684211626\nTitle: Sequential Document 0\nPath: /e2e/sequence\nTags: seq, test, 0\n--------------------------------------------------\nID: e2e-seq-1-1792684211967\nTitle: Sequential Document 1\nPath: /e2e/sequence\nTags: seq, test, 1\n--------------------------------------------------\nID: e2e-seq-2-1792684212339\nTitle: Sequential Document 2\nPath: /e2e/sequence\nTags: seq, test, 2\n--------------------------------------------------\nID: e2e-seq-0-1792684327973\nTitle: Sequential Document 0\nPath: /e2e/sequence\nTags: seq, test, 0\n--------------------------------------------------\n' = CompletedProcess(args=['D:\\Study\\mindx\\mindx-onb\\assignments\\week3\\TicketManagerCLI\\.venv\\Scripts\\python.exe', 'main.py', 'kb', 'list', '--node', '/e2e/sequence', '--limit', '10'], returncode=0, stdout='\nFound 10 document(s):\n\nID: e2e-seq-0-1792683879073\nTitle: Sequential Document 0\nPath: /e2e/sequence\nTags: seq, test, 0\n--------------------------------------------------\nID: e2e-seq-1-1792683879339\nTitle: Sequential Document 1\nPath: /e2e/sequence\nTags: seq, test, 1\n--------------------------------------------------\nID: e2e-seq-2-1792683879614\nTitle: Sequential Document 2\nPath: /e2e/sequence\nTags: seq, test, 2\n--------------------------------------------------\nID: e2e-seq-0-1792684056283\nTitle: Sequential Document 0\nPath: /e2e/sequence\nTags: seq, test, 0\n--------------------------------------------------\nID: e2e-seq-1-1792684056556\nTitle: Sequential Document 1\nPath: /e2e/sequence\nTags: seq, test, 1\n--------------------------------------------------\nID: e2e-seq-2-1792684056821\nTitle: Sequential Document 2\nPath: /e2e/sequence\nTags: seq, test, 2\n--------------------------------------------------\nID: e2e-seq-0-1792684211626\nTitle: Sequential Document 0\nPath: /e2e/sequence\nTags: seq, test, 0\n--------------------------------------------------\nID: e2e-seq-1-1792684211967\nTitle: Sequential Document 1\nPath: /e2e/sequence\nTags: seq, test, 1\n--------------------------------------------------\nID: e2e-seq-2-1792684212339\nTitle: Sequential Document 2\nPath: /e2e/sequence\nTags: seq, test, 2\n--------------------------------------------------\nID: e2e-seq-0-1792684327973\nTitle: Sequential Document 0\nPath: /e2e/sequence\nTags: seq, test, 0\n--------------------------------------------------\n', stderr='').stdout
+
+tests\e2e\test_kb_service_e2e.py:315: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/e2e/test_kb_service_e2e.py::TestKBServiceE2E::test_e2e_multiple_operations_sequence
+========================= 1 failed, 5 passed in 4.38s =========================
+
+======================================================================
+Test run: 2026-10-22 22:54:52
+Command: D:\Study\mindx\mindx-onb\assignments\week3\TicketManagerCLI\.venv\Scripts\python.exe -m pytest ./tests/e2e/test_kb_service_e2e.py::TestKBServiceE2E::test_e2e_multiple_operations_sequence -v
+======================================================================
+
+============================= test session starts =============================
+platform win32 -- Python 3.13.3, pytest-9.1.1, pluggy-1.6.0 -- D:\Study\mindx\mindx-onb\assignments\week3\TicketManagerCLI\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: D:\Study\mindx\mindx-onb\assignments\week3\TicketManagerCLI
+configfile: pytest.ini
+collecting ... collected 1 item
+
+tests/e2e/test_kb_service_e2e.py::TestKBServiceE2E::test_e2e_multiple_operations_sequence FAILED [100%]
+
+================================== FAILURES ===================================
+___________ TestKBServiceE2E.test_e2e_multiple_operations_sequence ____________
+
+self = <tests.e2e.test_kb_service_e2e.TestKBServiceE2E object at 0x0000024D6F1976F0>
+kb_service_process = <Popen: returncode: None args: 'npm start'>
+kb_cli_env = {'AI_AGENT': 'claude-code_2-1-305_agent', 'ALLUSERSPROFILE': 'C:\\ProgramData', 'ANTHROPIC_AUTH_TOKEN': 'sk-fc874087fd17af6a-jzvkf9-07a1dd20', 'ANTHROPIC_BASE_URL': 'http://127.0.0.1:20128/v1', ...}
+
+    def test_e2e_multiple_operations_sequence(self, kb_service_process, kb_cli_env):
+        """Should handle a sequence of add, list, retrieve, search operations."""
+        # Use unique timestamp to isolate this test run's data from previous runs
+        test_timestamp = int(time.time() * 1000)
+        unique_node_path = f"/e2e/sequence/{test_timestamp}"
+        doc_ids = []
+    
+        # Add multiple documents
+        for i in range(3):
+            unique_id = f"e2e-seq-{i}-{test_timestamp}"
+            doc_ids.append(unique_id)
+    
+            result = run_cli_kb_add(
+                doc_id=unique_id,
+                title=f"Sequential Document {i}",
+                content=f"This is sequential document number {i}",
+                node_path=unique_node_path,
+                tags=f"seq,test,{i}",
+                env=kb_cli_env
+            )
+    
+            assert result.returncode == 0, \
+                f"Failed to add document {i}: {result.stderr}"
+    
+        # List all documents in the path with higher limit to ensure we get all newly added docs
+        list_result = run_cli_kb_list(node_path=unique_node_path, limit=100, env=kb_cli_env)
+        assert list_result.returncode == 0
+    
+        # Verify all documents are listed
+        for doc_id in doc_ids:
+            assert doc_id in list_result.stdout, \
+                f"Document {doc_id} not found in list"
+    
+        # Retrieve each document
+        for doc_id in doc_ids:
+            result = run_cli_kb_retrieve(doc_id, env=kb_cli_env)
+    
+            assert result.returncode == 0, \
+                f"Failed to retrieve {doc_id}: {result.stderr}"
+            assert doc_id in result.stdout
+    
+        # Search and verify results
+        search_result = run_cli_kb_search(
+            "Sequential",
+            top_k=10,
+            env=kb_cli_env
+        )
+    
+        assert search_result.returncode == 0
+        for doc_id in doc_ids:
+>           assert doc_id in search_result.stdout, \
+                f"Document {doc_id} not found in search results"
+E           AssertionError: Document e2e-seq-0-1792684490550 not found in search results
+E           assert 'e2e-seq-0-1792684490550' in '\nFound 10 document(s):\n\nID: e2e-seq-0-1792683879073\nTitle: Sequential Document 0\nPath: /e2e/sequence\n--------------------------------------------------\nID: e2e-seq-1-1792683879339\nTitle: Sequential Document 1\nPath: /e2e/sequence\n--------------------------------------------------\nID: e2e-seq-2-1792683879614\nTitle: Sequential Document 2\nPath: /e2e/sequence\n--------------------------------------------------\nID: e2e-seq-0-1792684056283\nTitle: Sequential Document 0\nPath: /e2e/sequence\n--------------------------------------------------\nID: e2e-seq-1-1792684056556\nTitle: Sequential Document 1\nPath: /e2e/sequence\n--------------------------------------------------\nID: e2e-seq-2-1792684056821\nTitle: Sequential Document 2\nPath: /e2e/sequence\n--------------------------------------------------\nID: e2e-seq-0-1792684211626\nTitle: Sequential Document 0\nPath: /e2e/sequence\n--------------------------------------------------\nID: e2e-seq-1-1792684211967\nTitle: Sequential Document 1\nPath: /e2e/sequence\n--------------------------------------------------\nID: e2e-seq-2-1792684212339\nTitle: Sequential Document 2\nPath: /e2e/sequence\n--------------------------------------------------\nID: e2e-seq-0-1792684327973\nTitle: Sequential Document 0\nPath: /e2e/sequence\n--------------------------------------------------\n'
+E            +  where '\nFound 10 document(s):\n\nID: e2e-seq-0-1792683879073\nTitle: Sequential Document 0\nPath: /e2e/sequence\n--------------------------------------------------\nID: e2e-seq-1-1792683879339\nTitle: Sequential Document 1\nPath: /e2e/sequence\n--------------------------------------------------\nID: e2e-seq-2-1792683879614\nTitle: Sequential Document 2\nPath: /e2e/sequence\n--------------------------------------------------\nID: e2e-seq-0-1792684056283\nTitle: Sequential Document 0\nPath: /e2e/sequence\n--------------------------------------------------\nID: e2e-seq-1-1792684056556\nTitle: Sequential Document 1\nPath: /e2e/sequence\n--------------------------------------------------\nID: e2e-seq-2-1792684056821\nTitle: Sequential Document 2\nPath: /e2e/sequence\n--------------------------------------------------\nID: e2e-seq-0-1792684211626\nTitle: Sequential Document 0\nPath: /e2e/sequence\n--------------------------------------------------\nID: e2e-seq-1-1792684211967\nTitle: Sequential Document 1\nPath: /e2e/sequence\n--------------------------------------------------\nID: e2e-seq-2-1792684212339\nTitle: Sequential Document 2\nPath: /e2e/sequence\n--------------------------------------------------\nID: e2e-seq-0-1792684327973\nTitle: Sequential Document 0\nPath: /e2e/sequence\n--------------------------------------------------\n' = CompletedProcess(args=['D:\\Study\\mindx\\mindx-onb\\assignments\\week3\\TicketManagerCLI\\.venv\\Scripts\\python.exe', 'main.py', 'kb', 'search', 'Sequential', '--top-k', '10'], returncode=0, stdout='\nFound 10 document(s):\n\nID: e2e-seq-0-1792683879073\nTitle: Sequential Document 0\nPath: /e2e/sequence\n--------------------------------------------------\nID: e2e-seq-1-1792683879339\nTitle: Sequential Document 1\nPath: /e2e/sequence\n--------------------------------------------------\nID: e2e-seq-2-1792683879614\nTitle: Sequential Document 2\nPath: /e2e/sequence\n--------------------------------------------------\nID: e2e-seq-0-1792684056283\nTitle: Sequential Document 0\nPath: /e2e/sequence\n--------------------------------------------------\nID: e2e-seq-1-1792684056556\nTitle: Sequential Document 1\nPath: /e2e/sequence\n--------------------------------------------------\nID: e2e-seq-2-1792684056821\nTitle: Sequential Document 2\nPath: /e2e/sequence\n--------------------------------------------------\nID: e2e-seq-0-1792684211626\nTitle: Sequential Document 0\nPath: /e2e/sequence\n--------------------------------------------------\nID: e2e-seq-1-1792684211967\nTitle: Sequential Document 1\nPath: /e2e/sequence\n--------------------------------------------------\nID: e2e-seq-2-1792684212339\nTitle: Sequential Document 2\nPath: /e2e/sequence\n--------------------------------------------------\nID: e2e-seq-0-1792684327973\nTitle: Sequential Document 0\nPath: /e2e/sequence\n--------------------------------------------------\n', stderr='').stdout
+
+tests\e2e\test_kb_service_e2e.py:338: AssertionError
+---------------------------- Captured stdout setup ----------------------------
+
+[E2E] Building KBService...
+[E2E] Starting KBService...
+[E2E] KBService is ready!
+-------------------------- Captured stdout teardown ---------------------------
+
+[E2E] Stopping KBService...
+[E2E] KBService stopped.
+=========================== short test summary info ===========================
+FAILED tests/e2e/test_kb_service_e2e.py::TestKBServiceE2E::test_e2e_multiple_operations_sequence
+============================== 1 failed in 3.78s ==============================
+
+======================================================================
+Test run: 2026-10-22 22:56:00
+Command: D:\Study\mindx\mindx-onb\assignments\week3\TicketManagerCLI\.venv\Scripts\python.exe -m pytest ./tests/e2e/test_kb_service_e2e.py -v
+======================================================================
+
+============================= test session starts =============================
+platform win32 -- Python 3.13.3, pytest-9.1.1, pluggy-1.6.0 -- D:\Study\mindx\mindx-onb\assignments\week3\TicketManagerCLI\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: D:\Study\mindx\mindx-onb\assignments\week3\TicketManagerCLI
+configfile: pytest.ini
+collecting ... collected 6 items
+
+tests/e2e/test_kb_service_e2e.py::TestKBServiceE2E::test_service_starts_successfully PASSED [ 16%]
+tests/e2e/test_kb_service_e2e.py::TestKBServiceE2E::test_e2e_add_and_retrieve_document PASSED [ 33%]
+tests/e2e/test_kb_service_e2e.py::TestKBServiceE2E::test_e2e_add_list_and_search PASSED [ 50%]
+tests/e2e/test_kb_service_e2e.py::TestKBServiceE2E::test_e2e_multiple_operations_sequence PASSED [ 66%]
+tests/e2e/test_kb_service_e2e.py::TestKBServiceE2E::test_e2e_empty_search_returns_gracefully PASSED [ 83%]
+tests/e2e/test_kb_service_e2e.py::TestKBServiceE2E::test_e2e_retrieve_nonexistent_returns_error PASSED [100%]
+
+============================== 6 passed in 6.11s ==============================
+
+======================================================================
+Test run: 2026-10-22 22:57:10
+Command: D:\Study\mindx\mindx-onb\assignments\week3\TicketManagerCLI\.venv\Scripts\python.exe -m pytest ./tests/ -v -s
+======================================================================
+
+============================= test session starts =============================
+platform win32 -- Python 3.13.3, pytest-9.1.1, pluggy-1.6.0 -- D:\Study\mindx\mindx-onb\assignments\week3\TicketManagerCLI\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: D:\Study\mindx\mindx-onb\assignments\week3\TicketManagerCLI
+configfile: pytest.ini
+collecting ... collected 321 items
+
+tests/e2e/test_kb_service_e2e.py::TestKBServiceE2E::test_service_starts_successfully 
+[E2E] Building KBService...
+[E2E] Starting KBService...
+[E2E] KBService is ready!
+PASSED
+tests/e2e/test_kb_service_e2e.py::TestKBServiceE2E::test_e2e_add_and_retrieve_document PASSED
+tests/e2e/test_kb_service_e2e.py::TestKBServiceE2E::test_e2e_add_list_and_search PASSED
+tests/e2e/test_kb_service_e2e.py::TestKBServiceE2E::test_e2e_multiple_operations_sequence PASSED
+tests/e2e/test_kb_service_e2e.py::TestKBServiceE2E::test_e2e_empty_search_returns_gracefully PASSED
+tests/e2e/test_kb_service_e2e.py::TestKBServiceE2E::test_e2e_retrieve_nonexistent_returns_error PASSED
+tests/integrations/KB/test_http_kb_client.py::test_http_retrieve_existing_document PASSED
+tests/integrations/KB/test_http_kb_client.py::test_http_retrieve_nonexistent_document_raises_error PASSED
+tests/integrations/KB/test_http_kb_client.py::test_http_retrieve_returns_full_document PASSED
+tests/integrations/KB/test_http_kb_client.py::test_http_search_by_query PASSED
+tests/integrations/KB/test_http_kb_client.py::test_http_search_respects_top_k PASSED
+tests/integrations/KB/test_http_kb_client.py::test_http_search_case_insensitive PASSED
+tests/integrations/KB/test_http_kb_client.py::test_http_search_no_matches PASSED
+tests/integrations/KB/test_http_kb_client.py::test_http_list_all_documents PASSED
+tests/integrations/KB/test_http_kb_client.py::test_http_list_filters_by_node_path PASSED
+tests/integrations/KB/test_http_kb_client.py::test_http_list_respects_limit PASSED
+tests/integrations/KB/test_http_kb_client.py::test_http_list_no_match PASSED
+tests/integrations/KB/test_http_kb_client.py::test_http_add_new_document PASSED
+tests/integrations/KB/test_http_kb_client.py::test_http_add_duplicate_raises_error PASSED
+tests/integrations/KB/test_http_kb_client.py::test_http_add_makes_document_listable PASSED
+tests/integrations/KB/test_http_kb_client_cli.py::test_http_kb_search_by_query_returns_results PASSED
+tests/integrations/KB/test_http_kb_client_cli.py::test_http_kb_search_respects_top_k_limit PASSED
+tests/integrations/KB/test_http_kb_client_cli.py::test_http_kb_search_case_insensitive PASSED
+tests/integrations/KB/test_http_kb_client_cli.py::test_http_kb_search_returns_message_when_no_match PASSED
+tests/integrations/KB/test_http_kb_client_cli.py::test_http_kb_search_searches_in_title PASSED
+tests/integrations/KB/test_http_kb_client_cli.py::test_http_kb_list_all_documents PASSED
+tests/integrations/KB/test_http_kb_client_cli.py::test_http_kb_list_filters_by_node_path_prefix PASSED
+tests/integrations/KB/test_http_kb_client_cli.py::test_http_kb_list_filters_by_exact_node_path PASSED
+tests/integrations/KB/test_http_kb_client_cli.py::test_http_kb_list_respects_limit PASSED
+tests/integrations/KB/test_http_kb_client_cli.py::test_http_kb_list_returns_empty_when_no_match PASSED
+tests/integrations/KB/test_http_kb_client_cli.py::test_http_kb_retrieve_existing_document PASSED
+tests/integrations/KB/test_http_kb_client_cli.py::test_http_kb_retrieve_returns_full_document PASSED
+tests/integrations/KB/test_http_kb_client_cli.py::test_http_kb_retrieve_nonexistent_raises_error PASSED
+tests/integrations/KB/test_http_kb_client_cli.py::test_http_kb_add_new_document_returns_success PASSED
+tests/integrations/KB/test_http_kb_client_cli.py::test_http_kb_add_document_makes_it_retrievable PASSED
+tests/integrations/KB/test_http_kb_client_cli.py::test_http_kb_add_document_appears_in_list PASSED
+tests/integrations/KB/test_http_kb_client_cli.py::test_http_kb_add_duplicate_raises_error PASSED
+tests/integrations/KB/test_http_kb_client_cli.py::test_http_kb_add_document_with_tags PASSED
+tests/integrations/KB/test_kb_mock_client.py::test_retrieve_existing_document_returns_document PASSED
+tests/integrations/KB/test_kb_mock_client.py::test_retrieve_nonexistent_document_raises_error PASSED
+tests/integrations/KB/test_kb_mock_client.py::test_retrieve_returns_full_document_with_content PASSED
+tests/integrations/KB/test_kb_mock_client.py::test_search_by_title_returns_matching_documents PASSED
+tests/integrations/KB/test_kb_mock_client.py::test_search_by_content_returns_matching_documents PASSED
+tests/integrations/KB/test_kb_mock_client.py::test_search_by_tag_returns_matching_documents PASSED
+tests/integrations/KB/test_kb_mock_client.py::test_search_is_case_insensitive PASSED
+tests/integrations/KB/test_kb_mock_client.py::test_search_respects_top_k_limit PASSED
+tests/integrations/KB/test_kb_mock_client.py::test_search_returns_search_result_objects PASSED
+tests/integrations/KB/test_kb_mock_client.py::test_search_returns_empty_list_when_no_matches PASSED
+tests/integrations/KB/test_kb_mock_client.py::test_list_returns_all_documents_when_no_filter PASSED
+tests/integrations/KB/test_kb_mock_client.py::test_list_filters_by_node_path_prefix PASSED
+tests/integrations/KB/test_kb_mock_client.py::test_list_filters_by_exact_node_path PASSED
+tests/integrations/KB/test_kb_mock_client.py::test_list_respects_limit PASSED
+tests/integrations/KB/test_kb_mock_client.py::test_list_default_limit_is_ten PASSED
+tests/integrations/KB/test_kb_mock_client.py::test_list_returns_full_document_objects PASSED
+tests/integrations/KB/test_kb_mock_client.py::test_add_new_document_returns_document PASSED
+tests/integrations/KB/test_kb_mock_client.py::test_add_document_makes_it_retrievable PASSED
+tests/integrations/KB/test_kb_mock_client.py::test_add_document_appears_in_list PASSED
+tests/integrations/KB/test_kb_mock_client.py::test_add_duplicate_document_raises_error PASSED
+tests/integrations/KB/test_kb_mock_client.py::test_load_from_valid_persist_file PASSED
+tests/integrations/KB/test_kb_mock_client.py::test_load_from_nonexistent_persist_file_initializes_with_samples PASSED
+tests/integrations/KB/test_kb_mock_client.py::test_load_from_invalid_json_reinitializes_with_samples PASSED
+tests/integrations/KB/test_kb_mock_client.py::test_load_from_persist_file_with_non_array_raises_error PASSED
+tests/integrations/KB/test_kb_mock_client.py::test_load_from_persist_file_with_invalid_document_structure_raises_error PASSED
+tests/integrations/KB/test_kb_mock_client.py::test_add_persists_to_file PASSED
+tests/integrations/KB/test_kb_mock_client.py::test_load_persisted_data_from_previous_session PASSED
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_search_by_query_returns_results PASSED
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_search_respects_top_k_limit PASSED
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_search_case_insensitive PASSED
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_search_returns_message_when_no_match PASSED
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_search_searches_in_title PASSED
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_search_searches_in_content PASSED
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_search_searches_in_tags PASSED
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_list_all_documents PASSED
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_list_filters_by_node_path_prefix PASSED
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_list_filters_by_exact_node_path PASSED
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_list_respects_limit PASSED
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_list_default_limit_is_ten PASSED
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_list_returns_empty_when_no_match PASSED
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_retrieve_existing_document PASSED
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_retrieve_returns_full_document PASSED
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_retrieve_nonexistent_raises_error PASSED
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_retrieve_includes_content PASSED
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_add_new_document_returns_success PASSED
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_add_document_makes_it_retrievable PASSED
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_add_document_appears_in_list PASSED
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_add_duplicate_raises_error PASSED
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_add_document_with_tags PASSED
+tests/integrations/database_service/test_db_client.py::TestDBClientRead::test_read_empty_file_returns_empty_list PASSED
+tests/integrations/database_service/test_db_client.py::TestDBClientRead::test_read_returns_all_tickets PASSED
+tests/integrations/database_service/test_db_client.py::TestDBClientRead::test_read_missing_file_raises_file_not_found PASSED
+tests/integrations/database_service/test_db_client.py::TestDBClientRead::test_read_corrupted_json_raises_json_decode_error PASSED
+tests/integrations/database_service/test_db_client.py::TestDBClientWrite::test_write_single_ticket_to_empty_file PASSED
+tests/integrations/database_service/test_db_client.py::TestDBClientWrite::test_write_multiple_tickets_appends PASSED
+tests/integrations/database_service/test_db_client.py::TestDBClientWrite::test_write_preserves_ticket_structure PASSED
+tests/integrations/database_service/test_db_client.py::TestDBClientWrite::test_write_to_missing_file_raises_file_not_found PASSED
+tests/integrations/database_service/test_db_client.py::TestDBClientWrite::test_write_to_corrupted_json_raises_json_decode_error PASSED
+tests/integrations/database_service/test_db_client.py::TestDBClientUpdate::test_update_ticket_by_id PASSED
+tests/integrations/database_service/test_db_client.py::TestDBClientUpdate::test_update_nonexistent_ticket_raises_error PASSED
+tests/integrations/database_service/test_db_client.py::TestDBClientUpdate::test_update_partial_fields PASSED
+tests/integrations/database_service/test_db_client.py::TestDBClientDelete::test_delete_ticket_by_id PASSED
+tests/integrations/database_service/test_db_client.py::TestDBClientDelete::test_delete_nonexistent_ticket_raises_error PASSED
+tests/integrations/database_service/test_db_client.py::TestDBClientDelete::test_delete_last_ticket_leaves_empty_array PASSED
+tests/integrations/database_service/test_db_client.py::TestDBClientEdgeCases::test_handles_corrupted_json_gracefully PASSED
+tests/integrations/database_service/test_db_client.py::TestDBClientEdgeCases::test_file_is_created_if_not_exists PASSED
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceCreate::test_create_ticket_with_required_fields_only PASSED
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceCreate::test_create_ticket_with_all_fields PASSED
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceCreate::test_create_multiple_tickets_generates_unique_uuids PASSED
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceCreate::test_create_ticket_without_title_raises_error PASSED
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceCreate::test_create_ticket_persists_to_db PASSED
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceRead::test_get_all_returns_empty_list PASSED
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceRead::test_get_all_returns_all_tickets PASSED
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceRead::test_get_by_id_returns_ticket PASSED
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceRead::test_get_by_id_returns_none_for_nonexistent PASSED
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceRead::test_get_by_status_filters_correctly PASSED
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceRead::test_get_by_priority_filters_correctly PASSED
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceUpdate::test_update_ticket_title PASSED
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceUpdate::test_update_ticket_status PASSED
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceUpdate::test_update_multiple_fields PASSED
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceUpdate::test_update_tags PASSED
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceUpdate::test_update_nonexistent_ticket_raises_error PASSED
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceUpdate::test_update_with_no_fields_raises_error PASSED
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceUpdate::test_update_with_invalid_field_raises_error PASSED
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceUpdate::test_update_preserves_other_fields PASSED
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceDelete::test_delete_ticket_by_id PASSED
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceDelete::test_delete_nonexistent_ticket_raises_error PASSED
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceDelete::test_delete_last_ticket_leaves_empty PASSED
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_create_with_invalid_title_too_short PASSED
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_create_with_invalid_title_too_long PASSED
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_create_with_invalid_description_too_long PASSED
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_create_with_invalid_priority PASSED
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_create_with_invalid_status PASSED
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_create_with_invalid_tag_too_short PASSED
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_create_with_invalid_tag_too_long PASSED
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_create_with_too_many_tags PASSED
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_create_with_invalid_creator_email PASSED
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_create_with_invalid_assignee_email PASSED
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_create_with_valid_creator_email PASSED
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_create_with_valid_assignee_email PASSED
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_create_with_valid_estimated_time PASSED
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_update_with_invalid_title PASSED
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_update_with_invalid_description PASSED
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_update_with_invalid_priority PASSED
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_update_with_invalid_status PASSED
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_update_with_invalid_assignee_email PASSED
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_update_with_valid_assignee_email PASSED
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_update_with_valid_estimated_time PASSED
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceIntegration::test_create_update_read_workflow PASSED
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceIntegration::test_multiple_crud_operations PASSED
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceIntegration::test_persistence_across_service_instances PASSED
+tests/integrations/error_handling/test_cli_error_handling.py::TestCLIErrorHandling::test_list_corrupted_json_shows_friendly_error PASSED
+tests/integrations/error_handling/test_cli_error_handling.py::TestCLIErrorHandling::test_create_corrupted_json_shows_friendly_error PASSED
+tests/integrations/error_handling/test_cli_error_handling.py::TestCLIErrorHandling::test_delete_corrupted_json_shows_friendly_error PASSED
+tests/integrations/error_handling/test_cli_error_handling.py::TestCLIErrorHandling::test_list_empty_database_shows_no_tickets_message PASSED
+tests/integrations/error_handling/test_cli_error_handling.py::TestCLIErrorHandling::test_create_succeeds_with_empty_database PASSED
+tests/integrations/error_handling/test_cli_error_handling.py::TestCLIErrorHandling::test_corrupted_json_does_not_auto_recover PASSED
+tests/integrations/error_handling/test_cli_error_handling.py::TestCLIErrorHandling::test_corrupted_json_error_suggests_fix_or_restore PASSED
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_happy_path PASSED
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_with_required_fields_only PASSED
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_without_title_fails PASSED
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_with_low_priority PASSED
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_with_default_priority PASSED
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_with_invalid_priority_fails PASSED
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_with_empty_tags PASSED
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_with_single_tag PASSED
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_with_multiple_tags PASSED
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_with_tags_with_spaces PASSED
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_multiple_tickets PASSED
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_with_special_characters PASSED
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_outputs_success_message PASSED
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_default_status_is_open PASSED
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_with_long_description PASSED
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_with_creator_email PASSED
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_with_assignee_email PASSED
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_with_estimated_time PASSED
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_with_all_new_fields PASSED
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_with_invalid_creator_email_fails PASSED
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_with_invalid_assignee_email_fails PASSED
+tests/integrations/ticket_CRUD/test_delete_ticket_cli.py::TestDeleteTicketCLI::test_delete_ticket_removes_from_list PASSED
+tests/integrations/ticket_CRUD/test_delete_ticket_cli.py::TestDeleteTicketCLI::test_delete_ticket_leaves_others_intact PASSED
+tests/integrations/ticket_CRUD/test_delete_ticket_cli.py::TestDeleteTicketCLI::test_delete_first_ticket PASSED
+tests/integrations/ticket_CRUD/test_delete_ticket_cli.py::TestDeleteTicketCLI::test_delete_last_ticket PASSED
+tests/integrations/ticket_CRUD/test_delete_ticket_cli.py::TestDeleteTicketCLI::test_delete_middle_ticket PASSED
+tests/integrations/ticket_CRUD/test_delete_ticket_cli.py::TestDeleteTicketCLI::test_delete_nonexistent_ticket_fails PASSED
+tests/integrations/ticket_CRUD/test_delete_ticket_cli.py::TestDeleteTicketCLI::test_delete_already_deleted_ticket_fails PASSED
+tests/integrations/ticket_CRUD/test_delete_ticket_cli.py::TestDeleteTicketCLI::test_delete_displays_success_message PASSED
+tests/integrations/ticket_CRUD/test_delete_ticket_cli.py::TestDeleteTicketCLI::test_delete_invalid_uuid_format_fails PASSED
+tests/integrations/ticket_CRUD/test_delete_ticket_cli.py::TestDeleteTicketCLI::test_delete_multiple_tickets_sequentially PASSED
+tests/integrations/ticket_CRUD/test_delete_ticket_cli.py::TestDeleteTicketCLI::test_delete_closed_ticket PASSED
+tests/integrations/ticket_CRUD/test_delete_ticket_cli.py::TestDeleteTicketCLI::test_delete_open_ticket PASSED
+tests/integrations/ticket_CRUD/test_delete_ticket_cli.py::TestDeleteTicketCLI::test_delete_high_priority_ticket PASSED
+tests/integrations/ticket_CRUD/test_delete_ticket_cli.py::TestDeleteTicketCLI::test_delete_ticket_with_tags PASSED
+tests/integrations/ticket_CRUD/test_delete_ticket_cli.py::TestDeleteTicketCLI::test_delete_ticket_with_long_description PASSED
+tests/integrations/ticket_CRUD/test_delete_ticket_cli.py::TestDeleteTicketCLI::test_delete_preserves_file_structure PASSED
+tests/integrations/ticket_CRUD/test_list_ticket_cli.py::TestListTicketCLI::test_list_empty_tickets PASSED
+tests/integrations/ticket_CRUD/test_list_ticket_cli.py::TestListTicketCLI::test_list_all_tickets PASSED
+tests/integrations/ticket_CRUD/test_list_ticket_cli.py::TestListTicketCLI::test_list_filter_by_status_open PASSED
+tests/integrations/ticket_CRUD/test_list_ticket_cli.py::TestListTicketCLI::test_list_filter_by_status_closed PASSED
+tests/integrations/ticket_CRUD/test_list_ticket_cli.py::TestListTicketCLI::test_list_filter_by_priority_high PASSED
+tests/integrations/ticket_CRUD/test_list_ticket_cli.py::TestListTicketCLI::test_list_filter_by_priority_medium PASSED
+tests/integrations/ticket_CRUD/test_list_ticket_cli.py::TestListTicketCLI::test_list_filter_by_priority_low PASSED
+tests/integrations/ticket_CRUD/test_list_ticket_cli.py::TestListTicketCLI::test_list_filter_by_tag PASSED
+tests/integrations/ticket_CRUD/test_list_ticket_cli.py::TestListTicketCLI::test_list_filter_by_multiple_tags PASSED
+tests/integrations/ticket_CRUD/test_list_ticket_cli.py::TestListTicketCLI::test_list_with_status_and_priority_filters PASSED
+tests/integrations/ticket_CRUD/test_list_ticket_cli.py::TestListTicketCLI::test_list_with_all_filters PASSED
+tests/integrations/ticket_CRUD/test_list_ticket_cli.py::TestListTicketCLI::test_list_invalid_status_fails PASSED
+tests/integrations/ticket_CRUD/test_list_ticket_cli.py::TestListTicketCLI::test_list_invalid_priority_fails PASSED
+tests/integrations/ticket_CRUD/test_list_ticket_cli.py::TestListTicketCLI::test_list_no_results_with_filter PASSED
+tests/integrations/ticket_CRUD/test_list_ticket_cli.py::TestListTicketCLI::test_list_displays_ticket_info PASSED
+tests/integrations/ticket_CRUD/test_show_ticket_cli.py::TestShowTicketCLI::test_show_ticket_displays_all_fields PASSED
+tests/integrations/ticket_CRUD/test_show_ticket_cli.py::TestShowTicketCLI::test_show_ticket_with_uuid PASSED
+tests/integrations/ticket_CRUD/test_show_ticket_cli.py::TestShowTicketCLI::test_show_nonexistent_ticket_fails PASSED
+tests/integrations/ticket_CRUD/test_show_ticket_cli.py::TestShowTicketCLI::test_show_ticket_displays_description PASSED
+tests/integrations/ticket_CRUD/test_show_ticket_cli.py::TestShowTicketCLI::test_show_ticket_displays_priority PASSED
+tests/integrations/ticket_CRUD/test_show_ticket_cli.py::TestShowTicketCLI::test_show_ticket_displays_status PASSED
+tests/integrations/ticket_CRUD/test_show_ticket_cli.py::TestShowTicketCLI::test_show_ticket_displays_tags PASSED
+tests/integrations/ticket_CRUD/test_show_ticket_cli.py::TestShowTicketCLI::test_show_ticket_displays_id PASSED
+tests/integrations/ticket_CRUD/test_show_ticket_cli.py::TestShowTicketCLI::test_show_ticket_with_empty_description PASSED
+tests/integrations/ticket_CRUD/test_show_ticket_cli.py::TestShowTicketCLI::test_show_ticket_with_no_tags PASSED
+tests/integrations/ticket_CRUD/test_show_ticket_cli.py::TestShowTicketCLI::test_show_invalid_id_format_fails PASSED
+tests/integrations/ticket_CRUD/test_show_ticket_cli.py::TestShowTicketCLI::test_show_ticket_displays_created_at PASSED
+tests/integrations/ticket_CRUD/test_update_ticket_cli.py::TestUpdateTicketCLI::test_update_ticket_status_to_closed PASSED
+tests/integrations/ticket_CRUD/test_update_ticket_cli.py::TestUpdateTicketCLI::test_update_ticket_status_to_in_progress PASSED
+tests/integrations/ticket_CRUD/test_update_ticket_cli.py::TestUpdateTicketCLI::test_update_ticket_status_from_closed_to_open PASSED
+tests/integrations/ticket_CRUD/test_update_ticket_cli.py::TestUpdateTicketCLI::test_update_nonexistent_ticket_fails PASSED
+tests/integrations/ticket_CRUD/test_update_ticket_cli.py::TestUpdateTicketCLI::test_update_without_status_fails PASSED
+tests/integrations/ticket_CRUD/test_update_ticket_cli.py::TestUpdateTicketCLI::test_update_with_invalid_status_fails PASSED
+tests/integrations/ticket_CRUD/test_update_ticket_cli.py::TestUpdateTicketCLI::test_update_displays_success_message PASSED
+tests/integrations/ticket_CRUD/test_update_ticket_cli.py::TestUpdateTicketCLI::test_update_multiple_tickets_independently PASSED
+tests/integrations/ticket_CRUD/test_update_ticket_cli.py::TestUpdateTicketCLI::test_update_preserves_other_fields PASSED
+tests/integrations/ticket_CRUD/test_update_ticket_cli.py::TestUpdateTicketCLI::test_update_invalid_uuid_format_fails PASSED
+tests/integrations/ticket_CRUD/test_update_ticket_cli.py::TestUpdateTicketCLI::test_update_valid_status_transitions PASSED
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_valid_simple_email PASSED
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_valid_email_with_numbers PASSED
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_valid_email_with_dots_in_local PASSED
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_valid_email_with_plus PASSED
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_valid_email_with_hyphen_in_domain PASSED
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_valid_email_with_subdomain PASSED
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_valid_email_with_multiple_subdomains PASSED
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_valid_email_with_underscore PASSED
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_valid_email_with_percent PASSED
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_valid_email_short_domain PASSED
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_valid_email_long_domain PASSED
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_valid_email_mixed_case PASSED
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_invalid_email_no_at_symbol PASSED
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_invalid_email_multiple_at_symbols PASSED
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_invalid_email_no_domain PASSED
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_invalid_email_no_local_part PASSED
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_invalid_email_no_extension PASSED
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_invalid_email_empty_string PASSED
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_invalid_email_whitespace PASSED
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_invalid_email_none PASSED
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_invalid_email_consecutive_dots PASSED
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_invalid_email_starts_with_dot PASSED
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_invalid_email_ends_with_dot PASSED
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_invalid_email_domain_starts_with_dot PASSED
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_invalid_email_domain_label_starts_with_hyphen PASSED
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_invalid_email_domain_label_ends_with_hyphen PASSED
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_invalid_email_domain_ends_with_dot PASSED
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_invalid_email_spaces PASSED
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_invalid_email_special_chars PASSED
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_invalid_email_comma PASSED
+tests/units/validation/test_email_validator.py::TestEmailValidatorValidate::test_validate_valid_email PASSED
+tests/units/validation/test_email_validator.py::TestEmailValidatorValidate::test_validate_none_email PASSED
+tests/units/validation/test_email_validator.py::TestEmailValidatorValidate::test_validate_invalid_email_raises_error PASSED
+tests/units/validation/test_email_validator.py::TestEmailValidatorValidate::test_validate_empty_string_raises_error PASSED
+tests/units/validation/test_email_validator.py::TestEmailValidatorValidate::test_validate_whitespace_only_raises_error PASSED
+tests/units/validation/test_email_validator.py::TestEmailValidatorValidate::test_validate_not_string_raises_error PASSED
+tests/units/validation/test_email_validator.py::TestEmailValidatorValidate::test_validate_too_long_email_raises_error PASSED
+tests/units/validation/test_email_validator.py::TestEmailValidatorValidate::test_validate_consecutive_dots_raises_error PASSED
+tests/units/validation/test_email_validator.py::TestEmailValidatorValidate::test_validate_local_part_too_long_raises_error PASSED
+tests/units/validation/test_email_validator.py::TestEmailValidatorValidate::test_validate_local_part_empty_raises_error PASSED
+tests/units/validation/test_email_validator.py::TestEmailValidatorValidate::test_validate_domain_starts_with_dot_raises_error PASSED
+tests/units/validation/test_email_validator.py::TestEmailValidatorValidate::test_validate_domain_ends_with_dot_raises_error PASSED
+tests/units/validation/test_email_validator.py::TestEmailValidationEdgeCases::test_email_with_hyphen_in_local_part PASSED
+tests/units/validation/test_email_validator.py::TestEmailValidationEdgeCases::test_email_numeric_only_local_part PASSED
+tests/units/validation/test_email_validator.py::TestEmailValidationEdgeCases::test_email_numeric_only_domain PASSED
+tests/units/validation/test_email_validator.py::TestEmailValidationEdgeCases::test_email_with_hyphens_at_start_of_domain PASSED
+tests/units/validation/test_email_validator.py::TestEmailValidationEdgeCases::test_email_with_hyphens_at_end_of_domain PASSED
+tests/units/validation/test_email_validator.py::TestEmailValidationEdgeCases::test_email_single_character_local_part PASSED
+tests/units/validation/test_email_validator.py::TestEmailValidationEdgeCases::test_email_two_letter_domain_extension PASSED
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorTitle::test_validate_title_valid PASSED
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorTitle::test_validate_title_minimum_length PASSED
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorTitle::test_validate_title_too_short PASSED
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorTitle::test_validate_title_too_long PASSED
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorTitle::test_validate_title_empty_raises_error PASSED
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorTitle::test_validate_title_whitespace_only_raises_error PASSED
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorTitle::test_validate_title_not_string_raises_error PASSED
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorDescription::test_validate_description_valid PASSED
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorDescription::test_validate_description_empty PASSED
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorDescription::test_validate_description_too_long PASSED
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorDescription::test_validate_description_not_string_raises_error PASSED
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorPriority::test_validate_priority_low PASSED
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorPriority::test_validate_priority_medium PASSED
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorPriority::test_validate_priority_high PASSED
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorPriority::test_validate_priority_invalid PASSED
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorPriority::test_validate_priority_empty_raises_error PASSED
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorPriority::test_validate_priority_mixed_case_raises_error PASSED
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorStatus::test_validate_status_open PASSED
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorStatus::test_validate_status_in_progress PASSED
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorStatus::test_validate_status_closed PASSED
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorStatus::test_validate_status_invalid PASSED
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorStatus::test_validate_status_empty_raises_error PASSED
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorTags::test_validate_tags_empty_list PASSED
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorTags::test_validate_tags_single_tag PASSED
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorTags::test_validate_tags_multiple_tags PASSED
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorTags::test_validate_tags_maximum_tags PASSED
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorTags::test_validate_tags_too_many_raises_error PASSED
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorTags::test_validate_tags_not_list_raises_error PASSED
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorTags::test_validate_tags_non_string_tag_raises_error PASSED
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorTags::test_validate_tags_empty_tag_raises_error PASSED
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorTags::test_validate_tags_whitespace_tag_raises_error PASSED
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorTags::test_validate_tags_too_short_raises_error PASSED
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorTags::test_validate_tags_too_long_raises_error PASSED
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorCreator::test_validate_creator_valid_email PASSED
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorCreator::test_validate_creator_none PASSED
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorCreator::test_validate_creator_invalid_email_raises_error PASSED
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorCreator::test_validate_creator_empty_string_raises_error PASSED
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorAssignee::test_validate_assignee_valid_email PASSED
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorAssignee::test_validate_assignee_none PASSED
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorAssignee::test_validate_assignee_invalid_email_raises_error PASSED
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorAssignee::test_validate_assignee_empty_string_raises_error PASSED
+[E2E] Stopping KBService...
+[E2E] KBService stopped.
+
+
+============================ 321 passed in 41.49s =============================

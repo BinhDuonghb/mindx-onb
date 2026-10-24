@@ -1,0 +1,930 @@
+
+======================================================================
+Test run: 2026-10-21 00:00:24
+Command: D:\Study\mindx\mindx-onb\assignments\week3\TicketManagerCLI\.venv\Scripts\python.exe -m pytest .\tests\integrations\KB\ -v --tb=short
+======================================================================
+
+============================= test session starts =============================
+platform win32 -- Python 3.13.3, pytest-9.1.1, pluggy-1.6.0 -- D:\Study\mindx\mindx-onb\assignments\week3\TicketManagerCLI\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: D:\Study\mindx\mindx-onb\assignments\week3\TicketManagerCLI
+configfile: pytest.ini
+collecting ... collected 20 items
+
+tests/integrations/KB/test_kb_mock_client.py::test_retrieve_existing_document_returns_document PASSED [  5%]
+tests/integrations/KB/test_kb_mock_client.py::test_retrieve_nonexistent_document_raises_error PASSED [ 10%]
+tests/integrations/KB/test_kb_mock_client.py::test_retrieve_returns_full_document_with_content PASSED [ 15%]
+tests/integrations/KB/test_kb_mock_client.py::test_search_by_title_returns_matching_documents PASSED [ 20%]
+tests/integrations/KB/test_kb_mock_client.py::test_search_by_content_returns_matching_documents PASSED [ 25%]
+tests/integrations/KB/test_kb_mock_client.py::test_search_by_tag_returns_matching_documents PASSED [ 30%]
+tests/integrations/KB/test_kb_mock_client.py::test_search_is_case_insensitive PASSED [ 35%]
+tests/integrations/KB/test_kb_mock_client.py::test_search_respects_top_k_limit PASSED [ 40%]
+tests/integrations/KB/test_kb_mock_client.py::test_search_returns_search_result_objects PASSED [ 45%]
+tests/integrations/KB/test_kb_mock_client.py::test_search_returns_empty_list_when_no_matches PASSED [ 50%]
+tests/integrations/KB/test_kb_mock_client.py::test_list_returns_all_documents_when_no_filter PASSED [ 55%]
+tests/integrations/KB/test_kb_mock_client.py::test_list_filters_by_node_path_prefix PASSED [ 60%]
+tests/integrations/KB/test_kb_mock_client.py::test_list_filters_by_exact_node_path PASSED [ 65%]
+tests/integrations/KB/test_kb_mock_client.py::test_list_respects_limit PASSED [ 70%]
+tests/integrations/KB/test_kb_mock_client.py::test_list_default_limit_is_ten PASSED [ 75%]
+tests/integrations/KB/test_kb_mock_client.py::test_list_returns_full_document_objects PASSED [ 80%]
+tests/integrations/KB/test_kb_mock_client.py::test_add_new_document_returns_document PASSED [ 85%]
+tests/integrations/KB/test_kb_mock_client.py::test_add_document_makes_it_retrievable PASSED [ 90%]
+tests/integrations/KB/test_kb_mock_client.py::test_add_document_appears_in_list PASSED [ 95%]
+tests/integrations/KB/test_kb_mock_client.py::test_add_duplicate_document_raises_error PASSED [100%]
+
+============================= 20 passed in 0.10s ==============================
+
+======================================================================
+Test run: 2026-10-21 00:01:49
+Command: D:\Study\mindx\mindx-onb\assignments\week3\TicketManagerCLI\.venv\Scripts\python.exe -m pytest .\tests\integrations\KB\ -v --tb=short
+======================================================================
+
+============================= test session starts =============================
+platform win32 -- Python 3.13.3, pytest-9.1.1, pluggy-1.6.0 -- D:\Study\mindx\mindx-onb\assignments\week3\TicketManagerCLI\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: D:\Study\mindx\mindx-onb\assignments\week3\TicketManagerCLI
+configfile: pytest.ini
+collecting ... collected 20 items
+
+tests/integrations/KB/test_kb_mock_client.py::test_retrieve_existing_document_returns_document PASSED [  5%]
+tests/integrations/KB/test_kb_mock_client.py::test_retrieve_nonexistent_document_raises_error PASSED [ 10%]
+tests/integrations/KB/test_kb_mock_client.py::test_retrieve_returns_full_document_with_content PASSED [ 15%]
+tests/integrations/KB/test_kb_mock_client.py::test_search_by_title_returns_matching_documents PASSED [ 20%]
+tests/integrations/KB/test_kb_mock_client.py::test_search_by_content_returns_matching_documents PASSED [ 25%]
+tests/integrations/KB/test_kb_mock_client.py::test_search_by_tag_returns_matching_documents PASSED [ 30%]
+tests/integrations/KB/test_kb_mock_client.py::test_search_is_case_insensitive PASSED [ 35%]
+tests/integrations/KB/test_kb_mock_client.py::test_search_respects_top_k_limit PASSED [ 40%]
+tests/integrations/KB/test_kb_mock_client.py::test_search_returns_search_result_objects PASSED [ 45%]
+tests/integrations/KB/test_kb_mock_client.py::test_search_returns_empty_list_when_no_matches PASSED [ 50%]
+tests/integrations/KB/test_kb_mock_client.py::test_list_returns_all_documents_when_no_filter PASSED [ 55%]
+tests/integrations/KB/test_kb_mock_client.py::test_list_filters_by_node_path_prefix PASSED [ 60%]
+tests/integrations/KB/test_kb_mock_client.py::test_list_filters_by_exact_node_path PASSED [ 65%]
+tests/integrations/KB/test_kb_mock_client.py::test_list_respects_limit PASSED [ 70%]
+tests/integrations/KB/test_kb_mock_client.py::test_list_default_limit_is_ten PASSED [ 75%]
+tests/integrations/KB/test_kb_mock_client.py::test_list_returns_full_document_objects PASSED [ 80%]
+tests/integrations/KB/test_kb_mock_client.py::test_add_new_document_returns_document PASSED [ 85%]
+tests/integrations/KB/test_kb_mock_client.py::test_add_document_makes_it_retrievable PASSED [ 90%]
+tests/integrations/KB/test_kb_mock_client.py::test_add_document_appears_in_list PASSED [ 95%]
+tests/integrations/KB/test_kb_mock_client.py::test_add_duplicate_document_raises_error PASSED [100%]
+
+============================= 20 passed in 0.08s ==============================
+
+======================================================================
+Test run: 2026-10-21 00:02:35
+Command: D:\Study\mindx\mindx-onb\assignments\week3\TicketManagerCLI\.venv\Scripts\python.exe -m pytest .\tests\integrations\KB\ -v --tb=short
+======================================================================
+
+============================= test session starts =============================
+platform win32 -- Python 3.13.3, pytest-9.1.1, pluggy-1.6.0 -- D:\Study\mindx\mindx-onb\assignments\week3\TicketManagerCLI\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: D:\Study\mindx\mindx-onb\assignments\week3\TicketManagerCLI
+configfile: pytest.ini
+collecting ... collected 20 items
+
+tests/integrations/KB/test_kb_mock_client.py::test_retrieve_existing_document_returns_document PASSED [  5%]
+tests/integrations/KB/test_kb_mock_client.py::test_retrieve_nonexistent_document_raises_error PASSED [ 10%]
+tests/integrations/KB/test_kb_mock_client.py::test_retrieve_returns_full_document_with_content PASSED [ 15%]
+tests/integrations/KB/test_kb_mock_client.py::test_search_by_title_returns_matching_documents PASSED [ 20%]
+tests/integrations/KB/test_kb_mock_client.py::test_search_by_content_returns_matching_documents PASSED [ 25%]
+tests/integrations/KB/test_kb_mock_client.py::test_search_by_tag_returns_matching_documents PASSED [ 30%]
+tests/integrations/KB/test_kb_mock_client.py::test_search_is_case_insensitive PASSED [ 35%]
+tests/integrations/KB/test_kb_mock_client.py::test_search_respects_top_k_limit PASSED [ 40%]
+tests/integrations/KB/test_kb_mock_client.py::test_search_returns_search_result_objects PASSED [ 45%]
+tests/integrations/KB/test_kb_mock_client.py::test_search_returns_empty_list_when_no_matches PASSED [ 50%]
+tests/integrations/KB/test_kb_mock_client.py::test_list_returns_all_documents_when_no_filter PASSED [ 55%]
+tests/integrations/KB/test_kb_mock_client.py::test_list_filters_by_node_path_prefix PASSED [ 60%]
+tests/integrations/KB/test_kb_mock_client.py::test_list_filters_by_exact_node_path PASSED [ 65%]
+tests/integrations/KB/test_kb_mock_client.py::test_list_respects_limit PASSED [ 70%]
+tests/integrations/KB/test_kb_mock_client.py::test_list_default_limit_is_ten PASSED [ 75%]
+tests/integrations/KB/test_kb_mock_client.py::test_list_returns_full_document_objects PASSED [ 80%]
+tests/integrations/KB/test_kb_mock_client.py::test_add_new_document_returns_document PASSED [ 85%]
+tests/integrations/KB/test_kb_mock_client.py::test_add_document_makes_it_retrievable PASSED [ 90%]
+tests/integrations/KB/test_kb_mock_client.py::test_add_document_appears_in_list PASSED [ 95%]
+tests/integrations/KB/test_kb_mock_client.py::test_add_duplicate_document_raises_error PASSED [100%]
+
+============================= 20 passed in 0.08s ==============================
+
+======================================================================
+Test run: 2026-10-21 15:59:26
+Command: D:\Study\mindx\mindx-onb\assignments\week3\TicketManagerCLI\.venv\Scripts\python.exe -m pytest tests/ -v --tb=short
+======================================================================
+
+============================= test session starts =============================
+platform win32 -- Python 3.13.3, pytest-9.1.1, pluggy-1.6.0 -- D:\Study\mindx\mindx-onb\assignments\week3\TicketManagerCLI\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: D:\Study\mindx\mindx-onb\assignments\week3\TicketManagerCLI
+configfile: pytest.ini
+collecting ... collected 254 items
+
+tests/integrations/KB/test_kb_mock_client.py::test_retrieve_existing_document_returns_document PASSED [  0%]
+tests/integrations/KB/test_kb_mock_client.py::test_retrieve_nonexistent_document_raises_error PASSED [  0%]
+tests/integrations/KB/test_kb_mock_client.py::test_retrieve_returns_full_document_with_content PASSED [  1%]
+tests/integrations/KB/test_kb_mock_client.py::test_search_by_title_returns_matching_documents PASSED [  1%]
+tests/integrations/KB/test_kb_mock_client.py::test_search_by_content_returns_matching_documents PASSED [  1%]
+tests/integrations/KB/test_kb_mock_client.py::test_search_by_tag_returns_matching_documents PASSED [  2%]
+tests/integrations/KB/test_kb_mock_client.py::test_search_is_case_insensitive PASSED [  2%]
+tests/integrations/KB/test_kb_mock_client.py::test_search_respects_top_k_limit PASSED [  3%]
+tests/integrations/KB/test_kb_mock_client.py::test_search_returns_search_result_objects PASSED [  3%]
+tests/integrations/KB/test_kb_mock_client.py::test_search_returns_empty_list_when_no_matches PASSED [  3%]
+tests/integrations/KB/test_kb_mock_client.py::test_list_returns_all_documents_when_no_filter PASSED [  4%]
+tests/integrations/KB/test_kb_mock_client.py::test_list_filters_by_node_path_prefix PASSED [  4%]
+tests/integrations/KB/test_kb_mock_client.py::test_list_filters_by_exact_node_path PASSED [  5%]
+tests/integrations/KB/test_kb_mock_client.py::test_list_respects_limit PASSED [  5%]
+tests/integrations/KB/test_kb_mock_client.py::test_list_default_limit_is_ten PASSED [  5%]
+tests/integrations/KB/test_kb_mock_client.py::test_list_returns_full_document_objects PASSED [  6%]
+tests/integrations/KB/test_kb_mock_client.py::test_add_new_document_returns_document PASSED [  6%]
+tests/integrations/KB/test_kb_mock_client.py::test_add_document_makes_it_retrievable PASSED [  7%]
+tests/integrations/KB/test_kb_mock_client.py::test_add_document_appears_in_list PASSED [  7%]
+tests/integrations/KB/test_kb_mock_client.py::test_add_duplicate_document_raises_error PASSED [  7%]
+tests/integrations/database_service/test_db_client.py::TestDBClientRead::test_read_empty_file_returns_empty_list PASSED [  8%]
+tests/integrations/database_service/test_db_client.py::TestDBClientRead::test_read_returns_all_tickets PASSED [  8%]
+tests/integrations/database_service/test_db_client.py::TestDBClientRead::test_read_missing_file_raises_file_not_found PASSED [  9%]
+tests/integrations/database_service/test_db_client.py::TestDBClientRead::test_read_corrupted_json_raises_json_decode_error PASSED [  9%]
+tests/integrations/database_service/test_db_client.py::TestDBClientWrite::test_write_single_ticket_to_empty_file PASSED [  9%]
+tests/integrations/database_service/test_db_client.py::TestDBClientWrite::test_write_multiple_tickets_appends PASSED [ 10%]
+tests/integrations/database_service/test_db_client.py::TestDBClientWrite::test_write_preserves_ticket_structure PASSED [ 10%]
+tests/integrations/database_service/test_db_client.py::TestDBClientWrite::test_write_to_missing_file_raises_file_not_found PASSED [ 11%]
+tests/integrations/database_service/test_db_client.py::TestDBClientWrite::test_write_to_corrupted_json_raises_json_decode_error PASSED [ 11%]
+tests/integrations/database_service/test_db_client.py::TestDBClientUpdate::test_update_ticket_by_id PASSED [ 11%]
+tests/integrations/database_service/test_db_client.py::TestDBClientUpdate::test_update_nonexistent_ticket_raises_error PASSED [ 12%]
+tests/integrations/database_service/test_db_client.py::TestDBClientUpdate::test_update_partial_fields PASSED [ 12%]
+tests/integrations/database_service/test_db_client.py::TestDBClientDelete::test_delete_ticket_by_id PASSED [ 12%]
+tests/integrations/database_service/test_db_client.py::TestDBClientDelete::test_delete_nonexistent_ticket_raises_error PASSED [ 13%]
+tests/integrations/database_service/test_db_client.py::TestDBClientDelete::test_delete_last_ticket_leaves_empty_array PASSED [ 13%]
+tests/integrations/database_service/test_db_client.py::TestDBClientEdgeCases::test_handles_corrupted_json_gracefully PASSED [ 14%]
+tests/integrations/database_service/test_db_client.py::TestDBClientEdgeCases::test_file_is_created_if_not_exists PASSED [ 14%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceCreate::test_create_ticket_with_required_fields_only PASSED [ 14%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceCreate::test_create_ticket_with_all_fields PASSED [ 15%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceCreate::test_create_multiple_tickets_generates_unique_uuids PASSED [ 15%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceCreate::test_create_ticket_without_title_raises_error PASSED [ 16%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceCreate::test_create_ticket_persists_to_db PASSED [ 16%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceRead::test_get_all_returns_empty_list PASSED [ 16%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceRead::test_get_all_returns_all_tickets PASSED [ 17%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceRead::test_get_by_id_returns_ticket PASSED [ 17%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceRead::test_get_by_id_returns_none_for_nonexistent PASSED [ 18%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceRead::test_get_by_status_filters_correctly PASSED [ 18%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceRead::test_get_by_priority_filters_correctly PASSED [ 18%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceUpdate::test_update_ticket_title PASSED [ 19%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceUpdate::test_update_ticket_status PASSED [ 19%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceUpdate::test_update_multiple_fields PASSED [ 20%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceUpdate::test_update_tags PASSED [ 20%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceUpdate::test_update_nonexistent_ticket_raises_error PASSED [ 20%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceUpdate::test_update_with_no_fields_raises_error PASSED [ 21%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceUpdate::test_update_with_invalid_field_raises_error PASSED [ 21%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceUpdate::test_update_preserves_other_fields PASSED [ 22%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceDelete::test_delete_ticket_by_id PASSED [ 22%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceDelete::test_delete_nonexistent_ticket_raises_error PASSED [ 22%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceDelete::test_delete_last_ticket_leaves_empty PASSED [ 23%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_create_with_invalid_title_too_short PASSED [ 23%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_create_with_invalid_title_too_long PASSED [ 24%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_create_with_invalid_description_too_long PASSED [ 24%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_create_with_invalid_priority PASSED [ 24%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_create_with_invalid_status PASSED [ 25%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_create_with_invalid_tag_too_short PASSED [ 25%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_create_with_invalid_tag_too_long PASSED [ 25%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_create_with_too_many_tags PASSED [ 26%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_create_with_invalid_creator_email PASSED [ 26%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_create_with_invalid_assignee_email PASSED [ 27%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_create_with_valid_creator_email PASSED [ 27%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_create_with_valid_assignee_email PASSED [ 27%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_create_with_valid_estimated_time PASSED [ 28%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_update_with_invalid_title PASSED [ 28%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_update_with_invalid_description PASSED [ 29%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_update_with_invalid_priority PASSED [ 29%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_update_with_invalid_status PASSED [ 29%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_update_with_invalid_assignee_email PASSED [ 30%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_update_with_valid_assignee_email PASSED [ 30%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_update_with_valid_estimated_time PASSED [ 31%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceIntegration::test_create_update_read_workflow PASSED [ 31%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceIntegration::test_multiple_crud_operations PASSED [ 31%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceIntegration::test_persistence_across_service_instances PASSED [ 32%]
+tests/integrations/error_handling/test_cli_error_handling.py::TestCLIErrorHandling::test_list_corrupted_json_shows_friendly_error PASSED [ 32%]
+tests/integrations/error_handling/test_cli_error_handling.py::TestCLIErrorHandling::test_create_corrupted_json_shows_friendly_error PASSED [ 33%]
+tests/integrations/error_handling/test_cli_error_handling.py::TestCLIErrorHandling::test_delete_corrupted_json_shows_friendly_error PASSED [ 33%]
+tests/integrations/error_handling/test_cli_error_handling.py::TestCLIErrorHandling::test_list_empty_database_shows_no_tickets_message PASSED [ 33%]
+tests/integrations/error_handling/test_cli_error_handling.py::TestCLIErrorHandling::test_create_succeeds_with_empty_database PASSED [ 34%]
+tests/integrations/error_handling/test_cli_error_handling.py::TestCLIErrorHandling::test_corrupted_json_does_not_auto_recover PASSED [ 34%]
+tests/integrations/error_handling/test_cli_error_handling.py::TestCLIErrorHandling::test_corrupted_json_error_suggests_fix_or_restore PASSED [ 35%]
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_happy_path PASSED [ 35%]
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_with_required_fields_only PASSED [ 35%]
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_without_title_fails PASSED [ 36%]
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_with_low_priority PASSED [ 36%]
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_with_default_priority PASSED [ 37%]
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_with_invalid_priority_fails PASSED [ 37%]
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_with_empty_tags PASSED [ 37%]
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_with_single_tag PASSED [ 38%]
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_with_multiple_tags PASSED [ 38%]
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_with_tags_with_spaces PASSED [ 38%]
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_multiple_tickets PASSED [ 39%]
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_with_special_characters PASSED [ 39%]
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_outputs_success_message PASSED [ 40%]
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_default_status_is_open PASSED [ 40%]
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_with_long_description PASSED [ 40%]
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_with_creator_email PASSED [ 41%]
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_with_assignee_email PASSED [ 41%]
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_with_estimated_time PASSED [ 42%]
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_with_all_new_fields PASSED [ 42%]
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_with_invalid_creator_email_fails PASSED [ 42%]
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_with_invalid_assignee_email_fails PASSED [ 43%]
+tests/integrations/ticket_CRUD/test_delete_ticket_cli.py::TestDeleteTicketCLI::test_delete_ticket_removes_from_list PASSED [ 43%]
+tests/integrations/ticket_CRUD/test_delete_ticket_cli.py::TestDeleteTicketCLI::test_delete_ticket_leaves_others_intact PASSED [ 44%]
+tests/integrations/ticket_CRUD/test_delete_ticket_cli.py::TestDeleteTicketCLI::test_delete_first_ticket PASSED [ 44%]
+tests/integrations/ticket_CRUD/test_delete_ticket_cli.py::TestDeleteTicketCLI::test_delete_last_ticket PASSED [ 44%]
+tests/integrations/ticket_CRUD/test_delete_ticket_cli.py::TestDeleteTicketCLI::test_delete_middle_ticket PASSED [ 45%]
+tests/integrations/ticket_CRUD/test_delete_ticket_cli.py::TestDeleteTicketCLI::test_delete_nonexistent_ticket_fails PASSED [ 45%]
+tests/integrations/ticket_CRUD/test_delete_ticket_cli.py::TestDeleteTicketCLI::test_delete_already_deleted_ticket_fails PASSED [ 46%]
+tests/integrations/ticket_CRUD/test_delete_ticket_cli.py::TestDeleteTicketCLI::test_delete_displays_success_message PASSED [ 46%]
+tests/integrations/ticket_CRUD/test_delete_ticket_cli.py::TestDeleteTicketCLI::test_delete_invalid_uuid_format_fails PASSED [ 46%]
+tests/integrations/ticket_CRUD/test_delete_ticket_cli.py::TestDeleteTicketCLI::test_delete_multiple_tickets_sequentially PASSED [ 47%]
+tests/integrations/ticket_CRUD/test_delete_ticket_cli.py::TestDeleteTicketCLI::test_delete_closed_ticket PASSED [ 47%]
+tests/integrations/ticket_CRUD/test_delete_ticket_cli.py::TestDeleteTicketCLI::test_delete_open_ticket PASSED [ 48%]
+tests/integrations/ticket_CRUD/test_delete_ticket_cli.py::TestDeleteTicketCLI::test_delete_high_priority_ticket PASSED [ 48%]
+tests/integrations/ticket_CRUD/test_delete_ticket_cli.py::TestDeleteTicketCLI::test_delete_ticket_with_tags PASSED [ 48%]
+tests/integrations/ticket_CRUD/test_delete_ticket_cli.py::TestDeleteTicketCLI::test_delete_ticket_with_long_description PASSED [ 49%]
+tests/integrations/ticket_CRUD/test_delete_ticket_cli.py::TestDeleteTicketCLI::test_delete_preserves_file_structure PASSED [ 49%]
+tests/integrations/ticket_CRUD/test_list_ticket_cli.py::TestListTicketCLI::test_list_empty_tickets PASSED [ 50%]
+tests/integrations/ticket_CRUD/test_list_ticket_cli.py::TestListTicketCLI::test_list_all_tickets PASSED [ 50%]
+tests/integrations/ticket_CRUD/test_list_ticket_cli.py::TestListTicketCLI::test_list_filter_by_status_open PASSED [ 50%]
+tests/integrations/ticket_CRUD/test_list_ticket_cli.py::TestListTicketCLI::test_list_filter_by_status_closed PASSED [ 51%]
+tests/integrations/ticket_CRUD/test_list_ticket_cli.py::TestListTicketCLI::test_list_filter_by_priority_high PASSED [ 51%]
+tests/integrations/ticket_CRUD/test_list_ticket_cli.py::TestListTicketCLI::test_list_filter_by_priority_medium PASSED [ 51%]
+tests/integrations/ticket_CRUD/test_list_ticket_cli.py::TestListTicketCLI::test_list_filter_by_priority_low PASSED [ 52%]
+tests/integrations/ticket_CRUD/test_list_ticket_cli.py::TestListTicketCLI::test_list_filter_by_tag PASSED [ 52%]
+tests/integrations/ticket_CRUD/test_list_ticket_cli.py::TestListTicketCLI::test_list_filter_by_multiple_tags PASSED [ 53%]
+tests/integrations/ticket_CRUD/test_list_ticket_cli.py::TestListTicketCLI::test_list_with_status_and_priority_filters PASSED [ 53%]
+tests/integrations/ticket_CRUD/test_list_ticket_cli.py::TestListTicketCLI::test_list_with_all_filters PASSED [ 53%]
+tests/integrations/ticket_CRUD/test_list_ticket_cli.py::TestListTicketCLI::test_list_invalid_status_fails PASSED [ 54%]
+tests/integrations/ticket_CRUD/test_list_ticket_cli.py::TestListTicketCLI::test_list_invalid_priority_fails PASSED [ 54%]
+tests/integrations/ticket_CRUD/test_list_ticket_cli.py::TestListTicketCLI::test_list_no_results_with_filter PASSED [ 55%]
+tests/integrations/ticket_CRUD/test_list_ticket_cli.py::TestListTicketCLI::test_list_displays_ticket_info PASSED [ 55%]
+tests/integrations/ticket_CRUD/test_show_ticket_cli.py::TestShowTicketCLI::test_show_ticket_displays_all_fields PASSED [ 55%]
+tests/integrations/ticket_CRUD/test_show_ticket_cli.py::TestShowTicketCLI::test_show_ticket_with_uuid PASSED [ 56%]
+tests/integrations/ticket_CRUD/test_show_ticket_cli.py::TestShowTicketCLI::test_show_nonexistent_ticket_fails PASSED [ 56%]
+tests/integrations/ticket_CRUD/test_show_ticket_cli.py::TestShowTicketCLI::test_show_ticket_displays_description PASSED [ 57%]
+tests/integrations/ticket_CRUD/test_show_ticket_cli.py::TestShowTicketCLI::test_show_ticket_displays_priority PASSED [ 57%]
+tests/integrations/ticket_CRUD/test_show_ticket_cli.py::TestShowTicketCLI::test_show_ticket_displays_status PASSED [ 57%]
+tests/integrations/ticket_CRUD/test_show_ticket_cli.py::TestShowTicketCLI::test_show_ticket_displays_tags PASSED [ 58%]
+tests/integrations/ticket_CRUD/test_show_ticket_cli.py::TestShowTicketCLI::test_show_ticket_displays_id PASSED [ 58%]
+tests/integrations/ticket_CRUD/test_show_ticket_cli.py::TestShowTicketCLI::test_show_ticket_with_empty_description PASSED [ 59%]
+tests/integrations/ticket_CRUD/test_show_ticket_cli.py::TestShowTicketCLI::test_show_ticket_with_no_tags PASSED [ 59%]
+tests/integrations/ticket_CRUD/test_show_ticket_cli.py::TestShowTicketCLI::test_show_invalid_id_format_fails PASSED [ 59%]
+tests/integrations/ticket_CRUD/test_show_ticket_cli.py::TestShowTicketCLI::test_show_ticket_displays_created_at PASSED [ 60%]
+tests/integrations/ticket_CRUD/test_update_ticket_cli.py::TestUpdateTicketCLI::test_update_ticket_status_to_closed PASSED [ 60%]
+tests/integrations/ticket_CRUD/test_update_ticket_cli.py::TestUpdateTicketCLI::test_update_ticket_status_to_in_progress PASSED [ 61%]
+tests/integrations/ticket_CRUD/test_update_ticket_cli.py::TestUpdateTicketCLI::test_update_ticket_status_from_closed_to_open PASSED [ 61%]
+tests/integrations/ticket_CRUD/test_update_ticket_cli.py::TestUpdateTicketCLI::test_update_nonexistent_ticket_fails PASSED [ 61%]
+tests/integrations/ticket_CRUD/test_update_ticket_cli.py::TestUpdateTicketCLI::test_update_without_status_fails PASSED [ 62%]
+tests/integrations/ticket_CRUD/test_update_ticket_cli.py::TestUpdateTicketCLI::test_update_with_invalid_status_fails PASSED [ 62%]
+tests/integrations/ticket_CRUD/test_update_ticket_cli.py::TestUpdateTicketCLI::test_update_displays_success_message PASSED [ 62%]
+tests/integrations/ticket_CRUD/test_update_ticket_cli.py::TestUpdateTicketCLI::test_update_multiple_tickets_independently PASSED [ 63%]
+tests/integrations/ticket_CRUD/test_update_ticket_cli.py::TestUpdateTicketCLI::test_update_preserves_other_fields PASSED [ 63%]
+tests/integrations/ticket_CRUD/test_update_ticket_cli.py::TestUpdateTicketCLI::test_update_invalid_uuid_format_fails PASSED [ 64%]
+tests/integrations/ticket_CRUD/test_update_ticket_cli.py::TestUpdateTicketCLI::test_update_valid_status_transitions PASSED [ 64%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_valid_simple_email PASSED [ 64%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_valid_email_with_numbers PASSED [ 65%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_valid_email_with_dots_in_local PASSED [ 65%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_valid_email_with_plus PASSED [ 66%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_valid_email_with_hyphen_in_domain PASSED [ 66%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_valid_email_with_subdomain PASSED [ 66%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_valid_email_with_multiple_subdomains PASSED [ 67%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_valid_email_with_underscore PASSED [ 67%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_valid_email_with_percent PASSED [ 68%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_valid_email_short_domain PASSED [ 68%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_valid_email_long_domain PASSED [ 68%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_valid_email_mixed_case PASSED [ 69%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_invalid_email_no_at_symbol PASSED [ 69%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_invalid_email_multiple_at_symbols PASSED [ 70%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_invalid_email_no_domain PASSED [ 70%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_invalid_email_no_local_part PASSED [ 70%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_invalid_email_no_extension PASSED [ 71%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_invalid_email_empty_string PASSED [ 71%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_invalid_email_whitespace PASSED [ 72%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_invalid_email_none PASSED [ 72%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_invalid_email_consecutive_dots PASSED [ 72%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_invalid_email_starts_with_dot PASSED [ 73%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_invalid_email_ends_with_dot PASSED [ 73%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_invalid_email_domain_starts_with_dot PASSED [ 74%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_invalid_email_domain_label_starts_with_hyphen PASSED [ 74%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_invalid_email_domain_label_ends_with_hyphen PASSED [ 74%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_invalid_email_domain_ends_with_dot PASSED [ 75%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_invalid_email_spaces PASSED [ 75%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_invalid_email_special_chars PASSED [ 75%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_invalid_email_comma PASSED [ 76%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorValidate::test_validate_valid_email PASSED [ 76%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorValidate::test_validate_none_email PASSED [ 77%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorValidate::test_validate_invalid_email_raises_error PASSED [ 77%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorValidate::test_validate_empty_string_raises_error PASSED [ 77%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorValidate::test_validate_whitespace_only_raises_error PASSED [ 78%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorValidate::test_validate_not_string_raises_error PASSED [ 78%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorValidate::test_validate_too_long_email_raises_error PASSED [ 79%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorValidate::test_validate_consecutive_dots_raises_error PASSED [ 79%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorValidate::test_validate_local_part_too_long_raises_error PASSED [ 79%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorValidate::test_validate_local_part_empty_raises_error PASSED [ 80%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorValidate::test_validate_domain_starts_with_dot_raises_error PASSED [ 80%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorValidate::test_validate_domain_ends_with_dot_raises_error PASSED [ 81%]
+tests/units/validation/test_email_validator.py::TestEmailValidationEdgeCases::test_email_with_hyphen_in_local_part PASSED [ 81%]
+tests/units/validation/test_email_validator.py::TestEmailValidationEdgeCases::test_email_numeric_only_local_part PASSED [ 81%]
+tests/units/validation/test_email_validator.py::TestEmailValidationEdgeCases::test_email_numeric_only_domain PASSED [ 82%]
+tests/units/validation/test_email_validator.py::TestEmailValidationEdgeCases::test_email_with_hyphens_at_start_of_domain PASSED [ 82%]
+tests/units/validation/test_email_validator.py::TestEmailValidationEdgeCases::test_email_with_hyphens_at_end_of_domain PASSED [ 83%]
+tests/units/validation/test_email_validator.py::TestEmailValidationEdgeCases::test_email_single_character_local_part PASSED [ 83%]
+tests/units/validation/test_email_validator.py::TestEmailValidationEdgeCases::test_email_two_letter_domain_extension PASSED [ 83%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorTitle::test_validate_title_valid PASSED [ 84%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorTitle::test_validate_title_minimum_length PASSED [ 84%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorTitle::test_validate_title_too_short PASSED [ 85%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorTitle::test_validate_title_too_long PASSED [ 85%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorTitle::test_validate_title_empty_raises_error PASSED [ 85%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorTitle::test_validate_title_whitespace_only_raises_error PASSED [ 86%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorTitle::test_validate_title_not_string_raises_error PASSED [ 86%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorDescription::test_validate_description_valid PASSED [ 87%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorDescription::test_validate_description_empty PASSED [ 87%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorDescription::test_validate_description_too_long PASSED [ 87%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorDescription::test_validate_description_not_string_raises_error PASSED [ 88%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorPriority::test_validate_priority_low PASSED [ 88%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorPriority::test_validate_priority_medium PASSED [ 88%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorPriority::test_validate_priority_high PASSED [ 89%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorPriority::test_validate_priority_invalid PASSED [ 89%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorPriority::test_validate_priority_empty_raises_error PASSED [ 90%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorPriority::test_validate_priority_mixed_case_raises_error PASSED [ 90%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorStatus::test_validate_status_open PASSED [ 90%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorStatus::test_validate_status_in_progress PASSED [ 91%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorStatus::test_validate_status_closed PASSED [ 91%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorStatus::test_validate_status_invalid PASSED [ 92%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorStatus::test_validate_status_empty_raises_error PASSED [ 92%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorTags::test_validate_tags_empty_list PASSED [ 92%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorTags::test_validate_tags_single_tag PASSED [ 93%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorTags::test_validate_tags_multiple_tags PASSED [ 93%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorTags::test_validate_tags_maximum_tags PASSED [ 94%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorTags::test_validate_tags_too_many_raises_error PASSED [ 94%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorTags::test_validate_tags_not_list_raises_error PASSED [ 94%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorTags::test_validate_tags_non_string_tag_raises_error PASSED [ 95%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorTags::test_validate_tags_empty_tag_raises_error PASSED [ 95%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorTags::test_validate_tags_whitespace_tag_raises_error PASSED [ 96%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorTags::test_validate_tags_too_short_raises_error PASSED [ 96%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorTags::test_validate_tags_too_long_raises_error PASSED [ 96%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorCreator::test_validate_creator_valid_email PASSED [ 97%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorCreator::test_validate_creator_none PASSED [ 97%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorCreator::test_validate_creator_invalid_email_raises_error PASSED [ 98%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorCreator::test_validate_creator_empty_string_raises_error PASSED [ 98%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorAssignee::test_validate_assignee_valid_email PASSED [ 98%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorAssignee::test_validate_assignee_none PASSED [ 99%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorAssignee::test_validate_assignee_invalid_email_raises_error PASSED [ 99%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorAssignee::test_validate_assignee_empty_string_raises_error PASSED [100%]
+
+============================ 254 passed in 13.59s =============================
+
+======================================================================
+Test run: 2026-10-21 16:08:09
+Command: D:\Study\mindx\mindx-onb\assignments\week3\TicketManagerCLI\.venv\Scripts\python.exe -m pytest .\tests\integrations\KB\test_kb_mock_client_cli.py -v --tb=short
+======================================================================
+
+============================= test session starts =============================
+platform win32 -- Python 3.13.3, pytest-9.1.1, pluggy-1.6.0 -- D:\Study\mindx\mindx-onb\assignments\week3\TicketManagerCLI\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: D:\Study\mindx\mindx-onb\assignments\week3\TicketManagerCLI
+configfile: pytest.ini
+collecting ... collected 24 items
+
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_search_by_query_returns_results PASSED [  4%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_search_respects_top_k_limit PASSED [  8%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_search_case_insensitive PASSED [ 12%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_search_returns_empty_when_no_match PASSED [ 16%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_search_searches_in_title PASSED [ 20%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_search_searches_in_content PASSED [ 25%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_search_searches_in_tags PASSED [ 29%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_list_all_documents PASSED [ 33%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_list_filters_by_node_path_prefix PASSED [ 37%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_list_filters_by_exact_node_path PASSED [ 41%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_list_respects_limit PASSED [ 45%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_list_default_limit_is_ten PASSED [ 50%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_list_returns_full_documents PASSED [ 54%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_list_returns_empty_when_no_match PASSED [ 58%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_retrieve_existing_document PASSED [ 62%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_retrieve_returns_full_document PASSED [ 66%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_retrieve_nonexistent_raises_error PASSED [ 70%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_retrieve_includes_content PASSED [ 75%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_add_new_document_returns_document PASSED [ 79%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_add_document_makes_it_retrievable PASSED [ 83%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_add_document_appears_in_list PASSED [ 87%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_add_duplicate_raises_error PASSED [ 91%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_add_document_with_tags PASSED [ 95%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_add_document_preserves_all_fields PASSED [100%]
+
+============================= 24 passed in 0.25s ==============================
+
+======================================================================
+Test run: 2026-10-21 16:12:51
+Command: D:\Study\mindx\mindx-onb\assignments\week3\TicketManagerCLI\.venv\Scripts\python.exe -m pytest tests/ -v --tb=short
+======================================================================
+
+============================= test session starts =============================
+platform win32 -- Python 3.13.3, pytest-9.1.1, pluggy-1.6.0 -- D:\Study\mindx\mindx-onb\assignments\week3\TicketManagerCLI\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: D:\Study\mindx\mindx-onb\assignments\week3\TicketManagerCLI
+configfile: pytest.ini
+collecting ... collected 278 items
+
+tests/integrations/KB/test_kb_mock_client.py::test_retrieve_existing_document_returns_document PASSED [  0%]
+tests/integrations/KB/test_kb_mock_client.py::test_retrieve_nonexistent_document_raises_error PASSED [  0%]
+tests/integrations/KB/test_kb_mock_client.py::test_retrieve_returns_full_document_with_content PASSED [  1%]
+tests/integrations/KB/test_kb_mock_client.py::test_search_by_title_returns_matching_documents PASSED [  1%]
+tests/integrations/KB/test_kb_mock_client.py::test_search_by_content_returns_matching_documents PASSED [  1%]
+tests/integrations/KB/test_kb_mock_client.py::test_search_by_tag_returns_matching_documents PASSED [  2%]
+tests/integrations/KB/test_kb_mock_client.py::test_search_is_case_insensitive PASSED [  2%]
+tests/integrations/KB/test_kb_mock_client.py::test_search_respects_top_k_limit PASSED [  2%]
+tests/integrations/KB/test_kb_mock_client.py::test_search_returns_search_result_objects PASSED [  3%]
+tests/integrations/KB/test_kb_mock_client.py::test_search_returns_empty_list_when_no_matches PASSED [  3%]
+tests/integrations/KB/test_kb_mock_client.py::test_list_returns_all_documents_when_no_filter PASSED [  3%]
+tests/integrations/KB/test_kb_mock_client.py::test_list_filters_by_node_path_prefix PASSED [  4%]
+tests/integrations/KB/test_kb_mock_client.py::test_list_filters_by_exact_node_path PASSED [  4%]
+tests/integrations/KB/test_kb_mock_client.py::test_list_respects_limit PASSED [  5%]
+tests/integrations/KB/test_kb_mock_client.py::test_list_default_limit_is_ten PASSED [  5%]
+tests/integrations/KB/test_kb_mock_client.py::test_list_returns_full_document_objects PASSED [  5%]
+tests/integrations/KB/test_kb_mock_client.py::test_add_new_document_returns_document PASSED [  6%]
+tests/integrations/KB/test_kb_mock_client.py::test_add_document_makes_it_retrievable PASSED [  6%]
+tests/integrations/KB/test_kb_mock_client.py::test_add_document_appears_in_list PASSED [  6%]
+tests/integrations/KB/test_kb_mock_client.py::test_add_duplicate_document_raises_error PASSED [  7%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_search_by_query_returns_results PASSED [  7%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_search_respects_top_k_limit PASSED [  7%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_search_case_insensitive PASSED [  8%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_search_returns_empty_when_no_match PASSED [  8%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_search_searches_in_title PASSED [  8%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_search_searches_in_content PASSED [  9%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_search_searches_in_tags PASSED [  9%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_list_all_documents PASSED [ 10%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_list_filters_by_node_path_prefix PASSED [ 10%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_list_filters_by_exact_node_path PASSED [ 10%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_list_respects_limit PASSED [ 11%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_list_default_limit_is_ten PASSED [ 11%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_list_returns_full_documents PASSED [ 11%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_list_returns_empty_when_no_match PASSED [ 12%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_retrieve_existing_document PASSED [ 12%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_retrieve_returns_full_document PASSED [ 12%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_retrieve_nonexistent_raises_error PASSED [ 13%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_retrieve_includes_content PASSED [ 13%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_add_new_document_returns_document PASSED [ 14%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_add_document_makes_it_retrievable PASSED [ 14%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_add_document_appears_in_list PASSED [ 14%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_add_duplicate_raises_error PASSED [ 15%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_add_document_with_tags PASSED [ 15%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_add_document_preserves_all_fields PASSED [ 15%]
+tests/integrations/database_service/test_db_client.py::TestDBClientRead::test_read_empty_file_returns_empty_list PASSED [ 16%]
+tests/integrations/database_service/test_db_client.py::TestDBClientRead::test_read_returns_all_tickets PASSED [ 16%]
+tests/integrations/database_service/test_db_client.py::TestDBClientRead::test_read_missing_file_raises_file_not_found PASSED [ 16%]
+tests/integrations/database_service/test_db_client.py::TestDBClientRead::test_read_corrupted_json_raises_json_decode_error PASSED [ 17%]
+tests/integrations/database_service/test_db_client.py::TestDBClientWrite::test_write_single_ticket_to_empty_file PASSED [ 17%]
+tests/integrations/database_service/test_db_client.py::TestDBClientWrite::test_write_multiple_tickets_appends PASSED [ 17%]
+tests/integrations/database_service/test_db_client.py::TestDBClientWrite::test_write_preserves_ticket_structure PASSED [ 18%]
+tests/integrations/database_service/test_db_client.py::TestDBClientWrite::test_write_to_missing_file_raises_file_not_found PASSED [ 18%]
+tests/integrations/database_service/test_db_client.py::TestDBClientWrite::test_write_to_corrupted_json_raises_json_decode_error PASSED [ 19%]
+tests/integrations/database_service/test_db_client.py::TestDBClientUpdate::test_update_ticket_by_id PASSED [ 19%]
+tests/integrations/database_service/test_db_client.py::TestDBClientUpdate::test_update_nonexistent_ticket_raises_error PASSED [ 19%]
+tests/integrations/database_service/test_db_client.py::TestDBClientUpdate::test_update_partial_fields PASSED [ 20%]
+tests/integrations/database_service/test_db_client.py::TestDBClientDelete::test_delete_ticket_by_id PASSED [ 20%]
+tests/integrations/database_service/test_db_client.py::TestDBClientDelete::test_delete_nonexistent_ticket_raises_error PASSED [ 20%]
+tests/integrations/database_service/test_db_client.py::TestDBClientDelete::test_delete_last_ticket_leaves_empty_array PASSED [ 21%]
+tests/integrations/database_service/test_db_client.py::TestDBClientEdgeCases::test_handles_corrupted_json_gracefully PASSED [ 21%]
+tests/integrations/database_service/test_db_client.py::TestDBClientEdgeCases::test_file_is_created_if_not_exists PASSED [ 21%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceCreate::test_create_ticket_with_required_fields_only PASSED [ 22%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceCreate::test_create_ticket_with_all_fields PASSED [ 22%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceCreate::test_create_multiple_tickets_generates_unique_uuids PASSED [ 23%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceCreate::test_create_ticket_without_title_raises_error PASSED [ 23%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceCreate::test_create_ticket_persists_to_db PASSED [ 23%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceRead::test_get_all_returns_empty_list PASSED [ 24%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceRead::test_get_all_returns_all_tickets PASSED [ 24%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceRead::test_get_by_id_returns_ticket PASSED [ 24%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceRead::test_get_by_id_returns_none_for_nonexistent PASSED [ 25%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceRead::test_get_by_status_filters_correctly PASSED [ 25%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceRead::test_get_by_priority_filters_correctly PASSED [ 25%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceUpdate::test_update_ticket_title PASSED [ 26%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceUpdate::test_update_ticket_status PASSED [ 26%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceUpdate::test_update_multiple_fields PASSED [ 26%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceUpdate::test_update_tags PASSED [ 27%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceUpdate::test_update_nonexistent_ticket_raises_error PASSED [ 27%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceUpdate::test_update_with_no_fields_raises_error PASSED [ 28%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceUpdate::test_update_with_invalid_field_raises_error PASSED [ 28%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceUpdate::test_update_preserves_other_fields PASSED [ 28%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceDelete::test_delete_ticket_by_id PASSED [ 29%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceDelete::test_delete_nonexistent_ticket_raises_error PASSED [ 29%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceDelete::test_delete_last_ticket_leaves_empty PASSED [ 29%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_create_with_invalid_title_too_short PASSED [ 30%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_create_with_invalid_title_too_long PASSED [ 30%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_create_with_invalid_description_too_long PASSED [ 30%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_create_with_invalid_priority PASSED [ 31%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_create_with_invalid_status PASSED [ 31%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_create_with_invalid_tag_too_short PASSED [ 32%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_create_with_invalid_tag_too_long PASSED [ 32%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_create_with_too_many_tags PASSED [ 32%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_create_with_invalid_creator_email PASSED [ 33%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_create_with_invalid_assignee_email PASSED [ 33%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_create_with_valid_creator_email PASSED [ 33%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_create_with_valid_assignee_email PASSED [ 34%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_create_with_valid_estimated_time PASSED [ 34%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_update_with_invalid_title PASSED [ 34%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_update_with_invalid_description PASSED [ 35%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_update_with_invalid_priority PASSED [ 35%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_update_with_invalid_status PASSED [ 35%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_update_with_invalid_assignee_email PASSED [ 36%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_update_with_valid_assignee_email PASSED [ 36%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceValidation::test_update_with_valid_estimated_time PASSED [ 37%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceIntegration::test_create_update_read_workflow PASSED [ 37%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceIntegration::test_multiple_crud_operations PASSED [ 37%]
+tests/integrations/database_service/test_ticket_service.py::TestTicketServiceIntegration::test_persistence_across_service_instances PASSED [ 38%]
+tests/integrations/error_handling/test_cli_error_handling.py::TestCLIErrorHandling::test_list_corrupted_json_shows_friendly_error PASSED [ 38%]
+tests/integrations/error_handling/test_cli_error_handling.py::TestCLIErrorHandling::test_create_corrupted_json_shows_friendly_error PASSED [ 38%]
+tests/integrations/error_handling/test_cli_error_handling.py::TestCLIErrorHandling::test_delete_corrupted_json_shows_friendly_error PASSED [ 39%]
+tests/integrations/error_handling/test_cli_error_handling.py::TestCLIErrorHandling::test_list_empty_database_shows_no_tickets_message PASSED [ 39%]
+tests/integrations/error_handling/test_cli_error_handling.py::TestCLIErrorHandling::test_create_succeeds_with_empty_database PASSED [ 39%]
+tests/integrations/error_handling/test_cli_error_handling.py::TestCLIErrorHandling::test_corrupted_json_does_not_auto_recover PASSED [ 40%]
+tests/integrations/error_handling/test_cli_error_handling.py::TestCLIErrorHandling::test_corrupted_json_error_suggests_fix_or_restore PASSED [ 40%]
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_happy_path PASSED [ 41%]
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_with_required_fields_only PASSED [ 41%]
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_without_title_fails PASSED [ 41%]
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_with_low_priority PASSED [ 42%]
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_with_default_priority PASSED [ 42%]
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_with_invalid_priority_fails PASSED [ 42%]
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_with_empty_tags PASSED [ 43%]
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_with_single_tag PASSED [ 43%]
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_with_multiple_tags PASSED [ 43%]
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_with_tags_with_spaces PASSED [ 44%]
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_multiple_tickets PASSED [ 44%]
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_with_special_characters PASSED [ 44%]
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_outputs_success_message PASSED [ 45%]
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_default_status_is_open PASSED [ 45%]
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_with_long_description PASSED [ 46%]
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_with_creator_email PASSED [ 46%]
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_with_assignee_email PASSED [ 46%]
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_with_estimated_time PASSED [ 47%]
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_with_all_new_fields PASSED [ 47%]
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_with_invalid_creator_email_fails PASSED [ 47%]
+tests/integrations/ticket_CRUD/test_create_ticket_cli.py::TestCreateTicketCLI::test_create_ticket_with_invalid_assignee_email_fails PASSED [ 48%]
+tests/integrations/ticket_CRUD/test_delete_ticket_cli.py::TestDeleteTicketCLI::test_delete_ticket_removes_from_list PASSED [ 48%]
+tests/integrations/ticket_CRUD/test_delete_ticket_cli.py::TestDeleteTicketCLI::test_delete_ticket_leaves_others_intact PASSED [ 48%]
+tests/integrations/ticket_CRUD/test_delete_ticket_cli.py::TestDeleteTicketCLI::test_delete_first_ticket PASSED [ 49%]
+tests/integrations/ticket_CRUD/test_delete_ticket_cli.py::TestDeleteTicketCLI::test_delete_last_ticket PASSED [ 49%]
+tests/integrations/ticket_CRUD/test_delete_ticket_cli.py::TestDeleteTicketCLI::test_delete_middle_ticket PASSED [ 50%]
+tests/integrations/ticket_CRUD/test_delete_ticket_cli.py::TestDeleteTicketCLI::test_delete_nonexistent_ticket_fails PASSED [ 50%]
+tests/integrations/ticket_CRUD/test_delete_ticket_cli.py::TestDeleteTicketCLI::test_delete_already_deleted_ticket_fails PASSED [ 50%]
+tests/integrations/ticket_CRUD/test_delete_ticket_cli.py::TestDeleteTicketCLI::test_delete_displays_success_message PASSED [ 51%]
+tests/integrations/ticket_CRUD/test_delete_ticket_cli.py::TestDeleteTicketCLI::test_delete_invalid_uuid_format_fails PASSED [ 51%]
+tests/integrations/ticket_CRUD/test_delete_ticket_cli.py::TestDeleteTicketCLI::test_delete_multiple_tickets_sequentially PASSED [ 51%]
+tests/integrations/ticket_CRUD/test_delete_ticket_cli.py::TestDeleteTicketCLI::test_delete_closed_ticket PASSED [ 52%]
+tests/integrations/ticket_CRUD/test_delete_ticket_cli.py::TestDeleteTicketCLI::test_delete_open_ticket PASSED [ 52%]
+tests/integrations/ticket_CRUD/test_delete_ticket_cli.py::TestDeleteTicketCLI::test_delete_high_priority_ticket PASSED [ 52%]
+tests/integrations/ticket_CRUD/test_delete_ticket_cli.py::TestDeleteTicketCLI::test_delete_ticket_with_tags PASSED [ 53%]
+tests/integrations/ticket_CRUD/test_delete_ticket_cli.py::TestDeleteTicketCLI::test_delete_ticket_with_long_description PASSED [ 53%]
+tests/integrations/ticket_CRUD/test_delete_ticket_cli.py::TestDeleteTicketCLI::test_delete_preserves_file_structure PASSED [ 53%]
+tests/integrations/ticket_CRUD/test_list_ticket_cli.py::TestListTicketCLI::test_list_empty_tickets PASSED [ 54%]
+tests/integrations/ticket_CRUD/test_list_ticket_cli.py::TestListTicketCLI::test_list_all_tickets PASSED [ 54%]
+tests/integrations/ticket_CRUD/test_list_ticket_cli.py::TestListTicketCLI::test_list_filter_by_status_open PASSED [ 55%]
+tests/integrations/ticket_CRUD/test_list_ticket_cli.py::TestListTicketCLI::test_list_filter_by_status_closed PASSED [ 55%]
+tests/integrations/ticket_CRUD/test_list_ticket_cli.py::TestListTicketCLI::test_list_filter_by_priority_high PASSED [ 55%]
+tests/integrations/ticket_CRUD/test_list_ticket_cli.py::TestListTicketCLI::test_list_filter_by_priority_medium PASSED [ 56%]
+tests/integrations/ticket_CRUD/test_list_ticket_cli.py::TestListTicketCLI::test_list_filter_by_priority_low PASSED [ 56%]
+tests/integrations/ticket_CRUD/test_list_ticket_cli.py::TestListTicketCLI::test_list_filter_by_tag PASSED [ 56%]
+tests/integrations/ticket_CRUD/test_list_ticket_cli.py::TestListTicketCLI::test_list_filter_by_multiple_tags PASSED [ 57%]
+tests/integrations/ticket_CRUD/test_list_ticket_cli.py::TestListTicketCLI::test_list_with_status_and_priority_filters PASSED [ 57%]
+tests/integrations/ticket_CRUD/test_list_ticket_cli.py::TestListTicketCLI::test_list_with_all_filters PASSED [ 57%]
+tests/integrations/ticket_CRUD/test_list_ticket_cli.py::TestListTicketCLI::test_list_invalid_status_fails PASSED [ 58%]
+tests/integrations/ticket_CRUD/test_list_ticket_cli.py::TestListTicketCLI::test_list_invalid_priority_fails PASSED [ 58%]
+tests/integrations/ticket_CRUD/test_list_ticket_cli.py::TestListTicketCLI::test_list_no_results_with_filter PASSED [ 58%]
+tests/integrations/ticket_CRUD/test_list_ticket_cli.py::TestListTicketCLI::test_list_displays_ticket_info PASSED [ 59%]
+tests/integrations/ticket_CRUD/test_show_ticket_cli.py::TestShowTicketCLI::test_show_ticket_displays_all_fields PASSED [ 59%]
+tests/integrations/ticket_CRUD/test_show_ticket_cli.py::TestShowTicketCLI::test_show_ticket_with_uuid PASSED [ 60%]
+tests/integrations/ticket_CRUD/test_show_ticket_cli.py::TestShowTicketCLI::test_show_nonexistent_ticket_fails PASSED [ 60%]
+tests/integrations/ticket_CRUD/test_show_ticket_cli.py::TestShowTicketCLI::test_show_ticket_displays_description PASSED [ 60%]
+tests/integrations/ticket_CRUD/test_show_ticket_cli.py::TestShowTicketCLI::test_show_ticket_displays_priority PASSED [ 61%]
+tests/integrations/ticket_CRUD/test_show_ticket_cli.py::TestShowTicketCLI::test_show_ticket_displays_status PASSED [ 61%]
+tests/integrations/ticket_CRUD/test_show_ticket_cli.py::TestShowTicketCLI::test_show_ticket_displays_tags PASSED [ 61%]
+tests/integrations/ticket_CRUD/test_show_ticket_cli.py::TestShowTicketCLI::test_show_ticket_displays_id PASSED [ 62%]
+tests/integrations/ticket_CRUD/test_show_ticket_cli.py::TestShowTicketCLI::test_show_ticket_with_empty_description PASSED [ 62%]
+tests/integrations/ticket_CRUD/test_show_ticket_cli.py::TestShowTicketCLI::test_show_ticket_with_no_tags PASSED [ 62%]
+tests/integrations/ticket_CRUD/test_show_ticket_cli.py::TestShowTicketCLI::test_show_invalid_id_format_fails PASSED [ 63%]
+tests/integrations/ticket_CRUD/test_show_ticket_cli.py::TestShowTicketCLI::test_show_ticket_displays_created_at PASSED [ 63%]
+tests/integrations/ticket_CRUD/test_update_ticket_cli.py::TestUpdateTicketCLI::test_update_ticket_status_to_closed PASSED [ 64%]
+tests/integrations/ticket_CRUD/test_update_ticket_cli.py::TestUpdateTicketCLI::test_update_ticket_status_to_in_progress PASSED [ 64%]
+tests/integrations/ticket_CRUD/test_update_ticket_cli.py::TestUpdateTicketCLI::test_update_ticket_status_from_closed_to_open PASSED [ 64%]
+tests/integrations/ticket_CRUD/test_update_ticket_cli.py::TestUpdateTicketCLI::test_update_nonexistent_ticket_fails PASSED [ 65%]
+tests/integrations/ticket_CRUD/test_update_ticket_cli.py::TestUpdateTicketCLI::test_update_without_status_fails PASSED [ 65%]
+tests/integrations/ticket_CRUD/test_update_ticket_cli.py::TestUpdateTicketCLI::test_update_with_invalid_status_fails PASSED [ 65%]
+tests/integrations/ticket_CRUD/test_update_ticket_cli.py::TestUpdateTicketCLI::test_update_displays_success_message PASSED [ 66%]
+tests/integrations/ticket_CRUD/test_update_ticket_cli.py::TestUpdateTicketCLI::test_update_multiple_tickets_independently PASSED [ 66%]
+tests/integrations/ticket_CRUD/test_update_ticket_cli.py::TestUpdateTicketCLI::test_update_preserves_other_fields PASSED [ 66%]
+tests/integrations/ticket_CRUD/test_update_ticket_cli.py::TestUpdateTicketCLI::test_update_invalid_uuid_format_fails PASSED [ 67%]
+tests/integrations/ticket_CRUD/test_update_ticket_cli.py::TestUpdateTicketCLI::test_update_valid_status_transitions PASSED [ 67%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_valid_simple_email PASSED [ 67%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_valid_email_with_numbers PASSED [ 68%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_valid_email_with_dots_in_local PASSED [ 68%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_valid_email_with_plus PASSED [ 69%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_valid_email_with_hyphen_in_domain PASSED [ 69%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_valid_email_with_subdomain PASSED [ 69%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_valid_email_with_multiple_subdomains PASSED [ 70%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_valid_email_with_underscore PASSED [ 70%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_valid_email_with_percent PASSED [ 70%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_valid_email_short_domain PASSED [ 71%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_valid_email_long_domain PASSED [ 71%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_valid_email_mixed_case PASSED [ 71%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_invalid_email_no_at_symbol PASSED [ 72%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_invalid_email_multiple_at_symbols PASSED [ 72%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_invalid_email_no_domain PASSED [ 73%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_invalid_email_no_local_part PASSED [ 73%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_invalid_email_no_extension PASSED [ 73%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_invalid_email_empty_string PASSED [ 74%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_invalid_email_whitespace PASSED [ 74%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_invalid_email_none PASSED [ 74%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_invalid_email_consecutive_dots PASSED [ 75%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_invalid_email_starts_with_dot PASSED [ 75%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_invalid_email_ends_with_dot PASSED [ 75%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_invalid_email_domain_starts_with_dot PASSED [ 76%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_invalid_email_domain_label_starts_with_hyphen PASSED [ 76%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_invalid_email_domain_label_ends_with_hyphen PASSED [ 76%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_invalid_email_domain_ends_with_dot PASSED [ 77%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_invalid_email_spaces PASSED [ 77%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_invalid_email_special_chars PASSED [ 78%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorIsValid::test_invalid_email_comma PASSED [ 78%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorValidate::test_validate_valid_email PASSED [ 78%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorValidate::test_validate_none_email PASSED [ 79%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorValidate::test_validate_invalid_email_raises_error PASSED [ 79%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorValidate::test_validate_empty_string_raises_error PASSED [ 79%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorValidate::test_validate_whitespace_only_raises_error PASSED [ 80%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorValidate::test_validate_not_string_raises_error PASSED [ 80%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorValidate::test_validate_too_long_email_raises_error PASSED [ 80%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorValidate::test_validate_consecutive_dots_raises_error PASSED [ 81%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorValidate::test_validate_local_part_too_long_raises_error PASSED [ 81%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorValidate::test_validate_local_part_empty_raises_error PASSED [ 82%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorValidate::test_validate_domain_starts_with_dot_raises_error PASSED [ 82%]
+tests/units/validation/test_email_validator.py::TestEmailValidatorValidate::test_validate_domain_ends_with_dot_raises_error PASSED [ 82%]
+tests/units/validation/test_email_validator.py::TestEmailValidationEdgeCases::test_email_with_hyphen_in_local_part PASSED [ 83%]
+tests/units/validation/test_email_validator.py::TestEmailValidationEdgeCases::test_email_numeric_only_local_part PASSED [ 83%]
+tests/units/validation/test_email_validator.py::TestEmailValidationEdgeCases::test_email_numeric_only_domain PASSED [ 83%]
+tests/units/validation/test_email_validator.py::TestEmailValidationEdgeCases::test_email_with_hyphens_at_start_of_domain PASSED [ 84%]
+tests/units/validation/test_email_validator.py::TestEmailValidationEdgeCases::test_email_with_hyphens_at_end_of_domain PASSED [ 84%]
+tests/units/validation/test_email_validator.py::TestEmailValidationEdgeCases::test_email_single_character_local_part PASSED [ 84%]
+tests/units/validation/test_email_validator.py::TestEmailValidationEdgeCases::test_email_two_letter_domain_extension PASSED [ 85%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorTitle::test_validate_title_valid PASSED [ 85%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorTitle::test_validate_title_minimum_length PASSED [ 85%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorTitle::test_validate_title_too_short PASSED [ 86%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorTitle::test_validate_title_too_long PASSED [ 86%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorTitle::test_validate_title_empty_raises_error PASSED [ 87%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorTitle::test_validate_title_whitespace_only_raises_error PASSED [ 87%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorTitle::test_validate_title_not_string_raises_error PASSED [ 87%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorDescription::test_validate_description_valid PASSED [ 88%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorDescription::test_validate_description_empty PASSED [ 88%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorDescription::test_validate_description_too_long PASSED [ 88%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorDescription::test_validate_description_not_string_raises_error PASSED [ 89%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorPriority::test_validate_priority_low PASSED [ 89%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorPriority::test_validate_priority_medium PASSED [ 89%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorPriority::test_validate_priority_high PASSED [ 90%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorPriority::test_validate_priority_invalid PASSED [ 90%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorPriority::test_validate_priority_empty_raises_error PASSED [ 91%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorPriority::test_validate_priority_mixed_case_raises_error PASSED [ 91%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorStatus::test_validate_status_open PASSED [ 91%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorStatus::test_validate_status_in_progress PASSED [ 92%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorStatus::test_validate_status_closed PASSED [ 92%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorStatus::test_validate_status_invalid PASSED [ 92%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorStatus::test_validate_status_empty_raises_error PASSED [ 93%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorTags::test_validate_tags_empty_list PASSED [ 93%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorTags::test_validate_tags_single_tag PASSED [ 93%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorTags::test_validate_tags_multiple_tags PASSED [ 94%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorTags::test_validate_tags_maximum_tags PASSED [ 94%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorTags::test_validate_tags_too_many_raises_error PASSED [ 94%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorTags::test_validate_tags_not_list_raises_error PASSED [ 95%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorTags::test_validate_tags_non_string_tag_raises_error PASSED [ 95%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorTags::test_validate_tags_empty_tag_raises_error PASSED [ 96%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorTags::test_validate_tags_whitespace_tag_raises_error PASSED [ 96%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorTags::test_validate_tags_too_short_raises_error PASSED [ 96%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorTags::test_validate_tags_too_long_raises_error PASSED [ 97%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorCreator::test_validate_creator_valid_email PASSED [ 97%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorCreator::test_validate_creator_none PASSED [ 97%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorCreator::test_validate_creator_invalid_email_raises_error PASSED [ 98%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorCreator::test_validate_creator_empty_string_raises_error PASSED [ 98%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorAssignee::test_validate_assignee_valid_email PASSED [ 98%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorAssignee::test_validate_assignee_none PASSED [ 99%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorAssignee::test_validate_assignee_invalid_email_raises_error PASSED [ 99%]
+tests/units/validation/test_ticket_validator.py::TestTicketValidatorAssignee::test_validate_assignee_empty_string_raises_error PASSED [100%]
+
+============================ 278 passed in 12.42s =============================
+
+======================================================================
+Test run: 2026-10-21 16:50:54
+Command: D:\Study\mindx\mindx-onb\assignments\week3\TicketManagerCLI\.venv\Scripts\python.exe -m pytest .\tests\integrations\KB\test_kb_mock_client_cli.py -v --tb=short
+======================================================================
+
+============================= test session starts =============================
+platform win32 -- Python 3.13.3, pytest-9.1.1, pluggy-1.6.0 -- D:\Study\mindx\mindx-onb\assignments\week3\TicketManagerCLI\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: D:\Study\mindx\mindx-onb\assignments\week3\TicketManagerCLI
+configfile: pytest.ini
+collecting ... collected 22 items
+
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_search_by_query_returns_results FAILED [  4%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_search_respects_top_k_limit FAILED [  9%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_search_case_insensitive FAILED [ 13%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_search_returns_message_when_no_match FAILED [ 18%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_search_searches_in_title FAILED [ 22%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_search_searches_in_content FAILED [ 27%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_search_searches_in_tags FAILED [ 31%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_list_all_documents FAILED [ 36%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_list_filters_by_node_path_prefix FAILED [ 40%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_list_filters_by_exact_node_path FAILED [ 45%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_list_respects_limit FAILED [ 50%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_list_default_limit_is_ten FAILED [ 54%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_list_returns_empty_when_no_match FAILED [ 59%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_retrieve_existing_document FAILED [ 63%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_retrieve_returns_full_document FAILED [ 68%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_retrieve_nonexistent_raises_error FAILED [ 72%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_retrieve_includes_content FAILED [ 77%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_add_new_document_returns_success FAILED [ 81%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_add_document_makes_it_retrievable FAILED [ 86%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_add_document_appears_in_list FAILED [ 90%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_add_duplicate_raises_error FAILED [ 95%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_add_document_with_tags FAILED [100%]
+
+================================== FAILURES ===================================
+___________________ test_kb_search_by_query_returns_results ___________________
+tests\integrations\KB\test_kb_mock_client_cli.py:72: in test_kb_search_by_query_returns_results
+    assert result.returncode == 0, f"CLI failed: {result.stderr}"
+E   AssertionError: CLI failed: usage: tickets [-h] [-t] {create,list,show,update,delete} ...
+E     tickets: error: argument command: invalid choice: 'kb-search' (choose from create, list, show, update, delete)
+E     
+E   assert 2 == 0
+E    +  where 2 = CompletedProcess(args=['D:\\Study\\mindx\\mindx-onb\\assignments\\week3\\TicketManagerCLI\\.venv\\Scripts\\python.exe', 'main.py', 'kb-search', 'Template', '--top-k', '5'], returncode=2, stdout='', stderr="usage: tickets [-h] [-t] {create,list,show,update,delete} ...\ntickets: error: argument command: invalid choice: 'kb-search' (choose from create, list, show, update, delete)\n").returncode
+_____________________ test_kb_search_respects_top_k_limit _____________________
+tests\integrations\KB\test_kb_mock_client_cli.py:81: in test_kb_search_respects_top_k_limit
+    assert result.returncode == 0
+E   assert 2 == 0
+E    +  where 2 = CompletedProcess(args=['D:\\Study\\mindx\\mindx-onb\\assignments\\week3\\TicketManagerCLI\\.venv\\Scripts\\python.exe', 'main.py', 'kb-search', '', '--top-k', '1'], returncode=2, stdout='', stderr="usage: tickets [-h] [-t] {create,list,show,update,delete} ...\ntickets: error: argument command: invalid choice: 'kb-search' (choose from create, list, show, update, delete)\n").returncode
+_______________________ test_kb_search_case_insensitive _______________________
+tests\integrations\KB\test_kb_mock_client_cli.py:91: in test_kb_search_case_insensitive
+    assert result_lower.returncode == 0
+E   assert 2 == 0
+E    +  where 2 = CompletedProcess(args=['D:\\Study\\mindx\\mindx-onb\\assignments\\week3\\TicketManagerCLI\\.venv\\Scripts\\python.exe', 'main.py', 'kb-search', 'devops', '--top-k', '5'], returncode=2, stdout='', stderr="usage: tickets [-h] [-t] {create,list,show,update,delete} ...\ntickets: error: argument command: invalid choice: 'kb-search' (choose from create, list, show, update, delete)\n").returncode
+________________ test_kb_search_returns_message_when_no_match _________________
+tests\integrations\KB\test_kb_mock_client_cli.py:102: in test_kb_search_returns_message_when_no_match
+    assert result.returncode == 0
+E   assert 2 == 0
+E    +  where 2 = CompletedProcess(args=['D:\\Study\\mindx\\mindx-onb\\assignments\\week3\\TicketManagerCLI\\.venv\\Scripts\\python.exe', 'main.py', 'kb-search', 'nonexistent-xyz-abc', '--top-k', '5'], returncode=2, stdout='', stderr="usage: tickets [-h] [-t] {create,list,show,update,delete} ...\ntickets: error: argument command: invalid choice: 'kb-search' (choose from create, list, show, update, delete)\n").returncode
+______________________ test_kb_search_searches_in_title _______________________
+tests\integrations\KB\test_kb_mock_client_cli.py:110: in test_kb_search_searches_in_title
+    assert result.returncode == 0
+E   assert 2 == 0
+E    +  where 2 = CompletedProcess(args=['D:\\Study\\mindx\\mindx-onb\\assignments\\week3\\TicketManagerCLI\\.venv\\Scripts\\python.exe', 'main.py', 'kb-search', 'Template', '--top-k', '5'], returncode=2, stdout='', stderr="usage: tickets [-h] [-t] {create,list,show,update,delete} ...\ntickets: error: argument command: invalid choice: 'kb-search' (choose from create, list, show, update, delete)\n").returncode
+_____________________ test_kb_search_searches_in_content ______________________
+tests\integrations\KB\test_kb_mock_client_cli.py:118: in test_kb_search_searches_in_content
+    assert result.returncode == 0
+E   assert 2 == 0
+E    +  where 2 = CompletedProcess(args=['D:\\Study\\mindx\\mindx-onb\\assignments\\week3\\TicketManagerCLI\\.venv\\Scripts\\python.exe', 'main.py', 'kb-search', 'CI/CD', '--top-k', '5'], returncode=2, stdout='', stderr="usage: tickets [-h] [-t] {create,list,show,update,delete} ...\ntickets: error: argument command: invalid choice: 'kb-search' (choose from create, list, show, update, delete)\n").returncode
+_______________________ test_kb_search_searches_in_tags _______________________
+tests\integrations\KB\test_kb_mock_client_cli.py:126: in test_kb_search_searches_in_tags
+    assert result.returncode == 0
+E   assert 2 == 0
+E    +  where 2 = CompletedProcess(args=['D:\\Study\\mindx\\mindx-onb\\assignments\\week3\\TicketManagerCLI\\.venv\\Scripts\\python.exe', 'main.py', 'kb-search', 'developer', '--top-k', '5'], returncode=2, stdout='', stderr="usage: tickets [-h] [-t] {create,list,show,update,delete} ...\ntickets: error: argument command: invalid choice: 'kb-search' (choose from create, list, show, update, delete)\n").returncode
+_________________________ test_kb_list_all_documents __________________________
+tests\integrations\KB\test_kb_mock_client_cli.py:139: in test_kb_list_all_documents
+    assert result.returncode == 0, f"CLI failed: {result.stderr}"
+E   AssertionError: CLI failed: usage: tickets [-h] [-t] {create,list,show,update,delete} ...
+E     tickets: error: argument command: invalid choice: 'kb-list' (choose from create, list, show, update, delete)
+E     
+E   assert 2 == 0
+E    +  where 2 = CompletedProcess(args=['D:\\Study\\mindx\\mindx-onb\\assignments\\week3\\TicketManagerCLI\\.venv\\Scripts\\python.exe', 'main.py', 'kb-list', '--limit', '10'], returncode=2, stdout='', stderr="usage: tickets [-h] [-t] {create,list,show,update,delete} ...\ntickets: error: argument command: invalid choice: 'kb-list' (choose from create, list, show, update, delete)\n").returncode
+__________________ test_kb_list_filters_by_node_path_prefix ___________________
+tests\integrations\KB\test_kb_mock_client_cli.py:148: in test_kb_list_filters_by_node_path_prefix
+    assert result.returncode == 0
+E   assert 2 == 0
+E    +  where 2 = CompletedProcess(args=['D:\\Study\\mindx\\mindx-onb\\assignments\\week3\\TicketManagerCLI\\.venv\\Scripts\\python.exe', 'main.py', 'kb-list', '--node', '/templates', '--limit', '10'], returncode=2, stdout='', stderr="usage: tickets [-h] [-t] {create,list,show,update,delete} ...\ntickets: error: argument command: invalid choice: 'kb-list' (choose from create, list, show, update, delete)\n").returncode
+___________________ test_kb_list_filters_by_exact_node_path ___________________
+tests\integrations\KB\test_kb_mock_client_cli.py:157: in test_kb_list_filters_by_exact_node_path
+    assert result.returncode == 0
+E   assert 2 == 0
+E    +  where 2 = CompletedProcess(args=['D:\\Study\\mindx\\mindx-onb\\assignments\\week3\\TicketManagerCLI\\.venv\\Scripts\\python.exe', 'main.py', 'kb-list', '--node', '/team/devops', '--limit', '10'], returncode=2, stdout='', stderr="usage: tickets [-h] [-t] {create,list,show,update,delete} ...\ntickets: error: argument command: invalid choice: 'kb-list' (choose from create, list, show, update, delete)\n").returncode
+_________________________ test_kb_list_respects_limit _________________________
+tests\integrations\KB\test_kb_mock_client_cli.py:165: in test_kb_list_respects_limit
+    assert result.returncode == 0
+E   assert 2 == 0
+E    +  where 2 = CompletedProcess(args=['D:\\Study\\mindx\\mindx-onb\\assignments\\week3\\TicketManagerCLI\\.venv\\Scripts\\python.exe', 'main.py', 'kb-list', '--limit', '1'], returncode=2, stdout='', stderr="usage: tickets [-h] [-t] {create,list,show,update,delete} ...\ntickets: error: argument command: invalid choice: 'kb-list' (choose from create, list, show, update, delete)\n").returncode
+______________________ test_kb_list_default_limit_is_ten ______________________
+tests\integrations\KB\test_kb_mock_client_cli.py:174: in test_kb_list_default_limit_is_ten
+    assert result.returncode == 0
+E   assert 2 == 0
+E    +  where 2 = CompletedProcess(args=['D:\\Study\\mindx\\mindx-onb\\assignments\\week3\\TicketManagerCLI\\.venv\\Scripts\\python.exe', 'main.py', 'kb-list', '--limit', '10'], returncode=2, stdout='', stderr="usage: tickets [-h] [-t] {create,list,show,update,delete} ...\ntickets: error: argument command: invalid choice: 'kb-list' (choose from create, list, show, update, delete)\n").returncode
+__________________ test_kb_list_returns_empty_when_no_match ___________________
+tests\integrations\KB\test_kb_mock_client_cli.py:183: in test_kb_list_returns_empty_when_no_match
+    assert result.returncode == 0
+E   assert 2 == 0
+E    +  where 2 = CompletedProcess(args=['D:\\Study\\mindx\\mindx-onb\\assignments\\week3\\TicketManagerCLI\\.venv\\Scripts\\python.exe', 'main.py', 'kb-list', '--node', '/nonexistent/path', '--limit', '10'], returncode=2, stdout='', stderr="usage: tickets [-h] [-t] {create,list,show,update,delete} ...\ntickets: error: argument command: invalid choice: 'kb-list' (choose from create, list, show, update, delete)\n").returncode
+_____________________ test_kb_retrieve_existing_document ______________________
+tests\integrations\KB\test_kb_mock_client_cli.py:196: in test_kb_retrieve_existing_document
+    assert result.returncode == 0, f"CLI failed: {result.stderr}"
+E   AssertionError: CLI failed: usage: tickets [-h] [-t] {create,list,show,update,delete} ...
+E     tickets: error: argument command: invalid choice: 'kb-retrieve' (choose from create, list, show, update, delete)
+E     
+E   assert 2 == 0
+E    +  where 2 = CompletedProcess(args=['D:\\Study\\mindx\\mindx-onb\\assignments\\week3\\TicketManagerCLI\\.venv\\Scripts\\python.exe', 'main.py', 'kb-retrieve', 'doc-001'], returncode=2, stdout='', stderr="usage: tickets [-h] [-t] {create,list,show,update,delete} ...\ntickets: error: argument command: invalid choice: 'kb-retrieve' (choose from create, list, show, update, delete)\n").returncode
+___________________ test_kb_retrieve_returns_full_document ____________________
+tests\integrations\KB\test_kb_mock_client_cli.py:206: in test_kb_retrieve_returns_full_document
+    assert result.returncode == 0
+E   assert 2 == 0
+E    +  where 2 = CompletedProcess(args=['D:\\Study\\mindx\\mindx-onb\\assignments\\week3\\TicketManagerCLI\\.venv\\Scripts\\python.exe', 'main.py', 'kb-retrieve', 'doc-002'], returncode=2, stdout='', stderr="usage: tickets [-h] [-t] {create,list,show,update,delete} ...\ntickets: error: argument command: invalid choice: 'kb-retrieve' (choose from create, list, show, update, delete)\n").returncode
+__________________ test_kb_retrieve_nonexistent_raises_error __________________
+tests\integrations\KB\test_kb_mock_client_cli.py:217: in test_kb_retrieve_nonexistent_raises_error
+    assert "not found" in result.stdout.lower()
+E   assert 'not found' in ''
+E    +  where '' = <built-in method lower of str object at 0x00007FFACB5076C0>()
+E    +    where <built-in method lower of str object at 0x00007FFACB5076C0> = ''.lower
+E    +      where '' = CompletedProcess(args=['D:\\Study\\mindx\\mindx-onb\\assignments\\week3\\TicketManagerCLI\\.venv\\Scripts\\python.exe', 'main.py', 'kb-retrieve', 'doc-999'], returncode=2, stdout='', stderr="usage: tickets [-h] [-t] {create,list,show,update,delete} ...\ntickets: error: argument command: invalid choice: 'kb-retrieve' (choose from create, list, show, update, delete)\n").stdout
+______________________ test_kb_retrieve_includes_content ______________________
+tests\integrations\KB\test_kb_mock_client_cli.py:224: in test_kb_retrieve_includes_content
+    assert result.returncode == 0
+E   assert 2 == 0
+E    +  where 2 = CompletedProcess(args=['D:\\Study\\mindx\\mindx-onb\\assignments\\week3\\TicketManagerCLI\\.venv\\Scripts\\python.exe', 'main.py', 'kb-retrieve', 'doc-001'], returncode=2, stdout='', stderr="usage: tickets [-h] [-t] {create,list,show,update,delete} ...\ntickets: error: argument command: invalid choice: 'kb-retrieve' (choose from create, list, show, update, delete)\n").returncode
+__________________ test_kb_add_new_document_returns_success ___________________
+tests\integrations\KB\test_kb_mock_client_cli.py:246: in test_kb_add_new_document_returns_success
+    assert result.returncode == 0, f"CLI failed: {result.stderr}"
+E   AssertionError: CLI failed: usage: tickets [-h] [-t] {create,list,show,update,delete} ...
+E     tickets: error: argument command: invalid choice: 'kb-add' (choose from create, list, show, update, delete)
+E     
+E   assert 2 == 0
+E    +  where 2 = CompletedProcess(args=['D:\\Study\\mindx\\mindx-onb\\assignments\\week3\\TicketManagerCLI\\.venv\\Scripts\\python.exe', 'main.py', 'kb-add', '--id', 'doc-new-001', '--title', 'New Template', '--content', 'This is a new template', '--node', '/templates/sms', '--tags', 'sms,template'], returncode=2, stdout='', stderr="usage: tickets [-h] [-t] {create,list,show,update,delete} ...\ntickets: error: argument command: invalid choice: 'kb-add' (choose from create, list, show, update, delete)\n").returncode
+__________________ test_kb_add_document_makes_it_retrievable __________________
+tests\integrations\KB\test_kb_mock_client_cli.py:262: in test_kb_add_document_makes_it_retrievable
+    assert add_result.returncode == 0
+E   assert 2 == 0
+E    +  where 2 = CompletedProcess(args=['D:\\Study\\mindx\\mindx-onb\\assignments\\week3\\TicketManagerCLI\\.venv\\Scripts\\python.exe', 'main.py', 'kb-add', '--id', 'doc-new-002', '--title', 'Retrievable Document', '--content', 'Can retrieve this document', '--node', '/docs/new', '--tags', 'test'], returncode=2, stdout='', stderr="usage: tickets [-h] [-t] {create,list,show,update,delete} ...\ntickets: error: argument command: invalid choice: 'kb-add' (choose from create, list, show, update, delete)\n").returncode
+____________________ test_kb_add_document_appears_in_list _____________________
+tests\integrations\KB\test_kb_mock_client_cli.py:283: in test_kb_add_document_appears_in_list
+    assert add_result.returncode == 0
+E   assert 2 == 0
+E    +  where 2 = CompletedProcess(args=['D:\\Study\\mindx\\mindx-onb\\assignments\\week3\\TicketManagerCLI\\.venv\\Scripts\\python.exe', 'main.py', 'kb-add', '--id', 'doc-new-003', '--title', 'Listable Document', '--content', 'Should appear in list', '--node', '/docs/custom', '--tags', 'test'], returncode=2, stdout='', stderr="usage: tickets [-h] [-t] {create,list,show,update,delete} ...\ntickets: error: argument command: invalid choice: 'kb-add' (choose from create, list, show, update, delete)\n").returncode
+_____________________ test_kb_add_duplicate_raises_error ______________________
+tests\integrations\KB\test_kb_mock_client_cli.py:303: in test_kb_add_duplicate_raises_error
+    assert "already exists" in result.stdout.lower()
+E   assert 'already exists' in ''
+E    +  where '' = <built-in method lower of str object at 0x00007FFACB5076C0>()
+E    +    where <built-in method lower of str object at 0x00007FFACB5076C0> = ''.lower
+E    +      where '' = CompletedProcess(args=['D:\\Study\\mindx\\mindx-onb\\assignments\\week3\\TicketManagerCLI\\.venv\\Scripts\\python.exe', 'main.py', 'kb-add', '--id', 'doc-001', '--title', 'Duplicate', '--content', 'This is a duplicate', '--node', '/docs/dup', '--tags', 'dup'], returncode=2, stdout='', stderr="usage: tickets [-h] [-t] {create,list,show,update,delete} ...\ntickets: error: argument command: invalid choice: 'kb-add' (choose from create, list, show, update, delete)\n").stdout
+_______________________ test_kb_add_document_with_tags ________________________
+tests\integrations\KB\test_kb_mock_client_cli.py:316: in test_kb_add_document_with_tags
+    assert result.returncode == 0
+E   assert 2 == 0
+E    +  where 2 = CompletedProcess(args=['D:\\Study\\mindx\\mindx-onb\\assignments\\week3\\TicketManagerCLI\\.venv\\Scripts\\python.exe', 'main.py', 'kb-add', '--id', 'doc-new-004', '--title', 'Tagged Document', '--content', 'Document with tags', '--node', '/docs/tagged', '--tags', 'tag1,tag2,tag3'], returncode=2, stdout='', stderr="usage: tickets [-h] [-t] {create,list,show,update,delete} ...\ntickets: error: argument command: invalid choice: 'kb-add' (choose from create, list, show, update, delete)\n").returncode
+=========================== short test summary info ===========================
+FAILED tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_search_by_query_returns_results
+FAILED tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_search_respects_top_k_limit
+FAILED tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_search_case_insensitive
+FAILED tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_search_returns_message_when_no_match
+FAILED tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_search_searches_in_title
+FAILED tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_search_searches_in_content
+FAILED tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_search_searches_in_tags
+FAILED tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_list_all_documents
+FAILED tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_list_filters_by_node_path_prefix
+FAILED tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_list_filters_by_exact_node_path
+FAILED tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_list_respects_limit
+FAILED tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_list_default_limit_is_ten
+FAILED tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_list_returns_empty_when_no_match
+FAILED tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_retrieve_existing_document
+FAILED tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_retrieve_returns_full_document
+FAILED tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_retrieve_nonexistent_raises_error
+FAILED tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_retrieve_includes_content
+FAILED tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_add_new_document_returns_success
+FAILED tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_add_document_makes_it_retrievable
+FAILED tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_add_document_appears_in_list
+FAILED tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_add_duplicate_raises_error
+FAILED tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_add_document_with_tags
+============================= 22 failed in 2.60s ==============================
+
+======================================================================
+Test run: 2026-10-21 19:10:18
+Command: D:\Study\mindx\mindx-onb\assignments\week3\TicketManagerCLI\.venv\Scripts\python.exe -m pytest .\tests\integrations\KB\test_kb_mock_client_cli.py -v --tb=short
+======================================================================
+
+============================= test session starts =============================
+platform win32 -- Python 3.13.3, pytest-9.1.1, pluggy-1.6.0 -- D:\Study\mindx\mindx-onb\assignments\week3\TicketManagerCLI\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: D:\Study\mindx\mindx-onb\assignments\week3\TicketManagerCLI
+configfile: pytest.ini
+collecting ... collected 22 items
+
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_search_by_query_returns_results PASSED [  4%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_search_respects_top_k_limit PASSED [  9%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_search_case_insensitive PASSED [ 13%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_search_returns_message_when_no_match PASSED [ 18%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_search_searches_in_title PASSED [ 22%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_search_searches_in_content PASSED [ 27%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_search_searches_in_tags PASSED [ 31%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_list_all_documents PASSED [ 36%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_list_filters_by_node_path_prefix PASSED [ 40%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_list_filters_by_exact_node_path PASSED [ 45%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_list_respects_limit PASSED [ 50%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_list_default_limit_is_ten PASSED [ 54%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_list_returns_empty_when_no_match PASSED [ 59%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_retrieve_existing_document PASSED [ 63%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_retrieve_returns_full_document PASSED [ 68%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_retrieve_nonexistent_raises_error PASSED [ 72%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_retrieve_includes_content PASSED [ 77%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_add_new_document_returns_success PASSED [ 81%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_add_document_makes_it_retrievable PASSED [ 86%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_add_document_appears_in_list PASSED [ 90%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_add_duplicate_raises_error PASSED [ 95%]
+tests/integrations/KB/test_kb_mock_client_cli.py::test_kb_add_document_with_tags PASSED [100%]
+
+============================= 22 passed in 3.05s ==============================

@@ -167,14 +167,20 @@ KBService will listen on `http://localhost:8000`
 Set environment variables in PowerShell or add to `.env`:
 
 **Use Mock Client (default, no KBService needed):**
-```bash
-set KB_CLIENT=mock
+```powershell
+$env:KB_CLIENT='mock'
 ```
 
 **Use HTTP Client (requires running KBService):**
-```bash
-set KB_CLIENT=http
-set KB_API_URL=http://localhost:8000
+```powershell
+$env:KB_CLIENT='http'
+$env:KB_API_URL='http://localhost:8000'
+```
+
+Or add to `.env` file:
+```
+KB_CLIENT=mock
+KB_API_URL=http://localhost:8000
 ```
 
 ### 7. Verify Installation
@@ -451,11 +457,13 @@ python -m pytest tests/integrations/KB/test_http_kb_client_cli.py::test_http_kb_
 
 **Ticket Tests:** 100+ test cases covering all CRUD operations, filtering, validation, error handling
 
-**KB Tests:** 81 test cases covering search, list, retrieve, add with both mock and HTTP clients:
+**KB Tests:** 147 test cases covering search, list, retrieve, add, file import, and data safety with both mock and HTTP clients:
+- Corrupt JSON Safety: 8 tests (data integrity, backup creation, error handling)
 - Mock Client: 27 tests (basic operations + persistence)
 - Mock CLI: 22 tests (command parsing and output)
 - HTTP Client: 14 tests (real API integration)
-- HTTP CLI: 18 tests (end-to-end CLI workflows)
+- HTTP CLI: 25 tests (end-to-end CLI workflows with file import)
+- Input Validation Parity: 51 tests (mock/HTTP consistency)
 
 **E2E Tests:** 6 tests covering full service lifecycle:
 - Service startup and health check
@@ -545,8 +553,13 @@ Tickets are stored in `data/tickets.json` in JSON format.
 
 ### Knowledge Base
 
-- **Mock client:** In-memory storage, lost on restart
-- **HTTP client:** Persisted by KBService (in-memory or configurable backend)
+- **Mock client:** Supports file-based persistence (JSON) and in-memory storage
+  - Can load/save from `persist_file` parameter
+  - Test data: 3 sample documents initialized on startup
+  - Useful for local development and testing
+- **HTTP client:** Data persisted by KBService backend
+  - For tests: in-memory storage (data lost on service restart)
+  - For production: can be configured with persistent backend (database, file storage)
 
 ## License
 

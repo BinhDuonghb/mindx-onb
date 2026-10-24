@@ -42,6 +42,4 @@ Thumbs.db
 .coverage
 htmlcov/
 
-# Logs
-*.log
 assignments/*/TicketManagerCLI/script.ps1

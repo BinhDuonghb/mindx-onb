@@ -198,15 +198,15 @@ On startup, KBService initializes with sample documents for testing:
 
 ### Configuration
 
-Set environment variables in TicketManagerCLI:
+Set environment variables in PowerShell or add to `.env`:
 
-```bash
+```powershell
 # Use HTTP client to connect to KBService
-set KB_CLIENT=http
-set KB_API_URL=http://localhost:8000
+$env:KB_CLIENT='http'
+$env:KB_API_URL='http://localhost:8000'
 ```
 
-Or in `.env`:
+Or in `.env` file:
 ```
 KB_CLIENT=http
 KB_API_URL=http://localhost:8000
