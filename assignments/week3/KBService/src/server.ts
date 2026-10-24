@@ -1,6 +1,7 @@
 import express, { Express, Request, Response } from 'express';
 import { KBDatabase } from './database';
 import { SearchQuery, ListQuery, AddDocumentRequest } from './types';
+import { PositiveIntegerValidator } from './validators';
 
 const app: Express = express();
 const PORT = 8000;
@@ -20,7 +21,14 @@ app.post('/search', (req: Request, res: Response) => {
       return res.status(400).json({ error: 'query is required' });
     }
 
-    const searchQuery: SearchQuery = { query, topK: topK || 5 };
+    // Validate topK is a positive integer
+    const topKValidation = PositiveIntegerValidator.validateWithDefault(
+      topK,
+      'topK',
+      5
+    );
+
+    const searchQuery: SearchQuery = { query, topK: topKValidation.value };
     const results = db.search(searchQuery);
 
     res.json({
@@ -37,9 +45,16 @@ app.post('/list', (req: Request, res: Response) => {
   try {
     const { nodePath, limit = 10 } = req.body as Partial<ListQuery>;
 
+    // Validate limit is a positive integer
+    const limitValidation = PositiveIntegerValidator.validateWithDefault(
+      limit,
+      'limit',
+      10
+    );
+
     const listQuery: ListQuery = {
       nodePath,
-      limit: limit || 10
+      limit: limitValidation.value
     };
 
     const results = db.list(listQuery);

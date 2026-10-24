@@ -3,6 +3,7 @@ import json
 
 from KB.factory import create_kb_client
 from cli.commands.base import BaseCommand
+from ticket_manager.validators.positive_integer_validator import PositiveIntegerValidator
 
 
 class KBListCommand(BaseCommand):
@@ -15,9 +16,16 @@ class KBListCommand(BaseCommand):
     def execute(self, parsed_args, use_test: bool = False) -> int:
         """Execute kb list command."""
         try:
+            # Validate and apply default for limit if zero or negative
+            limit = PositiveIntegerValidator.validate_and_return(
+                parsed_args.limit,
+                "limit",
+                default=10
+            )
+
             documents = self.kb_client.list(
                 node_path=parsed_args.node_path,
-                limit=parsed_args.limit
+                limit=limit
             )
 
             if not documents:

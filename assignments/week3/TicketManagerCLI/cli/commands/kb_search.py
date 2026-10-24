@@ -4,6 +4,7 @@ import json
 from KB.factory import create_kb_client
 from KB.models.search import KBQuery
 from cli.commands.base import BaseCommand
+from ticket_manager.validators.positive_integer_validator import PositiveIntegerValidator
 
 
 class KBSearchCommand(BaseCommand):
@@ -16,9 +17,16 @@ class KBSearchCommand(BaseCommand):
     def execute(self, parsed_args, use_test: bool = False) -> int:
         """Execute kb search command."""
         try:
+            # Validate and apply default for top_k if zero or negative
+            top_k = PositiveIntegerValidator.validate_and_return(
+                parsed_args.top_k,
+                "top_k",
+                default=5
+            )
+
             query = KBQuery(
                 query=parsed_args.query,
-                top_k=parsed_args.top_k
+                top_k=top_k
             )
 
             results = self.kb_client.search(query)

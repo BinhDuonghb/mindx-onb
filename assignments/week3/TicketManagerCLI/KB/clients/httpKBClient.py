@@ -43,6 +43,10 @@ class HTTPKBClient(KBClient):
 
     def search(self, query: KBQuery) -> list[SearchResult]:
         """Search documents by query."""
+        # Validate top_k is positive
+        if query.top_k <= 0:
+            return []
+
         try:
             response = self._session.post(
                 f"{self.base_url}/search",
@@ -77,6 +81,10 @@ class HTTPKBClient(KBClient):
         limit: int = 10,
     ) -> list[Document]:
         """List documents with optional filters."""
+        # Validate limit is positive
+        if limit <= 0:
+            return []
+
         try:
             payload = {"limit": limit}
             if node_path:

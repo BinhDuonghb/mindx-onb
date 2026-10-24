@@ -40,6 +40,10 @@ class MockKBClient(KBClient):
 
     def search(self, query: KBQuery) -> list[SearchResult]:
         """Search document titles, content, and tags."""
+        # Validate top_k is positive
+        if query.top_k <= 0:
+            return []
+
         keyword = query.query.strip().casefold()
         results = []
 
@@ -83,6 +87,10 @@ class MockKBClient(KBClient):
         limit: int = 10,
     ) -> list[Document]:
         """List documents, optionally filtered by node path."""
+        # Validate limit is positive
+        if limit <= 0:
+            return []
+
         documents = self._documents.values()
 
         if node_path is not None:
