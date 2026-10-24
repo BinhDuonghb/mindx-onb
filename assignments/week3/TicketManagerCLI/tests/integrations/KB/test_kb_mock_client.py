@@ -1,4 +1,5 @@
 import pytest
+from pathlib import Path
 
 from KB.clients.mockKBClient import MockKBClient
 from KB.models.document import Document
@@ -294,23 +295,24 @@ def test_load_from_nonexistent_persist_file_initializes_with_samples(tmp_path):
     assert "doc-003" in client._documents
 
 
-def test_load_from_invalid_json_reinitializes_with_samples(tmp_path, capsys):
-    """Should reinitialize with samples if persist file contains invalid JSON."""
+def test_load_from_invalid_json_raises_error_and_backs_up(tmp_path):
+    """Should raise error for corrupt JSON and create backup file (data safety)."""
     persist_file = tmp_path / "kb_data.json"
 
     # Create invalid JSON
     persist_file.write_text("{ invalid json }", encoding="utf-8")
 
-    client = MockKBClient(persist_file=persist_file)
+    # Should raise ValueError, not silently recover
+    with pytest.raises(ValueError, match="Persist file contains invalid JSON"):
+        MockKBClient(persist_file=persist_file)
 
-    # Should have reinitialized with samples
-    assert len(client._documents) == 3
-    assert "doc-001" in client._documents
+    # Verify original file is NOT overwritten
+    assert persist_file.read_text(encoding="utf-8") == "{ invalid json }"
 
-    # Should print warning
-    captured = capsys.readouterr()
-    assert "Warning" in captured.out
-    assert "Invalid JSON" in captured.out
+    # Verify backup was created
+    backup_file = Path(str(persist_file) + ".corrupt")
+    assert backup_file.exists()
+    assert backup_file.read_text(encoding="utf-8") == "{ invalid json }"
 
 
 def test_load_from_persist_file_with_non_array_raises_error(tmp_path):

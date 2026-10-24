@@ -120,10 +120,11 @@ class MockKBClient(KBClient):
         """
         Load documents from persist file.
 
-        If file doesn't exist or contains invalid JSON, initialize with sample documents.
+        If file doesn't exist, initialize with sample documents.
+        If file is corrupt, back it up and raise an error (don't overwrite).
 
         Raises:
-            ValueError: If file contains invalid document structure.
+            ValueError: If file contains invalid JSON or invalid document structure.
         """
         if not self.persist_file:
             return
@@ -138,12 +139,24 @@ class MockKBClient(KBClient):
                 with open(self.persist_file, "r", encoding="utf-8") as f:
                     data = json.load(f)
             except json.JSONDecodeError as e:
-                # File exists but contains invalid JSON, reinitialize with samples
-                print(f"Warning: Invalid JSON in {self.persist_file}, reinitializing with sample documents")
-                documents = deepcopy(SAMPLE_DOCUMENTS)
-                self._documents = {doc.id: doc for doc in documents}
-                self._save()
-                return
+                # File exists but contains invalid JSON
+                # Back up the corrupt file instead of overwriting it
+                backup_file = Path(str(self.persist_file) + ".corrupt")
+                try:
+                    import shutil
+                    shutil.copy2(self.persist_file, backup_file)
+                    error_msg = (
+                        f"Persist file contains invalid JSON: {self.persist_file}\n"
+                        f"Corrupt file backed up to: {backup_file}\n"
+                        f"Error details: {str(e)}"
+                    )
+                except Exception as backup_error:
+                    error_msg = (
+                        f"Persist file contains invalid JSON: {self.persist_file}\n"
+                        f"Failed to back up corrupt file: {str(backup_error)}\n"
+                        f"Original error: {str(e)}"
+                    )
+                raise ValueError(error_msg)
 
             # Validate that data is a list
             if not isinstance(data, list):

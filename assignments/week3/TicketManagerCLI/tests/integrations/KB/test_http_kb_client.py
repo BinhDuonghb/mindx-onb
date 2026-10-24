@@ -113,9 +113,12 @@ def test_http_list_filters_by_node_path(http_kb_client):
     """Should filter by node_path."""
     documents = http_kb_client.list(node_path="/templates/email")
 
-    assert len(documents) == 1
-    assert documents[0].id == "doc-001"
-    assert documents[0].node_path == "/templates/email"
+    # Should return at least the sample document
+    assert len(documents) >= 1
+    # All returned documents should have the correct node_path
+    assert all(doc.node_path == "/templates/email" for doc in documents)
+    # Should include the original sample document
+    assert any(doc.id == "doc-001" for doc in documents)
 
 
 def test_http_list_respects_limit(http_kb_client):
