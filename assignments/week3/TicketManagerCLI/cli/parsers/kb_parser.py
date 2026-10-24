@@ -83,7 +83,12 @@ Examples:
         help="Add a new document to knowledge base",
         epilog="""
 Examples:
-  tickets kb add --id doc-new-001 --title "New Template" --content "Template content" --node /templates/email --tags "template,email"
+  Direct content:
+    tickets kb add --id doc-new-001 --title "New Template" --content "Template content" --node /templates/email --tags "template,email"
+
+  From file:
+    tickets kb add --id doc-new-001 --file template.md --node /templates/email --tags "template,email"
+    tickets kb add --id doc-new-001 --file template.md --path /templates/email
         """
     )
     kb_add_parser.add_argument(
@@ -93,19 +98,25 @@ Examples:
     )
     kb_add_parser.add_argument(
         "--title",
-        required=True,
-        help="Document title (required)"
+        help="Document title (required for direct content, optional with --file)"
     )
     kb_add_parser.add_argument(
         "--content",
-        required=True,
-        help="Document content (required)"
+        help="Document content (use --content or --file, not both)"
+    )
+    kb_add_parser.add_argument(
+        "--file",
+        help="Path to file containing document content (use --file or --content, not both)"
     )
     kb_add_parser.add_argument(
         "--node",
         dest="node_path",
-        required=True,
-        help="Document node path (required)"
+        help="Document node path (use --node or --path)"
+    )
+    kb_add_parser.add_argument(
+        "--path",
+        dest="path_alias",
+        help="Alias for --node (use --node or --path)"
     )
     kb_add_parser.add_argument(
         "--tags",

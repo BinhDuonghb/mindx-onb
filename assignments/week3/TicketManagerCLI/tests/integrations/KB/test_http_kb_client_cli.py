@@ -38,15 +38,29 @@ def run_cli_kb_retrieve(doc_id: str) -> subprocess.CompletedProcess:
     return subprocess.run(cmd, capture_output=True, text=True, env=_get_http_env())
 
 
-def run_cli_kb_add(doc_id: str, title: str, content: str, node_path: str, tags: str = "") -> subprocess.CompletedProcess:
+def run_cli_kb_add(doc_id: str, title: str = None, content: str = None, node_path: str = None,
+                   file_path: str = None, path_alias: str = None, tags: str = "") -> subprocess.CompletedProcess:
     """Helper to run kb add command with given arguments."""
     cmd = [
         sys.executable, "main.py", "kb", "add",
         "--id", doc_id,
-        "--title", title,
-        "--content", content,
-        "--node", node_path,
     ]
+
+    # Add title if provided
+    if title:
+        cmd.extend(["--title", title])
+
+    # Add content (--content or --file, not both)
+    if content:
+        cmd.extend(["--content", content])
+    elif file_path:
+        cmd.extend(["--file", file_path])
+
+    # Add node path (--node or --path, not both)
+    if node_path:
+        cmd.extend(["--node", node_path])
+    elif path_alias:
+        cmd.extend(["--path", path_alias])
 
     if tags:
         cmd.extend(["--tags", tags])
@@ -280,3 +294,168 @@ def test_http_kb_add_document_with_tags():
 
     assert result.returncode == 0
     assert "added successfully" in result.stdout.lower()
+
+
+# ============================================================================
+# KB ADD COMMAND TESTS - FILE IMPORT VIA HTTP
+# ============================================================================
+
+
+def test_http_kb_add_document_from_file(tmp_path):
+    """Should add a new document from file via HTTP and return success message."""
+    # Create a test file
+    test_file = tmp_path / "template.md"
+    file_content = "# Email Template\n\nThis is an email response template."
+    test_file.write_text(file_content, encoding="utf-8")
+
+    unique_id = f"doc-http-file-{int(time.time() * 1000)}"
+    result = run_cli_kb_add(
+        doc_id=unique_id,
+        title="Email Response Template",
+        file_path=str(test_file),
+        path_alias="/templates/email",
+        tags="template,email"
+    )
+
+    assert result.returncode == 0, f"CLI failed: {result.stderr}"
+    assert "added successfully" in result.stdout.lower()
+    assert unique_id in result.stdout
+
+
+def test_http_kb_add_document_from_file_auto_title(tmp_path):
+    """Should add document from file via HTTP with auto-generated title from filename."""
+    # Create a test file
+    test_file = tmp_path / "sms_template.md"
+    file_content = "# SMS Template\n\nQuick response template for SMS."
+    test_file.write_text(file_content, encoding="utf-8")
+
+    unique_id = f"doc-http-file-auto-{int(time.time() * 1000)}"
+    result = run_cli_kb_add(
+        doc_id=unique_id,
+        file_path=str(test_file),
+        node_path="/templates/sms",
+        tags="template,sms"
+    )
+
+    assert result.returncode == 0, f"CLI failed: {result.stderr}"
+    assert "added successfully" in result.stdout.lower()
+    assert unique_id in result.stdout
+
+
+def test_http_kb_add_document_from_file_with_path_alias(tmp_path):
+    """Should add document from file via HTTP using --path instead of --node."""
+    # Create a test file
+    test_file = tmp_path / "devops_guide.md"
+    file_content = "# DevOps Setup Guide\n\nSteps to setup DevOps environment."
+    test_file.write_text(file_content, encoding="utf-8")
+
+    unique_id = f"doc-http-file-path-{int(time.time() * 1000)}"
+    result = run_cli_kb_add(
+        doc_id=unique_id,
+        title="DevOps Setup",
+        file_path=str(test_file),
+        path_alias="/docs/guides",
+        tags="guide,devops"
+    )
+
+    assert result.returncode == 0, f"CLI failed: {result.stderr}"
+    assert "added successfully" in result.stdout.lower()
+
+
+def test_http_kb_add_document_from_file_appears_in_list(tmp_path):
+    """Should make document added from file via HTTP appear in list."""
+    # Create a test file
+    test_file = tmp_path / "team_info.md"
+    file_content = "# Team Information\n\nTeam contact and roles."
+    test_file.write_text(file_content, encoding="utf-8")
+
+    unique_id = f"doc-http-file-list-{int(time.time() * 1000)}"
+
+    # Add document from file
+    add_result = run_cli_kb_add(
+        doc_id=unique_id,
+        title="Team Info",
+        file_path=str(test_file),
+        node_path="/team-http",
+        tags="team"
+    )
+
+    assert add_result.returncode == 0
+
+    # List with the same path
+    list_result = run_cli_kb_list(node_path="/team-http")
+
+    assert list_result.returncode == 0
+    assert unique_id in list_result.stdout
+
+
+def test_http_kb_add_document_from_file_makes_it_retrievable(tmp_path):
+    """Should make document added from file via HTTP retrievable via retrieve."""
+    # Create a test file
+    test_file = tmp_path / "handbook.md"
+    file_content = "# Company Handbook\n\nCompany policies and procedures."
+    test_file.write_text(file_content, encoding="utf-8")
+
+    unique_id = f"doc-http-file-retrieve-{int(time.time() * 1000)}"
+
+    # Add document from file
+    add_result = run_cli_kb_add(
+        doc_id=unique_id,
+        title="Company Handbook",
+        file_path=str(test_file),
+        node_path="/docs-http",
+        tags="handbook"
+    )
+
+    assert add_result.returncode == 0
+
+    # Retrieve it
+    retrieve_result = run_cli_kb_retrieve(unique_id)
+
+    assert retrieve_result.returncode == 0
+    assert unique_id in retrieve_result.stdout
+    assert "Company Handbook" in retrieve_result.stdout
+
+
+def test_http_kb_add_document_from_nonexistent_file_fails():
+    """Should fail when trying to add document from non-existent file via HTTP."""
+    result = run_cli_kb_add(
+        doc_id="doc-http-file-fail",
+        file_path="/nonexistent/file.md",
+        node_path="/docs"
+    )
+
+    assert result.returncode != 0
+    assert "not found" in result.stdout.lower() or "error" in result.stdout.lower()
+
+
+def test_http_kb_add_document_from_empty_file_fails(tmp_path):
+    """Should fail when trying to add document from empty file via HTTP."""
+    # Create empty file
+    empty_file = tmp_path / "empty.md"
+    empty_file.write_text("", encoding="utf-8")
+
+    result = run_cli_kb_add(
+        doc_id="doc-http-file-empty",
+        file_path=str(empty_file),
+        node_path="/docs"
+    )
+
+    assert result.returncode != 0
+    assert "empty" in result.stdout.lower() or "error" in result.stdout.lower()
+
+
+def test_http_kb_add_document_from_whitespace_only_file_fails(tmp_path):
+    """Should fail when trying to add document from whitespace-only file via HTTP."""
+    # Create whitespace-only file
+    whitespace_file = tmp_path / "whitespace.md"
+    whitespace_file.write_text("   \n\n  ", encoding="utf-8")
+
+    result = run_cli_kb_add(
+        doc_id="doc-http-file-whitespace",
+        file_path=str(whitespace_file),
+        node_path="/docs"
+    )
+
+    assert result.returncode != 0
+    assert "empty" in result.stdout.lower() or "error" in result.stdout.lower()
