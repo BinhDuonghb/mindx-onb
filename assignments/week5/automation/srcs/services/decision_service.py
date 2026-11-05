@@ -101,9 +101,30 @@ class DecisionService:
 
             # Rule 7: Active employee with login issue - APPROVE
             if employee.status == EmployeeStatus.ACTIVE:
+                if employee.lms_account_status == "active":
+                    return DecisionResult(
+                        action=Decision.SKIP,
+                        reason="LMS account is already active.",
+                    )
+
+                if employee.lms_account_status == "deactivated":
+                    if employee.deactivation_reason == "inactivity_30_days":
+                        return DecisionResult(
+                            action=Decision.APPROVE_REACTIVATION,
+                            reason=(
+                                "Employee is active. LMS account was "
+                                "deactivated due to 30 days of inactivity."
+                            ),
+                        )
+
+                    return DecisionResult(
+                        action=Decision.MANUAL_REVIEW,
+                        reason="Unsupported LMS deactivation reason.",
+                    )
+
                 return DecisionResult(
-                    action=Decision.APPROVE_REACTIVATION,
-                    reason=f"Active employee '{employee.name}' ({employee.email}) with verified {ticket.issue_type or 'login'} issue. Approved for account reactivation.",
+                    action=Decision.MANUAL_REVIEW,
+                    reason="Unknown LMS account status.",
                 )
 
             # Fallback: Unknown status

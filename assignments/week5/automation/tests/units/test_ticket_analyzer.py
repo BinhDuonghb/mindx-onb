@@ -70,6 +70,102 @@ class TestTicketAnalyzerEnglishPatterns:
         assert result.is_login_issue is True
         assert result.issue_type == IssueType.ACCESS_DENIED
 
+    def test_detect_inactive_account_deactivated_pattern(self, analyzer):
+        """Should detect 'account deactivated' pattern."""
+        ticket = Ticket(
+            id=24,
+            name="Login issue",
+            email_from="user@company.com",
+            description="login issue user can't not login seem like their account have been deactivated",
+        )
+
+        result = analyzer.analyze(ticket)
+
+        assert result.is_login_issue is True
+        assert result.issue_type == IssueType.INACTIVE_ACCOUNT
+
+    def test_detect_inactive_account_suspended_pattern(self, analyzer):
+        """Should detect 'account suspended' pattern."""
+        ticket = Ticket(
+            id=25,
+            name="Account suspended",
+            email_from="user@company.com",
+            description="My account has been suspended. I need to access it.",
+        )
+
+        result = analyzer.analyze(ticket)
+
+        assert result.is_login_issue is True
+        assert result.issue_type == IssueType.INACTIVE_ACCOUNT
+
+    def test_detect_inactive_account_disabled_pattern(self, analyzer):
+        """Should detect 'account disabled' pattern."""
+        ticket = Ticket(
+            id=26,
+            name="Account disabled",
+            email_from="user@company.com",
+            description="My account is disabled. Please reactivate it.",
+        )
+
+        result = analyzer.analyze(ticket)
+
+        assert result.is_login_issue is True
+        assert result.issue_type == IssueType.INACTIVE_ACCOUNT
+
+    def test_detect_cannot_login_alternative_phrasing_unable(self, analyzer):
+        """Should detect 'unable to login' alternative phrasing."""
+        ticket = Ticket(
+            id=27,
+            name="Unable to access account",
+            email_from="user@company.com",
+            description="I'm unable to login to my account after my break.",
+        )
+
+        result = analyzer.analyze(ticket)
+
+        assert result.is_login_issue is True
+        assert result.issue_type == IssueType.CANNOT_LOGIN
+
+    def test_detect_cannot_login_alternative_phrasing_trouble(self, analyzer):
+        """Should detect 'having trouble logging in' alternative phrasing."""
+        ticket = Ticket(
+            id=28,
+            name="Trouble logging in",
+            email_from="user@company.com",
+            description="I'm having trouble logging in to the system.",
+        )
+
+        result = analyzer.analyze(ticket)
+
+        assert result.is_login_issue is True
+
+    def test_detect_cannot_login_alternative_phrasing_locked_out(self, analyzer):
+        """Should detect 'locked out' alternative phrasing."""
+        ticket = Ticket(
+            id=29,
+            name="Locked out of account",
+            email_from="user@company.com",
+            description="I am locked out of my account and can't get back in.",
+        )
+
+        result = analyzer.analyze(ticket)
+
+        assert result.is_login_issue is True
+
+    def test_detect_account_inactive_pattern(self, analyzer):
+        """Should detect 'account inactive' pattern."""
+        ticket = Ticket(
+            id=30,
+            name="Account inactive",
+            email_from="user@company.com",
+            description="My account appears to be inactive. Can you reactivate it?",
+        )
+
+        result = analyzer.analyze(ticket)
+
+        assert result.is_login_issue is True
+        assert result.issue_type == IssueType.INACTIVE_ACCOUNT
+
 
 class TestTicketAnalyzerVietnamesePatterns:
     """Test Vietnamese login issue detection."""

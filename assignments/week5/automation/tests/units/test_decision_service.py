@@ -22,6 +22,8 @@ class TestDecisionServiceActiveEmployee:
             email="john@company.com",
             status=EmployeeStatus.ACTIVE,
             department="Engineering",
+            lms_account_status="deactivated",
+            deactivation_reason="inactivity_30_days",
         )
 
         ticket = Ticket(
@@ -69,6 +71,8 @@ class TestDecisionServiceTerminatedEmployee:
             name="Jane Smith",
             email="jane@company.com",
             status=EmployeeStatus.TERMINATED,
+            lms_account_status="deactivated",
+            deactivation_reason="Employee terminated",
         )
 
         ticket = Ticket(
@@ -95,6 +99,8 @@ class TestDecisionServiceOnLeaveEmployee:
             name="Bob Johnson",
             email="bob@company.com",
             status=EmployeeStatus.ON_LEAVE,
+            lms_account_status="suspended",
+            deactivation_reason="On leave",
         )
 
         ticket = Ticket(
@@ -120,6 +126,8 @@ class TestDecisionServiceInactiveEmployee:
             name="Alice Brown",
             email="alice@company.com",
             status=EmployeeStatus.INACTIVE,
+            lms_account_status="deactivated",
+            deactivation_reason="Account inactive - 30+ days",
         )
 
         ticket = Ticket(
@@ -144,6 +152,8 @@ class TestDecisionServiceEmailMismatch:
             name="Charlie Davis",
             email="charlie@company.com",
             status=EmployeeStatus.ACTIVE,
+            lms_account_status="active",
+            deactivation_reason=None,
         )
 
         ticket = Ticket(
@@ -165,6 +175,8 @@ class TestDecisionServiceEmailMismatch:
             name="Eve Thompson",
             email="eve@company.com",
             status=EmployeeStatus.ACTIVE,
+            lms_account_status="active",
+            deactivation_reason=None,
         )
 
         ticket = Ticket(
@@ -208,6 +220,8 @@ class TestDecisionServiceDecisionFields:
             name="Frank Wilson",
             email="frank@company.com",
             status=EmployeeStatus.ACTIVE,
+            lms_account_status="active",
+            deactivation_reason=None,
         )
 
         ticket = Ticket(
@@ -235,6 +249,8 @@ class TestDecisionServiceDeterminism:
             name="Grace Lee",
             email="grace@company.com",
             status=EmployeeStatus.ACTIVE,
+            lms_account_status="active",
+            deactivation_reason=None,
         )
 
         ticket = Ticket(
@@ -261,6 +277,8 @@ class TestDecisionServiceAllActions:
             name="Henry Taylor",
             email="henry@company.com",
             status=EmployeeStatus.ACTIVE,
+            lms_account_status="deactivated",
+            deactivation_reason="inactivity_30_days",
         )
 
         ticket = Ticket(
@@ -281,6 +299,8 @@ class TestDecisionServiceAllActions:
             name="Ivy Martinez",
             email="ivy@company.com",
             status=EmployeeStatus.TERMINATED,
+            lms_account_status="deactivated",
+            deactivation_reason="Employee terminated",
         )
 
         ticket = Ticket(
@@ -301,6 +321,8 @@ class TestDecisionServiceAllActions:
             name="Jack Robinson",
             email="jack@company.com",
             status=EmployeeStatus.ACTIVE,
+            lms_account_status="active",
+            deactivation_reason=None,
         )
 
         ticket = Ticket(

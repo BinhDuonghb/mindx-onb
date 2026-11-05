@@ -84,6 +84,9 @@ class TicketAnalyzer:
         r"\bunable\s+to\s+log\s+in\b",
         r"\bcannot\s+access\b",
         r"\bcan't\s+access\b",
+        r"\btroubl.*\s+log",
+        r"\blogged\s+out\b",
+        r"\bcan't\s+get\s+in\b",
     ]
 
     ENGLISH_ACCOUNT_LOCKED = [
@@ -91,6 +94,8 @@ class TicketAnalyzer:
         r"\baccount\s+is\s+locked\b",
         r"\bmy\s+account\s+locked\b",
         r"\buser\s+locked\b",
+        r"\blocked\s+out\b",
+        r"\blocked\s+out\s+of\b",
     ]
 
     ENGLISH_PASSWORD_RESET = [
@@ -106,6 +111,16 @@ class TicketAnalyzer:
         r"\bdenied\s+access\b",
         r"\bunauthorized\b",
         r"\bpermission\s+denied\b",
+    ]
+
+    ENGLISH_INACTIVE_ACCOUNT = [
+        r"\baccount\s+deactivated\b",
+        r"\bdeactivated\b",
+        r"\baccount\s+inactive\b",
+        r"\binactive\s+account\b",
+        r"\baccount\s+disabled\b",
+        r"\bdisabled\s+account\b",
+        r"\baccount\s+suspended\b",
     ]
 
     # Vietnamese patterns
@@ -254,6 +269,14 @@ class TicketAnalyzer:
                 is_login_issue=True,
                 issue_type=IssueType.ACCOUNT_LOCKED,
                 reason="Detected 'account locked' pattern",
+            )
+
+        # Check inactive account (deactivated, suspended, disabled)
+        if self._match_patterns(normalized_content, self.ENGLISH_INACTIVE_ACCOUNT):
+            return AnalysisResult(
+                is_login_issue=True,
+                issue_type=IssueType.INACTIVE_ACCOUNT,
+                reason="Detected 'inactive account' pattern",
             )
 
         # Check password reset

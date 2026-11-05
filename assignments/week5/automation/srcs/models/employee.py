@@ -31,6 +31,8 @@ class Employee:
     # Additional HR attributes
     is_internal: bool = True
     company_id: Optional[int] = None
+    lms_account_status: str = "unknown"
+    deactivation_reason: Optional[str] = None
 
     def __post_init__(self) -> None:
         """Validate employee data after initialization."""
@@ -74,4 +76,6 @@ class Employee:
             "manager_email": self.manager_email,
             "is_internal": self.is_internal,
             "company_id": self.company_id,
+            "lms_account_status": self.lms_account_status,
+            "deactivation_reason": self.deactivation_reason,
         }
