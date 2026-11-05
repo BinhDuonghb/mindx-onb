@@ -2,7 +2,7 @@
 
 import pytest
 import logging
-from assignments.week5.automation.srcs.clients.odoo.ticket_client import TicketClient
+from srcs.clients.odoo.ticket_client import TicketClient
 from srcs.config import ACTIVE_ODOO_URL, ACTIVE_ODOO_DATABASE, ACTIVE_ODOO_RPC_KEY
 
 logger = logging.getLogger(__name__)

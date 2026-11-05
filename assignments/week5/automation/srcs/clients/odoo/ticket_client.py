@@ -102,7 +102,7 @@ class TicketClient(ODOOClient):
                    If None, retrieves common fields
 
         Returns:
-            List of ticket data dictionaries
+            List of ticket data dictionaries, or empty list on error
         """
         if not ticket_ids:
             return []
@@ -127,6 +127,11 @@ class TicketClient(ODOOClient):
             logger.debug(f"Reading {len(ticket_ids)} tickets with fields: {fields}")
             response = self.post(endpoint, json=payload)
             result = response.json()
+
+            # Validate response is a list (not error dict or other malformed response)
+            if not isinstance(result, list):
+                logger.error(f"Unexpected response type from read: {type(result).__name__}")
+                return []
 
             logger.debug(f"Read {len(result)} ticket records")
             return result
@@ -156,6 +161,22 @@ class TicketClient(ODOOClient):
         except Exception as e:
             logger.error(f"Failed to get ticket {ticket_id}: {str(e)}")
             return None
+
+    def add_note(self, ticket_id: int, note: str) -> bool:
+        """Add a customer-visible note/message to a ticket.
+
+        This is a convenience wrapper around add_log() that sends a message
+        visible to the customer. For internal-only notes, use add_log() with
+        is_internal=True.
+
+        Args:
+            ticket_id: Ticket ID
+            note: Note text to add
+
+        Returns:
+            True if successful
+        """
+        return self.add_log(ticket_id, note, is_internal=False)
 
     def add_log(self, ticket_id: int, log_message: str, is_internal: bool = True) -> bool:
         """Add a log/notification message to a ticket.

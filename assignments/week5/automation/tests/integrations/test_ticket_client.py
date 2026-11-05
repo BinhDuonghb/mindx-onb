@@ -1,11 +1,17 @@
-"""Integration tests for Ticket Client (Odoo JSON-2 API)."""
+"""Integration tests for Ticket Client (Odoo JSON-2 API).
+
+These tests verify that TicketClient correctly calls the Odoo JSON-2 API
+and parses responses according to the actual API contract.
+
+JSON-2 API responses are direct results, not wrapped in {"jsonrpc": "2.0", "result": ...}
+"""
 
 import pytest
 import json
 from pathlib import Path
 from datetime import datetime
 from unittest.mock import patch, MagicMock, Mock
-from assignments.week5.automation.srcs.clients.odoo.ticket_client import TicketClient
+from srcs.clients.odoo.ticket_client import TicketClient
 from srcs.models import Ticket
 from srcs.config import ODOO_API_ENDPOINT, ODOO_HEADERS, ODOO_DATABASE
 
@@ -21,14 +27,10 @@ class TestTicketClientSearch:
             headers=ODOO_HEADERS,
         )
 
-        # Mock the POST request
+        # Mock the POST request - JSON-2 returns direct list, not wrapped
         with patch.object(client, "post") as mock_post:
             mock_response = Mock()
-            mock_response.json.return_value = {
-                "jsonrpc": "2.0",
-                "id": 1,
-                "result": [1, 2, 3, 4, 5],  # Ticket IDs
-            }
+            mock_response.json.return_value = [1, 2, 3, 4, 5]  # Direct ticket IDs
             mock_post.return_value = mock_response
 
             # Search for tickets in "New" stage
@@ -40,6 +42,13 @@ class TestTicketClientSearch:
         assert len(ticket_ids) == 5
         assert ticket_ids == [1, 2, 3, 4, 5]
 
+        # Verify the API was called with correct payload
+        call_args = mock_post.call_args
+        assert call_args[0][0] == "/helpdesk.ticket/search"
+        payload = call_args[1]["json"]
+        assert payload["domain"] == [("stage_id.name", "=", "New")]
+        assert payload["limit"] == 100
+
     def test_search_tickets_with_pagination(self):
         """Should support pagination with offset."""
         client = TicketClient(
@@ -50,9 +59,7 @@ class TestTicketClientSearch:
 
         with patch.object(client, "post") as mock_post:
             mock_response = Mock()
-            mock_response.json.return_value = {
-                "result": [6, 7, 8, 9, 10],
-            }
+            mock_response.json.return_value = [6, 7, 8, 9, 10]
             mock_post.return_value = mock_response
 
             # Get second page (offset 5)
@@ -64,6 +71,12 @@ class TestTicketClientSearch:
 
         assert ticket_ids == [6, 7, 8, 9, 10]
 
+        # Verify offset parameter was sent
+        call_args = mock_post.call_args
+        payload = call_args[1]["json"]
+        assert payload["offset"] == 5
+        assert payload["limit"] == 5
+
     def test_search_tickets_empty_result(self):
         """Should return empty list when no tickets found."""
         client = TicketClient(
@@ -74,7 +87,7 @@ class TestTicketClientSearch:
 
         with patch.object(client, "post") as mock_post:
             mock_response = Mock()
-            mock_response.json.return_value = {"result": []}
+            mock_response.json.return_value = []
             mock_post.return_value = mock_response
 
             ticket_ids = client.search_tickets(domain=[("id", "=", 999)])
@@ -91,14 +104,15 @@ class TestTicketClientSearch:
 
         with patch.object(client, "post") as mock_post:
             mock_response = Mock()
-            mock_response.json.return_value = {"result": [1, 2, 3]}
+            mock_response.json.return_value = [1, 2, 3]
             mock_post.return_value = mock_response
 
             ticket_ids = client.search_tickets()
 
         # Verify post was called with empty domain
         call_args = mock_post.call_args
-        assert call_args is not None
+        payload = call_args[1]["json"]
+        assert payload["domain"] == []
 
 
 class TestTicketClientRead:
@@ -112,32 +126,34 @@ class TestTicketClientRead:
             headers=ODOO_HEADERS,
         )
 
+        # Realistic Odoo JSON-2 response with partner_email (not email_from)
         ticket_data = [
             {
                 "id": 1,
                 "name": "Cannot login",
-                "email_from": "user1@company.com",
+                "partner_email": "user1@company.com",  # Odoo field name
                 "description": "Account locked after inactivity",
                 "stage_id": [1, "New"],
                 "partner_id": [10, "User One"],
-                "create_date": "2024-01-15 10:30:00",
-                "priority": 1,
+                "create_date": "2024-01-15T10:30:00",
+                "priority": "1",  # String selection in Odoo
             }
         ]
 
         with patch.object(client, "post") as mock_post:
             mock_response = Mock()
-            mock_response.json.return_value = {"result": ticket_data}
+            mock_response.json.return_value = ticket_data
             mock_post.return_value = mock_response
 
             tickets = client.read_tickets(
                 ticket_ids=[1],
-                fields=["id", "name", "email_from", "stage_id"],
+                fields=["id", "name", "partner_email", "stage_id"],
             )
 
         assert len(tickets) == 1
         assert tickets[0]["id"] == 1
         assert tickets[0]["name"] == "Cannot login"
+        assert tickets[0]["partner_email"] == "user1@company.com"
 
     def test_read_tickets_default_fields(self):
         """Should use default fields if not specified."""
@@ -151,24 +167,29 @@ class TestTicketClientRead:
             {
                 "id": 1,
                 "name": "Login Issue",
-                "email_from": "user@company.com",
+                "partner_email": "user@company.com",
                 "description": "Cannot access account",
                 "stage_id": [1, "New"],
                 "partner_id": [10, "User"],
-                "create_date": "2024-01-15 10:30:00",
-                "write_date": "2024-01-15 10:30:00",
-                "priority": 1,
+                "create_date": "2024-01-15T10:30:00",
+                "write_date": "2024-01-15T10:30:00",
+                "priority": "1",
             }
         ]
 
         with patch.object(client, "post") as mock_post:
             mock_response = Mock()
-            mock_response.json.return_value = {"result": ticket_data}
+            mock_response.json.return_value = ticket_data
             mock_post.return_value = mock_response
 
             tickets = client.read_tickets(ticket_ids=[1])
 
         assert len(tickets) == 1
+
+        # Verify default fields were requested
+        call_args = mock_post.call_args
+        payload = call_args[1]["json"]
+        assert "partner_email" in payload["fields"]  # Should request partner_email, not email_from
 
     def test_read_multiple_tickets(self):
         """Should read multiple tickets in one call."""
@@ -179,14 +200,14 @@ class TestTicketClientRead:
         )
 
         ticket_data = [
-            {"id": 1, "name": "Ticket 1", "email_from": "user1@company.com"},
-            {"id": 2, "name": "Ticket 2", "email_from": "user2@company.com"},
-            {"id": 3, "name": "Ticket 3", "email_from": "user3@company.com"},
+            {"id": 1, "name": "Ticket 1", "partner_email": "user1@company.com"},
+            {"id": 2, "name": "Ticket 2", "partner_email": "user2@company.com"},
+            {"id": 3, "name": "Ticket 3", "partner_email": "user3@company.com"},
         ]
 
         with patch.object(client, "post") as mock_post:
             mock_response = Mock()
-            mock_response.json.return_value = {"result": ticket_data}
+            mock_response.json.return_value = ticket_data
             mock_post.return_value = mock_response
 
             tickets = client.read_tickets(ticket_ids=[1, 2, 3])
@@ -208,13 +229,13 @@ class TestTicketClientSingleTicket:
         ticket_data = {
             "id": 42,
             "name": "Account Locked",
-            "email_from": "john@company.com",
+            "partner_email": "john@company.com",
             "description": "I cannot login to my account",
             "stage_id": [1, "New"],
             "partner_id": [100, "John Doe"],
-            "create_date": "2024-01-15 10:30:00",
-            "write_date": "2024-01-15 10:30:00",
-            "priority": 2,
+            "create_date": "2024-01-15T10:30:00",
+            "write_date": "2024-01-15T10:30:00",
+            "priority": "2",
         }
 
         with patch.object(client, "read_tickets") as mock_read:
@@ -226,7 +247,7 @@ class TestTicketClientSingleTicket:
         assert isinstance(ticket, Ticket)
         assert ticket.id == 42
         assert ticket.name == "Account Locked"
-        assert ticket.email_from == "john@company.com"
+        assert ticket.email_from == "john@company.com"  # Model uses email_from, mapped from partner_email
 
     def test_get_ticket_not_found(self):
         """Should return None when ticket not found."""
@@ -244,11 +265,11 @@ class TestTicketClientSingleTicket:
         assert ticket is None
 
 
-class TestTicketClientAddNote:
-    """Test adding notes to tickets."""
+class TestTicketClientAddLog:
+    """Test adding logs/messages to tickets."""
 
-    def test_add_note_success(self):
-        """Should add note to ticket successfully."""
+    def test_add_log_internal(self):
+        """Should add internal log (not sent to customer)."""
         client = TicketClient(
             api_endpoint=ODOO_API_ENDPOINT,
             database=ODOO_DATABASE,
@@ -257,10 +278,61 @@ class TestTicketClientAddNote:
 
         with patch.object(client, "post") as mock_post:
             mock_response = Mock()
-            mock_response.json.return_value = {
-                "result": 123,  # Message ID
-            }
+            mock_response.json.return_value = True
             mock_post.return_value = mock_response
+
+            success = client.add_log(
+                ticket_id=42,
+                log_message="[Automation] Internal note",
+                is_internal=True
+            )
+
+        assert success is True
+
+        # Verify the API was called with correct internal message payload
+        call_args = mock_post.call_args
+        assert call_args[0][0] == "/helpdesk.ticket/message_post"
+        payload = call_args[1]["json"]
+        assert payload["ids"] == [42]
+        assert payload["body"] == "[Automation] Internal note"
+        assert payload["subtype_xmlid"] == "mail.mt_note"  # Internal
+
+    def test_add_log_customer_visible(self):
+        """Should add customer-visible message (sent to customer)."""
+        client = TicketClient(
+            api_endpoint=ODOO_API_ENDPOINT,
+            database=ODOO_DATABASE,
+            headers=ODOO_HEADERS,
+        )
+
+        with patch.object(client, "post") as mock_post:
+            mock_response = Mock()
+            mock_response.json.return_value = True
+            mock_post.return_value = mock_response
+
+            success = client.add_log(
+                ticket_id=42,
+                log_message="Your account has been reactivated.",
+                is_internal=False
+            )
+
+        assert success is True
+
+        # Verify the API was called with correct customer-visible message payload
+        call_args = mock_post.call_args
+        payload = call_args[1]["json"]
+        assert payload["subtype_xmlid"] == "mail.mt_comment"  # Customer visible
+
+    def test_add_note_is_wrapper(self):
+        """add_note() should be a wrapper around add_log() with is_internal=False."""
+        client = TicketClient(
+            api_endpoint=ODOO_API_ENDPOINT,
+            database=ODOO_DATABASE,
+            headers=ODOO_HEADERS,
+        )
+
+        with patch.object(client, "add_log") as mock_add_log:
+            mock_add_log.return_value = True
 
             success = client.add_note(
                 ticket_id=42,
@@ -269,24 +341,12 @@ class TestTicketClientAddNote:
 
         assert success is True
 
-    def test_add_note_failure(self):
-        """Should handle note addition failure."""
-        client = TicketClient(
-            api_endpoint=ODOO_API_ENDPOINT,
-            database=ODOO_DATABASE,
-            headers=ODOO_HEADERS,
+        # Verify add_note calls add_log with is_internal=False
+        mock_add_log.assert_called_once_with(
+            42,
+            "Account has been reactivated automatically.",
+            is_internal=False
         )
-
-        with patch.object(client, "post") as mock_post:
-            mock_response = Mock()
-            mock_response.json.return_value = {
-                "error": {"message": "Ticket not found"}
-            }
-            mock_post.return_value = mock_response
-
-            success = client.add_note(ticket_id=999, note="Test")
-
-        assert success is False
 
 
 class TestTicketClientParseTicket:
@@ -303,13 +363,13 @@ class TestTicketClientParseTicket:
         ticket_data = {
             "id": 1,
             "name": "Test Ticket",
-            "email_from": "test@company.com",
+            "partner_email": "test@company.com",
             "description": "Test description",
             "stage_id": [1, "New"],
             "partner_id": [10, "Partner"],
             "create_date": "2024-01-15T10:30:00",
             "write_date": "2024-01-15T14:45:00",
-            "priority": 1,
+            "priority": "1",
         }
 
         ticket = client._parse_ticket(ticket_data)
@@ -330,17 +390,16 @@ class TestTicketClientParseTicket:
         ticket_data = {
             "id": 1,
             "name": "Test",
-            "email_from": "test@company.com",
+            "partner_email": "test@company.com",
             "stage_id": [5, "In Progress"],  # Many-to-one field
             "partner_id": [20, "Customer Name"],  # Many-to-one field
-            "category_id": [2, "Technical"],  # Many-to-one field
         }
 
         ticket = client._parse_ticket(ticket_data)
 
         assert ticket.stage_id == 5
         assert ticket.partner_id == 20
-        assert ticket.category_id == 2
+        # category_id removed - doesn't exist in Odoo
 
     def test_parse_ticket_with_missing_optional_fields(self):
         """Should handle missing optional fields gracefully."""
@@ -353,7 +412,7 @@ class TestTicketClientParseTicket:
         ticket_data = {
             "id": 1,
             "name": "Minimal Ticket",
-            "email_from": "test@company.com",
+            "partner_email": "test@company.com",
             # Missing optional fields: description, stage_id, etc.
         }
 
@@ -363,6 +422,92 @@ class TestTicketClientParseTicket:
         assert ticket.name == "Minimal Ticket"
         assert ticket.description is None
         assert ticket.stage_id is None
+
+    def test_parse_ticket_with_missing_email(self):
+        """Should handle tickets with missing customer email."""
+        client = TicketClient(
+            api_endpoint=ODOO_API_ENDPOINT,
+            database=ODOO_DATABASE,
+            headers=ODOO_HEADERS,
+        )
+
+        ticket_data = {
+            "id": 1,
+            "name": "No Email Ticket",
+            # partner_email missing or empty
+            "stage_id": [1, "New"],
+        }
+
+        ticket = client._parse_ticket(ticket_data)
+
+        assert ticket.id == 1
+        assert ticket.email_from == ""  # Empty email is valid
+
+    def test_parse_ticket_with_many_to_one_false_value(self):
+        """Should handle Odoo False value for unset many-to-one fields."""
+        client = TicketClient(
+            api_endpoint=ODOO_API_ENDPOINT,
+            database=ODOO_DATABASE,
+            headers=ODOO_HEADERS,
+        )
+
+        ticket_data = {
+            "id": 1,
+            "name": "Test",
+            "partner_email": "test@company.com",
+            "stage_id": False,  # Unset many-to-one
+            "partner_id": False,  # Unset many-to-one
+        }
+
+        ticket = client._parse_ticket(ticket_data)
+
+        assert ticket.stage_id is False
+        assert ticket.partner_id is False
+
+
+class TestTicketClientUpdateStage:
+    """Test updating ticket stage."""
+
+    def test_update_stage_success(self):
+        """Should update ticket stage successfully."""
+        client = TicketClient(
+            api_endpoint=ODOO_API_ENDPOINT,
+            database=ODOO_DATABASE,
+            headers=ODOO_HEADERS,
+        )
+
+        with patch.object(client, "post") as mock_post:
+            mock_response = Mock()
+            mock_response.json.return_value = True
+            mock_post.return_value = mock_response
+
+            success = client.update_stage(ticket_id=42, stage_id=2)
+
+        assert success is True
+
+        # Verify the API was called with correct payload using 'vals'
+        call_args = mock_post.call_args
+        assert call_args[0][0] == "/helpdesk.ticket/write"
+        payload = call_args[1]["json"]
+        assert payload["ids"] == [42]
+        assert payload["vals"] == {"stage_id": 2}  # Note: 'vals', not 'values'
+
+    def test_update_stage_failure(self):
+        """Should handle stage update failure."""
+        client = TicketClient(
+            api_endpoint=ODOO_API_ENDPOINT,
+            database=ODOO_DATABASE,
+            headers=ODOO_HEADERS,
+        )
+
+        with patch.object(client, "post") as mock_post:
+            mock_response = Mock()
+            mock_response.json.return_value = False
+            mock_post.return_value = mock_response
+
+            success = client.update_stage(ticket_id=42, stage_id=2)
+
+        assert success is False
 
 
 class TestTicketClientErrorHandling:
@@ -398,6 +543,7 @@ class TestTicketClientErrorHandling:
 
             tickets = client.read_tickets(ticket_ids=[1])
 
+        # Error response is treated as invalid data
         assert tickets == []
 
     def test_parse_ticket_with_invalid_data(self):
@@ -415,3 +561,18 @@ class TestTicketClientErrorHandling:
 
         with pytest.raises(ValueError):
             client._parse_ticket(invalid_ticket_data)
+
+    def test_add_log_handles_api_error(self):
+        """Should handle add_log API errors gracefully."""
+        client = TicketClient(
+            api_endpoint=ODOO_API_ENDPOINT,
+            database=ODOO_DATABASE,
+            headers=ODOO_HEADERS,
+        )
+
+        with patch.object(client, "post") as mock_post:
+            mock_post.side_effect = Exception("API error")
+
+            success = client.add_log(ticket_id=42, log_message="Test")
+
+        assert success is False
