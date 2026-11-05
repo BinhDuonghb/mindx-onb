@@ -1,7 +1,7 @@
 """Employee data model for HR system integration."""
 
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Union
 from enum import Enum
 
 
@@ -21,7 +21,7 @@ class Employee:
     Used to determine if an employee is still active before account actions.
     """
 
-    employee_id: int
+    employee_id: Union[str, int]
     name: str
     email: str
     status: EmployeeStatus
@@ -34,8 +34,12 @@ class Employee:
 
     def __post_init__(self) -> None:
         """Validate employee data after initialization."""
-        if not self.employee_id or self.employee_id <= 0:
-            raise ValueError("Employee ID must be positive")
+        # Employee ID can be string (e.g., "EMP001") or integer
+        if not self.employee_id:
+            raise ValueError("Employee ID cannot be empty")
+
+        if isinstance(self.employee_id, int) and self.employee_id <= 0:
+            raise ValueError("Employee ID (integer) must be positive")
         if not self.name or not self.name.strip():
             raise ValueError("Employee name cannot be empty")
         if not self.email or "@" not in self.email:
