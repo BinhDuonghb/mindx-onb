@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 from datetime import datetime
 from unittest.mock import patch, MagicMock, Mock
-from srcs.clients.odoo.ticket import TicketClient
+from assignments.week5.automation.srcs.clients.odoo.ticket_client import TicketClient
 from srcs.models import Ticket
 from srcs.config import ODOO_API_ENDPOINT, ODOO_HEADERS, ODOO_DATABASE
 
