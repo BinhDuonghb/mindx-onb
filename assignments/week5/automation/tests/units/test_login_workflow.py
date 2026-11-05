@@ -21,7 +21,7 @@ def mock_hr_client():
     """Mock HR client."""
     client = Mock()
     client.get_employee_by_email = Mock(return_value=None)
-    client.update_employee_status = Mock(return_value=True)
+    client.reactivate_lms_account = Mock(return_value=True)
     return client
 
 
@@ -76,7 +76,7 @@ class TestLoginWorkflowSuccessfulReactivation:
             reason="Detected 'cannot login' pattern",
             confidence=0.95,
         )
-        mock_hr_client.update_employee_status.return_value = True
+        mock_hr_client.reactivate_lms_account.return_value = True
 
         # Execute workflow
         result = workflow.execute(ticket_id=1)
@@ -88,9 +88,9 @@ class TestLoginWorkflowSuccessfulReactivation:
         assert result.employee_id == "EMP001"
 
         # Verify HR status was updated
-        mock_hr_client.update_employee_status.assert_called_once_with(
+        mock_hr_client.reactivate_lms_account.assert_called_once_with(
             employee_id="EMP001",
-            new_status="reactivated",
+            new_status="active",
         )
 
         # Verify internal note was posted
@@ -181,7 +181,7 @@ class TestLoginWorkflowEscalation:
         assert "terminated" in result.message.lower() or "manual" in result.message.lower()
 
         # Should NOT update HR status
-        mock_hr_client.update_employee_status.assert_not_called()
+        mock_hr_client.reactivate_lms_account.assert_not_called()
 
         # Should post internal note indicating escalation
         mock_ticket_client.add_log.assert_called_once()
@@ -277,7 +277,7 @@ class TestLoginWorkflowEscalation:
             reason="Detected login issue",
             confidence=0.9,
         )
-        mock_hr_client.update_employee_status.return_value = False
+        mock_hr_client.reactivate_lms_account.return_value = False
 
         # Execute workflow
         result = workflow.execute(ticket_id=6)
@@ -328,7 +328,7 @@ class TestLoginWorkflowSkip:
         assert "not a login issue" in result.message.lower()
 
         # Should NOT update HR or post note
-        mock_hr_client.update_employee_status.assert_not_called()
+        mock_hr_client.reactivate_lms_account.assert_not_called()
         mock_ticket_client.add_log.assert_not_called()
 
 
@@ -483,7 +483,7 @@ class TestLoginWorkflowIntegration:
             reason="Detected 'cannot access' pattern",
             confidence=0.92,
         )
-        mock_hr_client.update_employee_status.return_value = True
+        mock_hr_client.reactivate_lms_account.return_value = True
 
         # Execute complete workflow
         result = workflow.execute(ticket_id=20)
@@ -499,7 +499,7 @@ class TestLoginWorkflowIntegration:
         mock_ticket_client.get_ticket.assert_called_once_with(20)
         mock_analyzer.analyze.assert_called_once()
         mock_hr_client.get_employee_by_email.assert_called_once_with("alice@company.com")
-        mock_hr_client.update_employee_status.assert_called_once()
+        mock_hr_client.reactivate_lms_account.assert_called_once()
         mock_ticket_client.add_log.assert_called_once()
 
     def test_workflow_decision_flow_active_with_login_issue(

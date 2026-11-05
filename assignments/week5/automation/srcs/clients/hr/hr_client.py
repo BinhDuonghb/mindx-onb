@@ -133,14 +133,20 @@ class HRClient:
             logger.error(f"Failed to check employee status for {email}: {str(e)}")
             return None
 
-    def update_employee_status(
+    def reactivate_lms_account(
         self, employee_id: str, new_status: str
     ) -> bool:
-        """Update employee status in HR system.
+        """Reactivate employee's LMS account status (not HR employment status).
+
+        Updates only the simulated LMS account fields:
+        - lms_account_status: "active", "deactivated", "suspended", etc.
+        - deactivation_reason: reason for deactivation if applicable
+
+        Does NOT modify the employee's HR employment status (active/terminated/on-leave/inactive).
 
         Args:
             employee_id: Employee ID
-            new_status: New status value (e.g., "active", "reactivated", "terminated")
+            new_status: New LMS account status (e.g., "active", "reactivated")
 
         Returns:
             True if successful, False otherwise
@@ -149,24 +155,31 @@ class HRClient:
             employees = self.db_client.read()
 
             # Find and update employee
+            updated = False
             for emp_data in employees:
                 if emp_data.get("employee_id") == employee_id:
                     emp_data["lms_account_status"] = new_status
                     emp_data["deactivation_reason"] = None
-                    self.db_client.write(employees)
+                    updated = True
+                    break
 
-                    # Clear cache for this employee
-                    email = emp_data.get("email")
-                    if email in self._cache:
-                        del self._cache[email]
+            if not updated:
+                logger.warning(f"Employee {employee_id} not found for LMS reactivation")
+                return False
 
-                    logger.info(
-                        f"Updated employee {employee_id} status to {new_status}"
-                    )
-                    return True
+            # Write all employees back to file (replaces entire dataset)
+            self.db_client._write_all(employees)
 
-            logger.warning(f"Employee {employee_id} not found for status update")
-            return False
+            # Clear cache for this employee
+            for email, (employee, _) in list(self._cache.items()):
+                if employee.employee_id == employee_id:
+                    del self._cache[email]
+                    break
+
+            logger.info(
+                f"Reactivated LMS account for employee {employee_id}: {new_status}"
+            )
+            return True
 
         except FileNotFoundError:
             logger.error(f"HR file not found: {self.file_path}")
@@ -176,7 +189,7 @@ class HRClient:
             return False
         except Exception as e:
             logger.error(
-                f"Failed to update employee status for {employee_id}: {str(e)}"
+                f"Failed to reactivate LMS account for {employee_id}: {str(e)}"
             )
             return False
 
@@ -212,6 +225,8 @@ class HRClient:
                 manager_email=emp_data.get("manager_email"),
                 is_internal=emp_data.get("is_internal", True),
                 company_id=emp_data.get("company_id"),
+                lms_account_status=emp_data.get("lms_account_status", "unknown"),
+                deactivation_reason=emp_data.get("deactivation_reason"),
             )
 
             return employee

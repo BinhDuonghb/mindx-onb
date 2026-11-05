@@ -165,25 +165,25 @@ class LoginWorkflow:
         """
         logger.info(f"Reactivating account for employee {employee.name}")
 
-        # Update employee status in HR (mark as reactivated)
-        success = self.hr_client.update_employee_status(
+        # Reactivate LMS account (mark as active in simulated LMS system)
+        success = self.hr_client.reactivate_lms_account(
             employee_id=employee.employee_id,
             new_status="active",
         )
 
         if not success:
-            logger.warning(f"Failed to update HR status for {employee.name}")
+            logger.warning(f"Failed to reactivate LMS account for {employee.name}")
             # Post escalation note instead
             self.ticket_client.add_log(
                 ticket_id=ticket.id,
                 log_message=f"[Automation] Account reactivation approved for {employee.name}, "
-                f"but HR system update failed. Requires manual verification.",
+                f"but LMS system update failed. Requires manual verification.",
                 is_internal=True,
             )
             return WorkflowResult(
                 success=True,
                 action_taken="escalated_manual_review",
-                message=f"Account reactivation approved but HR update failed for {employee.name}",
+                message=f"Account reactivation approved but LMS update failed for {employee.name}",
                 ticket_id=ticket.id,
                 employee_id=employee.employee_id,
             )

@@ -82,7 +82,7 @@ def mock_hr_client():
         return None
 
     client.get_employee_by_email.side_effect = get_employee_by_email_side_effect
-    client.update_employee_status.return_value = True
+    client.reactivate_lms_account.return_value = True
 
     logger.info("Created mock HR client with predefined employees")
 
