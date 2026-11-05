@@ -42,4 +42,4 @@ Thumbs.db
 .coverage
 htmlcov/
 
-assignments/*/TicketManagerCLI/script.ps1
+assignments/**/script.ps1
