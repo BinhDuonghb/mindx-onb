@@ -5,11 +5,14 @@ just data representation and validation.
 """
 
 from .ticket import Ticket
-from .employee import Employee
-from .automation_result import AutomationResult
+from .employee import Employee, EmployeeStatus
+from .automation_result import AutomationResult, ActionTaken, ResultStatus
 
 __all__ = [
     "Ticket",
     "Employee",
+    "EmployeeStatus",
     "AutomationResult",
+    "ActionTaken",
+    "ResultStatus",
 ]
