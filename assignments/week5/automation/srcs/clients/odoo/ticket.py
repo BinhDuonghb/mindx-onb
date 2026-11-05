@@ -157,12 +157,14 @@ class TicketClient(ODOOClient):
             logger.error(f"Failed to get ticket {ticket_id}: {str(e)}")
             return None
 
-    def add_note(self, ticket_id: int, note: str) -> bool:
-        """Add a note/message to a ticket.
+    def add_log(self, ticket_id: int, log_message: str, is_internal: bool = True) -> bool:
+        """Add a log/notification message to a ticket.
 
         Args:
             ticket_id: Ticket ID
-            note: Note text to add
+            log_message: Log message text
+            is_internal: If True, internal note (not sent to customer).
+                        If False, visible comment (sent to customer).
 
         Returns:
             True if successful
@@ -170,26 +172,70 @@ class TicketClient(ODOOClient):
         # JSON-2 API endpoint: POST /json/2/helpdesk.ticket/message_post
         endpoint = f"/{self.MODEL_NAME}/message_post"
 
+        # Set subtype based on whether it's internal or external
+        subtype_xmlid = "mail.mt_note" if is_internal else "mail.mt_comment"
+
         # Parameters go at TOP LEVEL of request
         payload = {
             "ids": [ticket_id],
-            "body": note,
+            "body": log_message,
+            "message_type": "comment",
+            "subtype_xmlid": subtype_xmlid,
         }
 
         try:
-            logger.debug(f"Adding note to ticket {ticket_id}")
+            log_type = "internal log" if is_internal else "customer message"
+            logger.debug(f"Adding {log_type} to ticket {ticket_id}: {log_message}")
             response = self.post(endpoint, json=payload)
             result = response.json()
 
             if result:
-                logger.info(f"Added note to ticket {ticket_id}")
+                logger.info(f"Added {log_type} to ticket {ticket_id}")
                 return True
 
-            logger.error(f"Failed to add note: {result}")
+            logger.error(f"Failed to add {log_type}: {result}")
             return False
 
         except Exception as e:
-            logger.error(f"Failed to add note to ticket {ticket_id}: {str(e)}")
+            logger.error(f"Failed to add log to ticket {ticket_id}: {str(e)}")
+            return False
+
+    def update_stage(self, ticket_id: int, stage_id: int) -> bool:
+        """Update ticket stage.
+
+        Args:
+            ticket_id: Ticket ID
+            stage_id: New stage ID
+
+        Returns:
+            True if successful
+        """
+        # JSON-2 API endpoint: POST /json/2/helpdesk.ticket/write
+        endpoint = f"/{self.MODEL_NAME}/write"
+
+        # Parameters go at TOP LEVEL of request
+        # Note: Odoo's write() method expects 'vals', not 'values'
+        payload = {
+            "ids": [ticket_id],
+            "vals": {
+                "stage_id": stage_id,
+            },
+        }
+
+        try:
+            logger.debug(f"Updating ticket {ticket_id} stage to {stage_id}")
+            response = self.post(endpoint, json=payload)
+            result = response.json()
+
+            if result is True or result == 1:  # Odoo returns True or record count
+                logger.info(f"Updated ticket {ticket_id} stage to {stage_id}")
+                return True
+
+            logger.error(f"Failed to update stage: {result}")
+            return False
+
+        except Exception as e:
+            logger.error(f"Failed to update stage for ticket {ticket_id}: {str(e)}")
             return False
 
     def _parse_ticket(self, ticket_data: Dict[str, Any]) -> Ticket:
