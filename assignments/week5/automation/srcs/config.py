@@ -35,17 +35,27 @@ def ensure_storage():
             encoding="utf-8"
         )
 
+# Test Odoo Configuration (for E2E tests against real instance)
+TEST_ODOO_URL = os.getenv("TEST_ODOO_URL")
+TEST_ODOO_DATABASE = os.getenv("TEST_ODOO_DATABASE")
+TEST_ODOO_RPC_KEY = os.getenv("TEST_ODOO_RPC_KEY")
+
+# Use test config if available, otherwise fall back to production
+ACTIVE_ODOO_URL = TEST_ODOO_URL or ODOO_URL
+ACTIVE_ODOO_DATABASE = TEST_ODOO_DATABASE or ODOO_DATABASE
+ACTIVE_ODOO_RPC_KEY = TEST_ODOO_RPC_KEY or ODOO_RPC_KEY
+
 # Validate required configuration
-if not all([ODOO_URL, ODOO_DATABASE, ODOO_RPC_KEY]):
+if not all([ACTIVE_ODOO_URL, ACTIVE_ODOO_DATABASE, ACTIVE_ODOO_RPC_KEY]):
     raise ValueError(
         "Missing required Odoo configuration. "
         "Ensure ODOO_URL, ODOO_DATABASE, and ODOO_RPC_KEY are set in .env"
     )
 
 # Derived configuration
-ODOO_API_ENDPOINT = f"{ODOO_URL}/json/2"
+ODOO_API_ENDPOINT = f"{ACTIVE_ODOO_URL}/json/2"
 ODOO_HEADERS = {
-    "Authorization": f"Bearer {ODOO_RPC_KEY}",
+    "Authorization": f"Bearer {ACTIVE_ODOO_RPC_KEY}",
     "Content-Type": "application/json",
 }
 
@@ -64,6 +74,12 @@ __all__ = [
     "ODOO_URL",
     "ODOO_DATABASE",
     "ODOO_RPC_KEY",
+    "TEST_ODOO_URL",
+    "TEST_ODOO_DATABASE",
+    "TEST_ODOO_RPC_KEY",
+    "ACTIVE_ODOO_URL",
+    "ACTIVE_ODOO_DATABASE",
+    "ACTIVE_ODOO_RPC_KEY",
     "ODOO_API_ENDPOINT",
     "ODOO_HEADERS",
     "LOG_LEVEL",

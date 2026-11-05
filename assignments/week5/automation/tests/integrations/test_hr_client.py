@@ -3,7 +3,7 @@
 import pytest
 import json
 from pathlib import Path
-from srcs.clients.hr_client import HRClient
+from srcs.clients.hr.hr_client import HRClient
 from srcs.models import Employee, EmployeeStatus
 from data.db_client import DBClient
 

@@ -11,13 +11,25 @@ class Ticket:
 
     This model acts as a data contract between the Odoo API and internal services.
     Fields are derived from helpdesk.ticket model in Odoo 20.
+
+    Field mapping (Odoo → Model):
+    - id → id
+    - name → name (Subject)
+    - partner_email → email_from (Customer Email)
+    - description → description
+    - stage_id → stage_id
+    - partner_id → partner_id (Customer)
+    - create_date → create_date
+    - write_date → write_date
+    - priority → priority
+
+    See: [[odoo-ticket-field-mapping]] for full API reference.
     """
 
     id: int
     name: str  # Subject/title
-    email_from: str  # Customer email
+    email_from: str  # Customer email (mapped from partner_email in Odoo API)
     description: Optional[str] = None
-    category_id: Optional[int] = None  # Ticket category
     stage_id: Optional[int] = None  # Current stage (open, in_progress, closed, etc)
     partner_id: Optional[int] = None  # Customer/partner ID
     create_date: Optional[datetime] = None
@@ -37,7 +49,8 @@ class Ticket:
             raise ValueError("Ticket ID must be positive")
         if not self.name or not self.name.strip():
             raise ValueError("Ticket name (subject) cannot be empty")
-        if not self.email_from or "@" not in self.email_from:
+        # Email is optional - some tickets may not have customer email
+        if self.email_from and "@" not in self.email_from:
             raise ValueError(f"Invalid email address: {self.email_from}")
 
     def is_open(self) -> bool:
@@ -54,7 +67,6 @@ class Ticket:
             "name": self.name,
             "email_from": self.email_from,
             "description": self.description,
-            "category_id": self.category_id,
             "stage_id": self.stage_id,
             "partner_id": self.partner_id,
             "create_date": self.create_date.isoformat() if self.create_date else None,
