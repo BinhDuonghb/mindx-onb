@@ -5,25 +5,29 @@ from datetime import datetime
 
 # Mock employee records - represents what would come from real HR system
 MOCK_EMPLOYEES = {
-    "active_emp@company.com": {
+    "duongdznhat98@gmail.com": {
         "employee_id": 101,
         "name": "John Active",
-        "email": "active_emp@company.com",
+        "email": "duongdznhat98@gmail.com",
         "status": "active",
         "department": "Engineering",
         "manager_email": "manager@company.com",
         "is_internal": True,
         "company_id": 1,
+        "lms_account_status": "active",
+        "deactivation_reason": None,
     },
-    "terminated_emp@company.com": {
+    "duonghb1577@gmail.com": {
         "employee_id": 102,
         "name": "Jane Terminated",
-        "email": "terminated_emp@company.com",
+        "email": "duonghb1577@gmail.com",
         "status": "terminated",
         "department": "Sales",
         "manager_email": "manager@company.com",
         "is_internal": True,
         "company_id": 1,
+        "lms_account_status": "deactivated",
+        "deactivation_reason": "Employee terminated",
     },
     "onleave_emp@company.com": {
         "employee_id": 103,
@@ -34,6 +38,8 @@ MOCK_EMPLOYEES = {
         "manager_email": "manager@company.com",
         "is_internal": True,
         "company_id": 1,
+        "lms_account_status": "suspended",
+        "deactivation_reason": "On leave",
     },
     "inactive_emp@company.com": {
         "employee_id": 104,
@@ -44,6 +50,8 @@ MOCK_EMPLOYEES = {
         "manager_email": "manager@company.com",
         "is_internal": False,
         "company_id": 1,
+        "lms_account_status": "deactivated",
+        "deactivation_reason": "Account inactive - 30+ days",
     },
 }
 
@@ -111,4 +119,6 @@ def create_mock_employee_model(email: str) -> Employee:
         manager_email=data["manager_email"],
         is_internal=data["is_internal"],
         company_id=data["company_id"],
+        lms_account_status=data["lms_account_status"],
+        deactivation_reason=data["deactivation_reason"],
     )

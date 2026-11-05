@@ -133,6 +133,53 @@ class HRClient:
             logger.error(f"Failed to check employee status for {email}: {str(e)}")
             return None
 
+    def update_employee_status(
+        self, employee_id: str, new_status: str
+    ) -> bool:
+        """Update employee status in HR system.
+
+        Args:
+            employee_id: Employee ID
+            new_status: New status value (e.g., "active", "reactivated", "terminated")
+
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            employees = self.db_client.read()
+
+            # Find and update employee
+            for emp_data in employees:
+                if emp_data.get("employee_id") == employee_id:
+                    emp_data["lms_account_status"] = new_status
+                    emp_data["deactivation_reason"] = None
+                    self.db_client.write(employees)
+
+                    # Clear cache for this employee
+                    email = emp_data.get("email")
+                    if email in self._cache:
+                        del self._cache[email]
+
+                    logger.info(
+                        f"Updated employee {employee_id} status to {new_status}"
+                    )
+                    return True
+
+            logger.warning(f"Employee {employee_id} not found for status update")
+            return False
+
+        except FileNotFoundError:
+            logger.error(f"HR file not found: {self.file_path}")
+            return False
+        except json.JSONDecodeError:
+            logger.error(f"Invalid JSON in HR file: {self.file_path}")
+            return False
+        except Exception as e:
+            logger.error(
+                f"Failed to update employee status for {employee_id}: {str(e)}"
+            )
+            return False
+
     def clear_cache(self) -> None:
         """Clear the employee cache."""
         self._cache.clear()
