@@ -7,6 +7,7 @@ just data representation and validation.
 from .ticket import Ticket
 from .employee import Employee, EmployeeStatus
 from .automation_result import AutomationResult, ActionTaken, ResultStatus
+from .automation_state import AutomationState, AutomationStatus
 
 __all__ = [
     "Ticket",
@@ -15,4 +16,6 @@ __all__ = [
     "AutomationResult",
     "ActionTaken",
     "ResultStatus",
+    "AutomationState",
+    "AutomationStatus",
 ]
