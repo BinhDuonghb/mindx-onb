@@ -175,7 +175,15 @@ class TicketPoller:
         """
         # Check minimum age
         if min_age_minutes > 0 and ticket.create_date:
-            age = datetime.now(UTC) - ticket.create_date
+            # Handle both naive and aware datetimes
+            create_dt = ticket.create_date
+            now = datetime.now(UTC)
+
+            # If create_date is naive, assume it's UTC and make it aware
+            if create_dt.tzinfo is None:
+                create_dt = create_dt.replace(tzinfo=UTC)
+
+            age = now - create_dt
             if age < timedelta(minutes=min_age_minutes):
                 logger.debug(
                     f"Ticket {ticket.id} too new ({age.total_seconds():.0f}s old), skipping"
