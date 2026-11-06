@@ -149,6 +149,9 @@ class AutomationExecutor:
                     # Execute workflow
                     result = self.workflow.execute(ticket_id=ticket.id)
 
+                    # Save automation state after processing
+                    self._save_ticket_state(ticket, result)
+
                     # Track result
                     if result.success:
                         if result.action_taken == "skipped":
@@ -246,6 +249,48 @@ class AutomationExecutor:
             Metrics dictionary
         """
         return self.metrics.to_dict()
+
+    def _save_ticket_state(self, ticket, result) -> None:
+        """Save automation state after processing a ticket.
+
+        Args:
+            ticket: Ticket model
+            result: WorkflowResult from workflow execution
+        """
+        try:
+            from srcs.models import AutomationState, AutomationStatus
+            from srcs.services.ticket_fingerprinter import TicketFingerprinter
+
+            # Determine status based on workflow result
+            if result.action_taken == "account_reactivated":
+                status = AutomationStatus.COMPLETED
+            elif result.action_taken == "escalated_manual_review":
+                status = AutomationStatus.MANUAL_REVIEW
+            elif result.action_taken == "skipped":
+                status = AutomationStatus.SKIPPED
+            elif result.action_taken == "error":
+                status = AutomationStatus.FAILED
+            else:
+                status = AutomationStatus.COMPLETED
+
+            # Generate fingerprint for change detection
+            fingerprint = TicketFingerprinter.generate(ticket)
+
+            # Create and save state
+            state = AutomationState(
+                ticket_id=ticket.id,
+                fingerprint=fingerprint,
+                status=status,
+                last_decision=result.action_taken,
+                last_reason=result.message,
+            )
+
+            self.state_repo.save(state)
+            logger.debug(f"Saved automation state for ticket {ticket.id}: status={status.value}")
+
+        except Exception as e:
+            logger.error(f"Failed to save automation state for ticket {ticket.id}: {str(e)}")
+            # Don't raise - processing succeeded, just state saving failed
 
 
 def main():
