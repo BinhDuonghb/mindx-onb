@@ -1,7 +1,7 @@
 """Unit tests for TicketPoller."""
 
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from unittest.mock import Mock, MagicMock
 
 from srcs.models import Ticket, AutomationState, AutomationStatus
@@ -14,6 +14,7 @@ def mock_ticket_client():
     """Mock ticket client."""
     client = Mock()
     client.search_tickets = Mock(return_value=[])
+    client.get_ticket = Mock(return_value=None)
     return client
 
 
@@ -53,7 +54,8 @@ class TestTicketPollerPoll:
             name="Cannot login",
             email_from="user@company.com",
         )
-        mock_ticket_client.search_tickets.return_value = [ticket]
+        mock_ticket_client.search_tickets.return_value = [1]  # Return ticket ID
+        mock_ticket_client.get_ticket.return_value = ticket  # Return full Ticket object
         mock_state_repo.get.return_value = None  # No prior state
 
         result = poller.poll(limit=50)
@@ -83,7 +85,8 @@ class TestTicketPollerPoll:
             name="Cannot login",
             email_from="user@company.com",
         )
-        mock_ticket_client.search_tickets.return_value = [ticket]
+        mock_ticket_client.search_tickets.return_value = [1]  # Return ticket ID
+        mock_ticket_client.get_ticket.return_value = ticket  # Return full Ticket object
 
         # Ticket is already processing
         state = AutomationState(
@@ -104,7 +107,8 @@ class TestTicketPollerPoll:
             name="Cannot login - URGENT",
             email_from="user@company.com",
         )
-        mock_ticket_client.search_tickets.return_value = [ticket]
+        mock_ticket_client.search_tickets.return_value = [1]  # Return ticket ID
+        mock_ticket_client.get_ticket.return_value = ticket  # Return full Ticket object
 
         # Previous state with different fingerprint
         old_fingerprint = "old_fingerprint"
@@ -127,7 +131,8 @@ class TestTicketPollerPoll:
             name="Cannot login",
             email_from="user@company.com",
         )
-        mock_ticket_client.search_tickets.return_value = [ticket]
+        mock_ticket_client.search_tickets.return_value = [1]  # Return ticket ID
+        mock_ticket_client.get_ticket.return_value = ticket  # Return full Ticket object
 
         # Previous state with same fingerprint
         fingerprint = TicketFingerprinter.generate(ticket)
@@ -145,7 +150,7 @@ class TestTicketPollerPoll:
 
     def test_poll_respects_min_age(self, poller, mock_ticket_client, mock_state_repo):
         """Should skip very new tickets."""
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         ticket = Ticket(
             id=1,
             name="Cannot login",
@@ -163,7 +168,7 @@ class TestTicketPollerPoll:
 
     def test_poll_includes_old_tickets(self, poller, mock_ticket_client, mock_state_repo):
         """Should include tickets old enough."""
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         old_time = now - timedelta(minutes=10)
         ticket = Ticket(
             id=1,
@@ -171,7 +176,8 @@ class TestTicketPollerPoll:
             email_from="user@company.com",
             create_date=old_time,
         )
-        mock_ticket_client.search_tickets.return_value = [ticket]
+        mock_ticket_client.search_tickets.return_value = [1]  # Return ticket ID
+        mock_ticket_client.get_ticket.return_value = ticket  # Return full Ticket object
         mock_state_repo.get.return_value = None
 
         # Require tickets to be at least 5 minutes old
@@ -182,13 +188,23 @@ class TestTicketPollerPoll:
 
     def test_poll_mixed_tickets(self, poller, mock_ticket_client, mock_state_repo):
         """Should handle mix of new, unchanged, and changed tickets."""
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
 
         ticket1 = Ticket(id=1, name="New ticket", email_from="user@company.com")
         ticket2 = Ticket(id=2, name="Unchanged", email_from="user@company.com")
         ticket3 = Ticket(id=3, name="Updated", email_from="user@company.com")
 
-        mock_ticket_client.search_tickets.return_value = [ticket1, ticket2, ticket3]
+        mock_ticket_client.search_tickets.return_value = [1, 2, 3]  # Return ticket IDs
+
+        def get_ticket(ticket_id):
+            if ticket_id == 1:
+                return ticket1
+            elif ticket_id == 2:
+                return ticket2
+            elif ticket_id == 3:
+                return ticket3
+
+        mock_ticket_client.get_ticket.side_effect = get_ticket
 
         def get_state(ticket_id):
             if ticket_id == 1:
@@ -249,10 +265,11 @@ class TestTicketPollerPollForRetry:
     def test_poll_for_retry_finds_ready_retries(self, poller, mock_ticket_client, mock_state_repo):
         """Should find tickets ready for retry."""
         ticket = Ticket(id=1, name="Test", email_from="user@company.com")
-        mock_ticket_client.search_tickets.return_value = [ticket]
+        mock_ticket_client.search_tickets.return_value = [1]  # Return ticket ID
+        mock_ticket_client.get_ticket.return_value = ticket  # Return full Ticket object
 
         # Create state ready for retry
-        past_time = datetime.utcnow() - timedelta(hours=1)
+        past_time = datetime.now(UTC) - timedelta(hours=1)
         state = AutomationState(
             ticket_id=1,
             fingerprint="abc123",
@@ -273,7 +290,7 @@ class TestTicketPollerPollForRetry:
         mock_ticket_client.search_tickets.return_value = [ticket]
 
         # Create state not ready for retry yet
-        future_time = datetime.utcnow() + timedelta(hours=1)
+        future_time = datetime.now(UTC) + timedelta(hours=1)
         state = AutomationState(
             ticket_id=1,
             fingerprint="abc123",
@@ -302,7 +319,7 @@ class TestTicketPollerPollForRetry:
         ]
         mock_ticket_client.search_tickets.return_value = tickets
 
-        past_time = datetime.utcnow() - timedelta(hours=1)
+        past_time = datetime.now(UTC) - timedelta(hours=1)
         state = AutomationState(
             ticket_id=1,
             fingerprint="abc123",

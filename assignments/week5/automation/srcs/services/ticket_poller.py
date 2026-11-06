@@ -2,7 +2,7 @@
 
 import logging
 from typing import Optional, List, Tuple, TYPE_CHECKING, Any
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 
 from srcs.models import Ticket, AutomationState, AutomationStatus
 from srcs.services.ticket_fingerprinter import TicketFingerprinter
@@ -175,7 +175,7 @@ class TicketPoller:
         """
         # Check minimum age
         if min_age_minutes > 0 and ticket.create_date:
-            age = datetime.utcnow() - ticket.create_date
+            age = datetime.now(UTC) - ticket.create_date
             if age < timedelta(minutes=min_age_minutes):
                 logger.debug(
                     f"Ticket {ticket.id} too new ({age.total_seconds():.0f}s old), skipping"
@@ -230,7 +230,7 @@ class PollingMetrics:
         self.total_polls += 1
         self.total_tickets_fetched += fetched
         self.total_tickets_queued += queued
-        self.last_poll_time = datetime.utcnow()
+        self.last_poll_time = datetime.now(UTC)
         self.last_poll_count = queued
 
     def record_retry_poll(self, retries: int) -> None:

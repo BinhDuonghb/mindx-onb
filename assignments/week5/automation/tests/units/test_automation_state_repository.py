@@ -4,7 +4,7 @@ import pytest
 import tempfile
 import sqlite3
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 
 from srcs.models import AutomationState, AutomationStatus
 from srcs.repositories.automation_state_repository import AutomationStateRepository
@@ -114,7 +114,7 @@ class TestAutomationStateRepositoryBasics:
 
     def test_save_preserves_all_fields(self, repo):
         """Should preserve all fields on save and retrieval."""
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         retry_time = now + timedelta(hours=1)
 
         state = AutomationState(
@@ -174,7 +174,7 @@ class TestAutomationStateRepositoryClaimForProcessing:
     def test_claim_for_processing_expires_old_lease(self, repo):
         """Should allow claiming if previous lease expired."""
         # Create state with expired lease
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         expired_lease = now - timedelta(seconds=1)
 
         state = AutomationState(
@@ -378,9 +378,9 @@ class TestAutomationStateRepositoryScheduleRetry:
         )
         repo.save(state)
 
-        before = datetime.utcnow()
+        before = datetime.now(UTC)
         repo.schedule_retry(ticket_id=1, retry_after_seconds=3600)
-        after = datetime.utcnow()
+        after = datetime.now(UTC)
 
         retrieved = repo.get(ticket_id=1)
         assert retrieved.next_retry_at > after

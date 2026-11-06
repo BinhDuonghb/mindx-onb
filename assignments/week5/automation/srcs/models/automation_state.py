@@ -1,7 +1,7 @@
 """AutomationState model - Persistent processing state for each Odoo ticket."""
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, UTC
 from enum import Enum
 from typing import Optional
 
@@ -44,8 +44,8 @@ class AutomationState:
     last_decision: Optional[str] = None  # Business decision (e.g., "approve_reactivation")
     last_reason: Optional[str] = None  # Reason for the decision
 
-    created_at: datetime = field(default_factory=datetime.utcnow)
-    updated_at: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     last_checked_at: Optional[datetime] = None
 
     retry_count: int = 0
@@ -73,7 +73,7 @@ class AutomationState:
             return False
         if self.next_retry_at is None:
             return True
-        return datetime.utcnow() >= self.next_retry_at
+        return datetime.now(UTC) >= self.next_retry_at
 
     def to_dict(self) -> dict:
         """Convert to dictionary for serialization."""

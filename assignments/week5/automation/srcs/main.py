@@ -16,7 +16,7 @@ import logging
 import sys
 import time
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, UTC
 
 # Load configuration
 try:
@@ -114,7 +114,7 @@ class AutomationExecutor:
         logger.info("Starting one-time automation run")
 
         try:
-            start_time = datetime.utcnow()
+            start_time = datetime.now(UTC)
 
             # Poll for tickets
             logger.info(f"Polling for tickets (limit={limit})...")
@@ -129,7 +129,7 @@ class AutomationExecutor:
                     "escalated": 0,
                     "skipped": 0,
                     "failed": 0,
-                    "elapsed_seconds": (datetime.utcnow() - start_time).total_seconds(),
+                    "elapsed_seconds": (datetime.now(UTC) - start_time).total_seconds(),
                 }
 
             logger.info(f"Processing {len(tickets)} tickets")
@@ -174,7 +174,7 @@ class AutomationExecutor:
                 queued=results["successful"] + results["escalated"],
             )
 
-            elapsed = (datetime.utcnow() - start_time).total_seconds()
+            elapsed = (datetime.now(UTC) - start_time).total_seconds()
             results["success"] = True
             results["tickets_processed"] = len(tickets)
             results["elapsed_seconds"] = elapsed
@@ -192,7 +192,7 @@ class AutomationExecutor:
             return {
                 "success": False,
                 "error": str(e),
-                "elapsed_seconds": (datetime.utcnow() - start_time).total_seconds(),
+                "elapsed_seconds": (datetime.now(UTC) - start_time).total_seconds(),
             }
 
     def run_continuous(
@@ -217,7 +217,7 @@ class AutomationExecutor:
         try:
             while True:
                 poll_count += 1
-                logger.info(f"--- Poll {poll_count} at {datetime.utcnow().isoformat()} ---")
+                logger.info(f"--- Poll {poll_count} at {datetime.now(UTC).isoformat()} ---")
 
                 # Run one cycle
                 result = self.run_once(limit=limit, min_age_minutes=min_age_minutes)
@@ -346,7 +346,7 @@ def main():
 
     logger.info("=" * 80)
     logger.info("Odoo Login Issue Automation")
-    logger.info(f"Started at {datetime.utcnow().isoformat()}")
+    logger.info(f"Started at {datetime.now(UTC).isoformat()}")
     logger.info("=" * 80)
 
     try:

@@ -3,7 +3,7 @@
 import logging
 import sqlite3
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from typing import Optional
 
 from srcs.models import AutomationState, AutomationStatus
@@ -115,7 +115,7 @@ class AutomationStateRepository:
             True if successful, False otherwise
         """
         try:
-            state.updated_at = datetime.utcnow()
+            state.updated_at = datetime.now(UTC)
 
             with sqlite3.connect(self.db_path) as conn:
                 cursor = conn.cursor()
@@ -190,7 +190,7 @@ class AutomationStateRepository:
             True if claim successful, False if another process holds it
         """
         try:
-            now = datetime.utcnow()
+            now = datetime.now(UTC)
             lease_until = now + timedelta(seconds=lease_duration_seconds)
 
             with sqlite3.connect(self.db_path) as conn:
@@ -285,7 +285,7 @@ class AutomationStateRepository:
                     WHERE ticket_id = ?
                 """, (
                     AutomationStatus.COMPLETED.value,
-                    datetime.utcnow().isoformat(),
+                    datetime.now(UTC).isoformat(),
                     ticket_id
                 ))
                 conn.commit()
@@ -316,7 +316,7 @@ class AutomationStateRepository:
                 """, (
                     AutomationStatus.MANUAL_REVIEW.value,
                     reason,
-                    datetime.utcnow().isoformat(),
+                    datetime.now(UTC).isoformat(),
                     ticket_id
                 ))
                 conn.commit()
@@ -341,7 +341,7 @@ class AutomationStateRepository:
             True if successful, False otherwise
         """
         try:
-            now = datetime.utcnow()
+            now = datetime.now(UTC)
             next_retry = now + timedelta(seconds=retry_after_seconds)
 
             with sqlite3.connect(self.db_path) as conn:
