@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
 
-from srcs.models import Employee, EmployeeStatus, Ticket
+from srcs.models import Employee, EmployeeStatus, DeactivationReason, Ticket
 
 logger = logging.getLogger(__name__)
 
@@ -108,7 +108,7 @@ class DecisionService:
                     )
 
                 if employee.lms_account_status == "deactivated":
-                    if employee.deactivation_reason == "inactivity_30_days":
+                    if employee.deactivation_reason == DeactivationReason.INACTIVITY_30_DAYS:
                         return DecisionResult(
                             action=Decision.APPROVE_REACTIVATION,
                             reason=(

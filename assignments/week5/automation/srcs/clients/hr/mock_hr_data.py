@@ -1,6 +1,6 @@
 """Mock HR system data for testing."""
 
-from srcs.models import Employee, EmployeeStatus
+from srcs.models import Employee, EmployeeStatus, DeactivationReason
 from datetime import datetime
 
 # Mock employee records - represents what would come from real HR system
@@ -14,8 +14,8 @@ MOCK_EMPLOYEES = {
         "manager_email": "manager@company.com",
         "is_internal": True,
         "company_id": 1,
-        "lms_account_status": "active",
-        "deactivation_reason": None,
+        "lms_account_status": "deactivated",
+        "deactivation_reason": "inactivity_30_days",
     },
     "duonghb1577@gmail.com": {
         "employee_id": 102,
@@ -27,7 +27,7 @@ MOCK_EMPLOYEES = {
         "is_internal": True,
         "company_id": 1,
         "lms_account_status": "deactivated",
-        "deactivation_reason": "Employee terminated",
+        "deactivation_reason": "employee_terminated",
     },
     "onleave_emp@company.com": {
         "employee_id": 103,
@@ -39,7 +39,7 @@ MOCK_EMPLOYEES = {
         "is_internal": True,
         "company_id": 1,
         "lms_account_status": "suspended",
-        "deactivation_reason": "On leave",
+        "deactivation_reason": "on_leave",
     },
     "inactive_emp@company.com": {
         "employee_id": 104,
@@ -51,7 +51,7 @@ MOCK_EMPLOYEES = {
         "is_internal": False,
         "company_id": 1,
         "lms_account_status": "deactivated",
-        "deactivation_reason": "Account inactive - 30+ days",
+        "deactivation_reason": "inactivity_30_days",
     },
 }
 

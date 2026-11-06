@@ -13,6 +13,14 @@ class EmployeeStatus(str, Enum):
     INACTIVE = "inactive"
 
 
+class DeactivationReason(str, Enum):
+    """Reasons for LMS account deactivation."""
+    INACTIVITY_30_DAYS = "inactivity_30_days"
+    EMPLOYEE_TERMINATED = "employee_terminated"
+    ON_LEAVE = "on_leave"
+    OTHER = "other"
+
+
 @dataclass
 class Employee:
     """Represents employee data from HR system.
@@ -32,7 +40,7 @@ class Employee:
     is_internal: bool = True
     company_id: Optional[int] = None
     lms_account_status: str = "unknown"
-    deactivation_reason: Optional[str] = None
+    deactivation_reason: Optional[DeactivationReason] = None
 
     def __post_init__(self) -> None:
         """Validate employee data after initialization."""
@@ -77,5 +85,5 @@ class Employee:
             "is_internal": self.is_internal,
             "company_id": self.company_id,
             "lms_account_status": self.lms_account_status,
-            "deactivation_reason": self.deactivation_reason,
+            "deactivation_reason": self.deactivation_reason.value if self.deactivation_reason else None,
         }

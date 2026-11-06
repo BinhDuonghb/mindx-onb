@@ -9,7 +9,7 @@ import shutil
 from copy import deepcopy
 
 from data.db_client import DBClient
-from srcs.models import Employee, EmployeeStatus
+from srcs.models import Employee, EmployeeStatus, DeactivationReason
 from srcs.clients.hr.mock_hr_data import MOCK_EMPLOYEES
 
 logger = logging.getLogger(__name__)
@@ -292,6 +292,19 @@ class HRClient:
             if isinstance(status, str):
                 status = EmployeeStatus(status)
 
+            # Convert deactivation_reason to enum if present
+            deactivation_reason = None
+            if emp_data.get("deactivation_reason"):
+                reason_str = emp_data.get("deactivation_reason")
+                if isinstance(reason_str, str):
+                    try:
+                        deactivation_reason = DeactivationReason(reason_str)
+                    except ValueError:
+                        logger.warning(f"Unknown deactivation reason: {reason_str}, treating as OTHER")
+                        deactivation_reason = DeactivationReason.OTHER
+                else:
+                    deactivation_reason = reason_str
+
             employee = Employee(
                 employee_id=emp_data.get("employee_id"),
                 name=emp_data.get("name", ""),
@@ -302,7 +315,7 @@ class HRClient:
                 is_internal=emp_data.get("is_internal", True),
                 company_id=emp_data.get("company_id"),
                 lms_account_status=emp_data.get("lms_account_status", "unknown"),
-                deactivation_reason=emp_data.get("deactivation_reason"),
+                deactivation_reason=deactivation_reason,
             )
 
             return employee
