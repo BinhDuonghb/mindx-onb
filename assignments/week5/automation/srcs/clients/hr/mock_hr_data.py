@@ -57,8 +57,8 @@ MOCK_EMPLOYEES = {
 
 # Mock employee by ID
 MOCK_EMPLOYEES_BY_ID = {
-    101: MOCK_EMPLOYEES["active_emp@company.com"],
-    102: MOCK_EMPLOYEES["terminated_emp@company.com"],
+    101: MOCK_EMPLOYEES["duongdznhat98@gmail.com"],
+    102: MOCK_EMPLOYEES["duonghb1577@gmail.com"],
     103: MOCK_EMPLOYEES["onleave_emp@company.com"],
     104: MOCK_EMPLOYEES["inactive_emp@company.com"],
 }

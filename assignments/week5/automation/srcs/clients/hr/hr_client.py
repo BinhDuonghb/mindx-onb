@@ -5,9 +5,12 @@ from typing import Optional, Dict, Any
 from pathlib import Path
 from datetime import datetime, timedelta
 import json
+import shutil
+from copy import deepcopy
 
 from data.db_client import DBClient
 from srcs.models import Employee, EmployeeStatus
+from srcs.clients.hr.mock_hr_data import MOCK_EMPLOYEES
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +21,11 @@ class HRClient:
     Handles employee status lookups and verification.
     Uses DBClient to read employee data from JSON file.
     Implements caching with TTL to reduce file reads.
+
+    Graceful handling for missing or corrupt database:
+    - If file doesn't exist: initialize with mock data and save it
+    - If file is corrupt: back it up and raise an error (don't overwrite)
+    - If file is valid: load normally
     """
 
     def __init__(self, file_path: Path, cache_ttl: int = 300):
@@ -26,11 +34,79 @@ class HRClient:
         Args:
             file_path: Path to JSON file containing employee data
             cache_ttl: Cache time-to-live in seconds (default 300s)
+
+        Raises:
+            ValueError: If file contains invalid JSON (after backing up corrupt file)
         """
-        self.file_path = file_path
+        self.file_path = Path(file_path) if not isinstance(file_path, Path) else file_path
         self.cache_ttl = cache_ttl
-        self.db_client = DBClient(file_path)
         self._cache: Dict[str, tuple[Employee, datetime]] = {}  # email -> (employee, timestamp)
+
+        # Initialize database with graceful handling
+        self._ensure_database()
+        self.db_client = DBClient(self.file_path)
+
+    def _ensure_database(self) -> None:
+        """Ensure database file exists and is valid.
+
+        If file doesn't exist:
+        - Initialize with mock employee data
+        - Create parent directories as needed
+        - Save to file
+
+        If file exists but is corrupt:
+        - Back up the corrupt file to .corrupt
+        - Raise ValueError
+
+        If file is valid:
+        - Do nothing (DBClient will handle it)
+
+        Raises:
+            ValueError: If file exists but contains invalid JSON
+        """
+        if not self.file_path.exists():
+            # Initialize with mock data
+            logger.info(f"HR database not found at {self.file_path}, initializing with mock data")
+            self.file_path.parent.mkdir(parents=True, exist_ok=True)
+
+            # Convert mock data dict to list format for JSON storage
+            employees_list = list(MOCK_EMPLOYEES.values())
+
+            with open(self.file_path, "w", encoding="utf-8") as f:
+                json.dump(employees_list, f, indent=2, ensure_ascii=False)
+
+            logger.info(f"Initialized HR database at {self.file_path} with {len(employees_list)} mock employees")
+        else:
+            # Validate existing file
+            try:
+                with open(self.file_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+
+                # Ensure it's a list
+                if not isinstance(data, list):
+                    raise ValueError(f"HR database must contain a JSON array, got {type(data).__name__}")
+
+                logger.debug(f"HR database validated: {len(data)} employees loaded")
+
+            except json.JSONDecodeError as e:
+                # File exists but contains invalid JSON - back it up
+                backup_file = Path(str(self.file_path) + ".corrupt")
+                try:
+                    shutil.copy2(self.file_path, backup_file)
+                    error_msg = (
+                        f"HR database contains invalid JSON: {self.file_path}\n"
+                        f"Corrupt file backed up to: {backup_file}\n"
+                        f"Error details: {str(e)}"
+                    )
+                except Exception as backup_error:
+                    error_msg = (
+                        f"HR database contains invalid JSON: {self.file_path}\n"
+                        f"Failed to back up corrupt file: {str(backup_error)}\n"
+                        f"Original error: {str(e)}"
+                    )
+
+                logger.error(error_msg)
+                raise ValueError(error_msg)
 
     def get_employee_by_email(self, email: str) -> Optional[Employee]:
         """Get employee information by email.

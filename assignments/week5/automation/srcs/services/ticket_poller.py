@@ -69,17 +69,34 @@ class TicketPoller:
             List of tickets ready for automation processing
         """
         try:
-            # Fetch unprocessed tickets from Odoo
-            tickets = self.ticket_client.search_tickets(
+            # Fetch unprocessed ticket IDs from Odoo
+            ticket_ids = self.ticket_client.search_tickets(
                 domain=[("stage_id", "in", [1, 2])],  # new, pending stages
                 limit=limit,
             )
 
-            if not tickets:
+            if not ticket_ids:
                 logger.debug("No unprocessed tickets found")
                 return []
 
-            logger.info(f"Polled {len(tickets)} unprocessed tickets from Odoo")
+            logger.info(f"Polled {len(ticket_ids)} unprocessed ticket IDs from Odoo")
+
+            # Fetch full ticket data for each ID
+            tickets = []
+            for ticket_id in ticket_ids:
+                try:
+                    ticket = self.ticket_client.get_ticket(ticket_id)
+                    if ticket:
+                        tickets.append(ticket)
+                except Exception as e:
+                    logger.warning(f"Failed to fetch ticket {ticket_id}: {str(e)}")
+                    continue
+
+            if not tickets:
+                logger.info("No valid tickets retrieved")
+                return []
+
+            logger.info(f"Retrieved {len(tickets)} tickets from Odoo")
 
             # Filter by age and fingerprint
             ready_tickets = []
@@ -110,20 +127,28 @@ class TicketPoller:
             # Get tickets with RETRY_SCHEDULED status and retry time passed
             retry_tickets = []
 
-            # Fetch all tickets (this is a limitation of current design)
+            # Fetch all ticket IDs (this is a limitation of current design)
             # In production, might store retry queue separately
-            all_tickets = self.ticket_client.search_tickets(
+            ticket_ids = self.ticket_client.search_tickets(
                 domain=[("stage_id", "in", [1, 2])],
                 limit=limit * 5,  # Over-fetch since most won't be retry scheduled
             )
 
-            for ticket in all_tickets:
-                state = self.state_repo.get(ticket.id)
-                if state and state.is_ready_for_retry():
-                    retry_tickets.append((ticket, state))
+            for ticket_id in ticket_ids:
+                try:
+                    ticket = self.ticket_client.get_ticket(ticket_id)
+                    if not ticket:
+                        continue
 
-                if len(retry_tickets) >= limit:
-                    break
+                    state = self.state_repo.get(ticket.id)
+                    if state and state.is_ready_for_retry():
+                        retry_tickets.append((ticket, state))
+
+                    if len(retry_tickets) >= limit:
+                        break
+                except Exception as e:
+                    logger.warning(f"Failed to fetch ticket {ticket_id} for retry check: {str(e)}")
+                    continue
 
             logger.info(f"Found {len(retry_tickets)} tickets ready for retry")
             return retry_tickets
