@@ -196,11 +196,7 @@ class LoginWorkflow:
                     recipient_name=employee.name,
                     ticket_id=ticket.id,
                     ticket_title=ticket.name,
-                    template=EmailTemplate.ESCALATED_MANUAL_REVIEW,
-                    employee_name=employee.name,
-                    employee_id=employee.employee_id,
-                    department=employee.department,
-                    deactivation_reason=str(employee.deactivation_reason) if employee.deactivation_reason else None,
+                    template=EmailTemplate.MANUAL_REVIEW,
                 )
 
                 email_sent = self.gmail_service.send_email(email_context)
@@ -238,11 +234,7 @@ class LoginWorkflow:
                 recipient_name=employee.name,
                 ticket_id=ticket.id,
                 ticket_title=ticket.name,
-                template=EmailTemplate.ACCOUNT_REACTIVATED,
-                employee_name=employee.name,
-                employee_id=employee.employee_id,
-                department=employee.department,
-                deactivation_reason=employee.deactivation_reason,
+                template=EmailTemplate.RESOLUTION,
             )
 
             email_sent = self.gmail_service.send_email(email_context)
@@ -294,11 +286,7 @@ class LoginWorkflow:
                 recipient_name=employee_name,
                 ticket_id=ticket.id,
                 ticket_title=ticket.name,
-                template=EmailTemplate.ESCALATED_MANUAL_REVIEW,
-                employee_name=employee_name if employee else None,
-                employee_id=employee_id,
-                department=employee.department if employee else None,
-                deactivation_reason=str(employee.deactivation_reason) if employee and employee.deactivation_reason else None,
+                template=EmailTemplate.MANUAL_REVIEW,
             )
 
             email_sent = self.gmail_service.send_email(email_context)

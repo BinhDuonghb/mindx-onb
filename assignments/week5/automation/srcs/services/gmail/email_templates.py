@@ -1,4 +1,4 @@
-"""Email templates and rendering context for automation responses."""
+"""Email templates and rendering context for automation responses - Week 4 aligned."""
 
 from enum import Enum
 from dataclasses import dataclass
@@ -6,18 +6,22 @@ from typing import Optional
 
 
 class EmailTemplate(str, Enum):
-    """Email template types."""
+    """Email template types following Week 4 support communication structure."""
 
-    ACCOUNT_REACTIVATED = "account_reactivated"
-    ESCALATED_MANUAL_REVIEW = "escalated_manual_review"
-    EMPLOYEE_TERMINATED = "employee_terminated"
+    ACKNOWLEDGEMENT = "acknowledgement"
+    INVESTIGATION_UPDATE = "investigation_update"
+    RESOLUTION = "resolution"
+    MANUAL_REVIEW = "manual_review"
+    FOLLOW_UP = "follow_up"
     SYSTEM_ERROR = "system_error"
-    PASSWORD_RESET_INITIATED = "password_reset_initiated"
 
 
 @dataclass
 class EmailContext:
-    """Context data for email template rendering."""
+    """Context data for email template rendering.
+
+    Public fields only - sensitive HR data excluded from customer emails.
+    """
 
     recipient_email: str
     recipient_name: str
@@ -25,90 +29,107 @@ class EmailContext:
     ticket_title: str
     template: EmailTemplate
 
-    # Template-specific fields
-    employee_name: Optional[str] = None
-    employee_id: Optional[str] = None
-    department: Optional[str] = None
-    deactivation_reason: Optional[str] = None
-    action_taken: Optional[str] = None
-    message: Optional[str] = None
-    error_details: Optional[str] = None
+    # Optional fields for template customization
+    action_summary: Optional[str] = None
+    next_steps: Optional[str] = None
+    next_update_at: Optional[str] = None
     support_email: str = "support@company.com"
 
 
 class EmailTemplateRenderer:
-    """Renders email content from templates and context."""
+    """Renders email content from templates and context following Week 4 standards."""
 
     TEMPLATES = {
-        EmailTemplate.ACCOUNT_REACTIVATED: {
-            "subject": "Your Account Has Been Reactivated",
+        EmailTemplate.ACKNOWLEDGEMENT: {
+            "subject": "RE: LMS Login Issue - Ticket #{ticket_id}",
             "body": """Dear {recipient_name},
 
-Your account has been successfully reactivated. You should now be able to log in.
+Thank you for contacting us about your LMS login issue. We have received your support request and understand this may be impacting your access to class materials.
 
-If you continue to experience any issues, please reply to this email or contact our support team at {support_email}.
-
-Best regards,
-Automation Support Team""",
-        },
-        EmailTemplate.ESCALATED_MANUAL_REVIEW: {
-            "subject": "Your Login Request - Manual Review",
-            "body": """Dear {recipient_name},
-
-Thank you for reaching out. Your login issue has been received and is being reviewed by our support team.
-
-We will investigate your issue and get back to you shortly.
+We will investigate your account and employment information to determine the best course of action. Our team typically completes initial investigations within 24 hours.
 
 Ticket ID: {ticket_id}
-Title: {ticket_title}
+Issue: {ticket_title}
 
-If you have any additional information, please reply to this email.
+We will keep you updated on progress. If you have any additional information, please reply to this email.
+
+Best regards,
+Support Team
+{support_email}""",
+        },
+        EmailTemplate.INVESTIGATION_UPDATE: {
+            "subject": "Update: LMS Login Issue - Ticket #{ticket_id}",
+            "body": """Dear {recipient_name},
+
+Thank you for your patience. We are actively investigating your login issue.
+
+Our team is verifying your account and employment information to determine the appropriate resolution. We will contact you as soon as we have more information.
+
+Ticket ID: {ticket_id}
+
+If you have any questions in the meantime, please reply to this email or contact us at {support_email}.
 
 Best regards,
 Support Team""",
         },
-        EmailTemplate.EMPLOYEE_TERMINATED: {
-            "subject": "Account Access Request",
+        EmailTemplate.RESOLUTION: {
+            "subject": "LMS Account Reactivated - Ticket #{ticket_id}",
             "body": """Dear {recipient_name},
 
-Thank you for contacting us. We are unable to process your login request at this time.
+Good news! Your LMS account has been reactivated and access has been restored.
 
-Our support team will contact you regarding your account status.
+Please try logging in again at your earliest convenience. If you are able to successfully access the LMS, please reply to confirm that the issue is resolved.
+
+If you continue to experience any difficulties logging in, please let us know immediately so we can investigate further.
 
 Ticket ID: {ticket_id}
 
-Please contact our support team at {support_email} if you have any questions.
+Thank you for your patience.
+
+Best regards,
+Support Team
+{support_email}""",
+        },
+        EmailTemplate.MANUAL_REVIEW: {
+            "subject": "Update on Your Login Request - Ticket #{ticket_id}",
+            "body": """Dear {recipient_name},
+
+Thank you for your support request. Your login issue requires further investigation by our support team.
+
+We are reviewing your account information and will determine the appropriate next steps. We will contact you as soon as we have completed our review.
+
+Ticket ID: {ticket_id}
+Issue: {ticket_title}
+
+If you have any questions in the meantime, please contact us at {support_email}.
+
+Best regards,
+Support Team""",
+        },
+        EmailTemplate.FOLLOW_UP: {
+            "subject": "Follow-up: LMS Login Issue - Ticket #{ticket_id}",
+            "body": """Dear {recipient_name},
+
+We wanted to follow up on your LMS login request (Ticket #{ticket_id}).
+
+Are you now able to access the LMS successfully? Please let us know whether you were able to log in and access your course materials.
+
+If you are still experiencing issues, we are happy to assist further. Please reply to this email or contact us at {support_email}.
 
 Best regards,
 Support Team""",
         },
         EmailTemplate.SYSTEM_ERROR: {
-            "subject": "We're Looking Into Your Issue",
+            "subject": "Update on Your Support Request - Ticket #{ticket_id}",
             "body": """Dear {recipient_name},
 
-Thank you for reporting your issue. An unexpected error occurred while processing your request, but our team has been notified.
+Thank you for reporting your LMS login issue. We are currently experiencing a processing delay and have not yet been able to investigate your request fully.
 
-We will investigate and get back to you shortly.
-
-Ticket ID: {ticket_id}
-Title: {ticket_title}
-
-Contact us at {support_email} if you have urgent concerns.
-
-Best regards,
-Support Team""",
-        },
-        EmailTemplate.PASSWORD_RESET_INITIATED: {
-            "subject": "Password Reset Initiated",
-            "body": """Dear {recipient_name},
-
-A password reset has been initiated for your account.
-
-Please check your email for further instructions.
+Our support team is aware of this issue and is working to resolve it. We will contact you as soon as we can proceed with investigating your account.
 
 Ticket ID: {ticket_id}
 
-If you did not request this, please contact us at {support_email}.
+We appreciate your patience. If you have urgent concerns, please contact us at {support_email}.
 
 Best regards,
 Support Team""",
@@ -135,19 +156,18 @@ Support Team""",
         subject = template["subject"]
         body = template["body"]
 
+        # Use safe fallback for empty recipient name
+        recipient_name = context.recipient_name if context.recipient_name else "Hello"
+
         # Format with context
         format_dict = {
-            "recipient_name": context.recipient_name,
+            "recipient_name": recipient_name,
             "recipient_email": context.recipient_email,
             "ticket_id": context.ticket_id,
             "ticket_title": context.ticket_title,
-            "employee_name": context.employee_name or "",
-            "employee_id": context.employee_id or "",
-            "department": context.department or "",
-            "deactivation_reason": context.deactivation_reason or "",
-            "action_taken": context.action_taken or "",
-            "message": context.message or "",
-            "error_details": context.error_details or "",
+            "action_summary": context.action_summary or "",
+            "next_steps": context.next_steps or "",
+            "next_update_at": context.next_update_at or "",
             "support_email": context.support_email,
         }
 

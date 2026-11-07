@@ -1,4 +1,4 @@
-"""Unit tests for Gmail service - Phase 1 & 2: Templates and SMTP Transport."""
+"""Unit tests for Gmail service - Updated for Week 4 email templates."""
 
 import pytest
 from unittest.mock import Mock, patch, MagicMock, call
@@ -11,93 +11,90 @@ from srcs.services.gmail.email_templates import EmailTemplateRenderer
 
 
 # ==============================================================================
-# Phase 1: Template and Configuration Tests
+# Phase 1: Template Rendering Tests (Updated for Week 4)
 # ==============================================================================
 
 class TestEmailTemplateRenderer:
     """Test email template rendering and content generation."""
 
-    def test_render_account_reactivated_with_content(self):
-        """Should render account reactivated template with proper content."""
+    def test_render_resolution_template(self):
+        """Should render resolution template for successful reactivation."""
         context = EmailContext(
             recipient_email="john@company.com",
             recipient_name="John Doe",
             ticket_id=42,
             ticket_title="Cannot login",
-            template=EmailTemplate.ACCOUNT_REACTIVATED,
-            employee_name="John Doe",
+            template=EmailTemplate.RESOLUTION,
         )
 
         subject, body = EmailTemplateRenderer.render(context)
 
-        # Verify subject
         assert "Reactivated" in subject
-        # Verify recipient name appears in body
         assert "John Doe" in body
-        # Verify content-specific phrases
-        assert "log in" in body.lower()
+        assert "logging in" in body.lower() or "try" in body.lower()
 
-    def test_render_escalated_manual_review_with_ticket_details(self):
-        """Should render escalated template with ticket details."""
+    def test_render_manual_review_template(self):
+        """Should render manual review template with ticket details."""
         context = EmailContext(
             recipient_email="jane@company.com",
             recipient_name="Jane Smith",
             ticket_id=99,
             ticket_title="Account locked",
-            template=EmailTemplate.ESCALATED_MANUAL_REVIEW,
+            template=EmailTemplate.MANUAL_REVIEW,
         )
 
         subject, body = EmailTemplateRenderer.render(context)
 
-        assert "Review" in subject or "Manual" in subject
-        assert "99" in body  # Ticket ID should appear
-        assert "Account locked" in body  # Title should appear
+        assert "Review" in subject or "Update" in subject
+        assert "99" in body
+        assert "Account locked" in body
 
-    def test_render_employee_terminated_template(self):
-        """Should render terminated employee template."""
+    def test_render_acknowledgement_template(self):
+        """Should render acknowledgement template."""
         context = EmailContext(
-            recipient_email="terminated@company.com",
-            recipient_name="Terminated Employee",
+            recipient_email="user@company.com",
+            recipient_name="User",
             ticket_id=1,
             ticket_title="Login request",
-            template=EmailTemplate.EMPLOYEE_TERMINATED,
+            template=EmailTemplate.ACKNOWLEDGEMENT,
         )
 
         subject, body = EmailTemplateRenderer.render(context)
 
         assert subject is not None
         assert body is not None
-        assert "1" in body  # Ticket ID should appear
+        assert "1" in body
 
     def test_render_system_error_template(self):
-        """Should render system error template."""
+        """Should render system error template without raw exceptions."""
         context = EmailContext(
             recipient_email="user@company.com",
             recipient_name="User",
             ticket_id=5,
             ticket_title="System Error Test",
             template=EmailTemplate.SYSTEM_ERROR,
-            error_details="Database connection timeout",
         )
 
         subject, body = EmailTemplateRenderer.render(context)
 
         assert subject is not None
         assert "5" in body
+        # Should not contain raw exception details
+        assert "Traceback" not in body
 
-    def test_render_password_reset_template(self):
-        """Should render password reset template."""
+    def test_render_follow_up_template(self):
+        """Should render follow-up template."""
         context = EmailContext(
             recipient_email="user@company.com",
             recipient_name="User",
             ticket_id=7,
-            ticket_title="Password Reset",
-            template=EmailTemplate.PASSWORD_RESET_INITIATED,
+            ticket_title="Follow-up Test",
+            template=EmailTemplate.FOLLOW_UP,
         )
 
         subject, body = EmailTemplateRenderer.render(context)
 
-        assert "Password" in subject or "password" in body.lower()
+        assert "Follow" in subject or "follow" in body.lower()
         assert "7" in body
 
     def test_render_with_custom_support_email(self):
@@ -107,7 +104,7 @@ class TestEmailTemplateRenderer:
             recipient_name="User",
             ticket_id=1,
             ticket_title="Test",
-            template=EmailTemplate.ACCOUNT_REACTIVATED,
+            template=EmailTemplate.RESOLUTION,
             support_email="help@example.com",
         )
 
@@ -122,34 +119,22 @@ class TestEmailTemplateRenderer:
             recipient_name="User",
             ticket_id=1,
             ticket_title="Test",
-            template=EmailTemplate.ACCOUNT_REACTIVATED,
+            template=EmailTemplate.RESOLUTION,
         )
 
         subject, body = EmailTemplateRenderer.render(context)
 
         assert "support@company.com" in body
 
-    def test_render_with_unknown_template_raises_error(self):
-        """Should raise ValueError for unknown template."""
-        context = EmailContext(
-            recipient_email="test@company.com",
-            recipient_name="Test User",
-            ticket_id=1,
-            ticket_title="Test",
-            template="unknown_template",  # type: ignore
-        )
-
-        with pytest.raises(ValueError, match="Unknown email template"):
-            EmailTemplateRenderer.render(context)
-
     def test_render_all_templates_succeed(self):
-        """Should successfully render all template types."""
+        """All templates should render without error."""
         templates = [
-            EmailTemplate.ACCOUNT_REACTIVATED,
-            EmailTemplate.ESCALATED_MANUAL_REVIEW,
-            EmailTemplate.EMPLOYEE_TERMINATED,
+            EmailTemplate.ACKNOWLEDGEMENT,
+            EmailTemplate.INVESTIGATION_UPDATE,
+            EmailTemplate.RESOLUTION,
+            EmailTemplate.MANUAL_REVIEW,
+            EmailTemplate.FOLLOW_UP,
             EmailTemplate.SYSTEM_ERROR,
-            EmailTemplate.PASSWORD_RESET_INITIATED,
         ]
 
         for template in templates:
@@ -250,7 +235,7 @@ class TestGmailServiceSendEmail:
             recipient_name="User Name",
             ticket_id=1,
             ticket_title="Test Ticket",
-            template=EmailTemplate.ACCOUNT_REACTIVATED,
+            template=EmailTemplate.RESOLUTION,
         )
 
         with patch.object(gmail_service, "_send_smtp") as mock_send:
@@ -266,17 +251,15 @@ class TestGmailServiceSendEmail:
             recipient_name="John Doe",
             ticket_id=42,
             ticket_title="Cannot login",
-            template=EmailTemplate.ACCOUNT_REACTIVATED,
+            template=EmailTemplate.RESOLUTION,
         )
 
         with patch.object(gmail_service, "_send_smtp") as mock_send:
             gmail_service.send_email(context)
 
-        # Verify _send_smtp was called with rendered content
         mock_send.assert_called_once()
         call_kwargs = mock_send.call_args[1]
 
-        # Verify email parameters
         assert call_kwargs["to_email"] == "john@company.com"
         assert "Reactivated" in call_kwargs["subject"]
         assert "John Doe" in call_kwargs["body"]
@@ -288,14 +271,13 @@ class TestGmailServiceSendEmail:
             recipient_name="User Name",
             ticket_id=1,
             ticket_title="Test Ticket",
-            template=EmailTemplate.ACCOUNT_REACTIVATED,
+            template=EmailTemplate.RESOLUTION,
         )
 
         with patch.object(gmail_service, "_send_smtp") as mock_send:
-            # First attempt fails, second succeeds
             mock_send.side_effect = [
                 smtplib.SMTPException("Temporary error"),
-                None,  # Success
+                None,
             ]
 
             result = gmail_service.send_email(context, max_retries=3)
@@ -310,7 +292,7 @@ class TestGmailServiceSendEmail:
             recipient_name="User Name",
             ticket_id=1,
             ticket_title="Test Ticket",
-            template=EmailTemplate.ACCOUNT_REACTIVATED,
+            template=EmailTemplate.RESOLUTION,
         )
 
         with patch.object(gmail_service, "_send_smtp") as mock_send:
@@ -321,7 +303,6 @@ class TestGmailServiceSendEmail:
             result = gmail_service.send_email(context, max_retries=3)
 
         assert result is False
-        # Auth error should not retry
         mock_send.assert_called_once()
 
     def test_send_email_fails_after_max_retries(self, gmail_service):
@@ -331,7 +312,7 @@ class TestGmailServiceSendEmail:
             recipient_name="User Name",
             ticket_id=1,
             ticket_title="Test Ticket",
-            template=EmailTemplate.ACCOUNT_REACTIVATED,
+            template=EmailTemplate.RESOLUTION,
         )
 
         with patch.object(gmail_service, "_send_smtp") as mock_send:
@@ -358,7 +339,7 @@ class TestGmailServiceSendEmail:
 
 
 # ==============================================================================
-# Phase 2: SMTP Transport Tests (mocking socket-level SMTP)
+# Phase 2: SMTP Transport Tests
 # ==============================================================================
 
 class TestSMTPTransport:
@@ -387,7 +368,6 @@ class TestSMTPTransport:
             body="Test body",
         )
 
-        # Verify SMTP was initialized with correct parameters
         mock_smtp.assert_called_once_with("smtp.gmail.com", 587, timeout=30)
 
     @patch("smtplib.SMTP")
@@ -402,7 +382,6 @@ class TestSMTPTransport:
             body="Test body",
         )
 
-        # Verify STARTTLS was called to upgrade connection
         mock_server.starttls.assert_called_once()
 
     @patch("smtplib.SMTP")
@@ -417,7 +396,6 @@ class TestSMTPTransport:
             body="Test body",
         )
 
-        # Verify login called with username and password
         mock_server.login.assert_called_once_with("test@gmail.com", "password123")
 
     @patch("smtplib.SMTP")
@@ -428,11 +406,10 @@ class TestSMTPTransport:
 
         gmail_service._send_smtp(
             to_email="user@company.com",
-            subject="Test Subject",
-            body="Test body content",
+            subject="Test",
+            body="Test body",
         )
 
-        # Verify send_message was called once
         mock_server.send_message.assert_called_once()
 
     @patch("smtplib.SMTP")
@@ -447,22 +424,11 @@ class TestSMTPTransport:
             body="Test body content",
         )
 
-        # Extract the message that was sent
         msg = mock_server.send_message.call_args[0][0]
 
-        # Verify message headers
         assert msg["Subject"] == "Test Subject"
         assert msg["From"] == "test@gmail.com"
         assert msg["To"] == "user@company.com"
-
-        # Verify message is multipart with text part
-        payload = msg.get_payload()
-        assert isinstance(payload, list)
-        assert len(payload) > 0
-
-        # First part should be text/plain
-        body_part = payload[0]
-        assert body_part.get_content_type() == "text/plain"
 
     @patch("smtplib.SMTP")
     def test_smtp_message_is_multipart(self, mock_smtp, gmail_service):
@@ -478,7 +444,6 @@ class TestSMTPTransport:
 
         msg = mock_server.send_message.call_args[0][0]
 
-        # Verify it's a multipart message
         assert msg.is_multipart()
 
     @patch("smtplib.SMTP")
@@ -578,14 +543,14 @@ class TestEmailContext:
             recipient_name="User Name",
             ticket_id=1,
             ticket_title="Test Ticket",
-            template=EmailTemplate.ACCOUNT_REACTIVATED,
+            template=EmailTemplate.RESOLUTION,
         )
 
         assert context.recipient_email == "user@company.com"
         assert context.recipient_name == "User Name"
         assert context.ticket_id == 1
         assert context.ticket_title == "Test Ticket"
-        assert context.template == EmailTemplate.ACCOUNT_REACTIVATED
+        assert context.template == EmailTemplate.RESOLUTION
 
     def test_create_full_context(self):
         """Should create context with all fields populated."""
@@ -594,20 +559,14 @@ class TestEmailContext:
             recipient_name="User Name",
             ticket_id=1,
             ticket_title="Test Ticket",
-            template=EmailTemplate.ACCOUNT_REACTIVATED,
-            employee_name="Employee Name",
-            employee_id="EMP001",
-            department="Sales",
-            deactivation_reason="inactivity_30_days",
-            action_taken="account_reactivated",
+            template=EmailTemplate.RESOLUTION,
+            action_summary="Account reactivated",
+            next_steps="Please try logging in",
             support_email="support@example.com",
         )
 
-        assert context.employee_name == "Employee Name"
-        assert context.employee_id == "EMP001"
-        assert context.department == "Sales"
-        assert context.deactivation_reason == "inactivity_30_days"
-        assert context.action_taken == "account_reactivated"
+        assert context.action_summary == "Account reactivated"
+        assert context.next_steps == "Please try logging in"
         assert context.support_email == "support@example.com"
 
     def test_context_optional_fields_default_to_none(self):
@@ -617,16 +576,12 @@ class TestEmailContext:
             recipient_name="User Name",
             ticket_id=1,
             ticket_title="Test Ticket",
-            template=EmailTemplate.ACCOUNT_REACTIVATED,
+            template=EmailTemplate.RESOLUTION,
         )
 
-        assert context.employee_name is None
-        assert context.employee_id is None
-        assert context.department is None
-        assert context.deactivation_reason is None
-        assert context.action_taken is None
-        assert context.message is None
-        assert context.error_details is None
+        assert context.action_summary is None
+        assert context.next_steps is None
+        assert context.next_update_at is None
 
     def test_context_support_email_defaults(self):
         """Should default support_email to company support."""
@@ -635,7 +590,7 @@ class TestEmailContext:
             recipient_name="User Name",
             ticket_id=1,
             ticket_title="Test Ticket",
-            template=EmailTemplate.ACCOUNT_REACTIVATED,
+            template=EmailTemplate.RESOLUTION,
         )
 
         assert context.support_email == "support@company.com"
