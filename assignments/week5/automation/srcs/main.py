@@ -26,6 +26,11 @@ try:
         ODOO_HEADERS,
         LOG_LEVEL,
         HR_FILE,
+        SMTP_HOST,
+        SMTP_PORT,
+        SMTP_USERNAME,
+        SMTP_PASSWORD,
+        SMTP_FROM_EMAIL,
     )
 except ImportError as e:
     print(f"ERROR: Failed to load configuration: {e}")
@@ -57,6 +62,7 @@ class AutomationExecutor:
             from srcs.services.login_workflow import LoginWorkflow
             from srcs.services.ticket_analyzer import TicketAnalyzer
             from srcs.services.decision_service import DecisionService
+            from srcs.services.gmail import GmailService
 
             # Initialize Odoo ticket client
             self.ticket_client = TicketClient(
@@ -85,11 +91,29 @@ class AutomationExecutor:
                 state_repo=self.state_repo,
             )
 
-            # Initialize workflow
+            # Initialize Gmail service if credentials available
+            gmail_service = None
+            if SMTP_USERNAME and SMTP_PASSWORD and SMTP_FROM_EMAIL:
+                try:
+                    gmail_service = GmailService(
+                        smtp_host=SMTP_HOST,
+                        smtp_port=SMTP_PORT,
+                        smtp_username=SMTP_USERNAME,
+                        smtp_password=SMTP_PASSWORD,
+                        from_email=SMTP_FROM_EMAIL,
+                    )
+                    logger.info("Gmail service initialized successfully")
+                except Exception as e:
+                    logger.warning(f"Failed to initialize Gmail service: {str(e)}. Continuing without email support.")
+            else:
+                logger.warning("Gmail credentials not configured. Email notifications will be disabled.")
+
+            # Initialize workflow with optional email service
             self.workflow = LoginWorkflow(
                 ticket_client=self.ticket_client,
                 hr_client=self.hr_client,
                 ticket_analyzer=self.ticket_analyzer,
+                gmail_service=gmail_service,
             )
 
             # Metrics
