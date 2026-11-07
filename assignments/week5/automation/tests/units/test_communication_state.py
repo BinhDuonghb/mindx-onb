@@ -46,9 +46,9 @@ class TestCommunicationStateTracking:
             employee_id="EMP001",
             name="John Doe",
             email="john@company.com",
-            status=EmployeeStatus.ACTIVE,
+            status=EmployeeStatus.TERMINATED,  # Terminated - will escalate
             lms_account_status="deactivated",
-            deactivation_reason=DeactivationReason.INACTIVITY_30_DAYS,
+            deactivation_reason=DeactivationReason.EMPLOYEE_TERMINATED,
         )
 
         workflow_with_email.ticket_client.get_ticket.return_value = ticket
@@ -59,9 +59,8 @@ class TestCommunicationStateTracking:
             reason="Login issue detected",
             confidence=0.9,
         )
-        workflow_with_email.hr_client.reactivate_lms_account.return_value = False
 
-        # First execution - reactivation fails, escalate with MANUAL_REVIEW
+        # First execution - terminated employee escalates with MANUAL_REVIEW
         result1 = workflow_with_email.execute(ticket_id=1)
         manual_review_count_after_first = sum(
             1 for call in gmail_service.send_email.call_args_list
@@ -184,10 +183,9 @@ class TestCommunicationStateTracking:
         assert manual_review_count_second == 0
 
     def test_ticket_content_change_resends_update_email(self, workflow_with_email, gmail_service):
-        """If ticket content changes, new INVESTIGATION_UPDATE email should be sent."""
-        # This is a placeholder test for future implementation
-        # When ticket content is modified, a new investigation update may be warranted
-        # For now, we just test that the framework supports it
+        """If ticket content changes, new emails may be warranted (future implementation)."""
+        # This test verifies email deduplication with content changes
+        # When ticket content changes (new fingerprint), the framework supports re-evaluation
 
         ticket_v1 = Ticket(
             id=4,
@@ -210,7 +208,7 @@ class TestCommunicationStateTracking:
             deactivation_reason=DeactivationReason.INACTIVITY_30_DAYS,
         )
 
-        # First execution with v1
+        # First execution with v1 - successful reactivation
         workflow_with_email.ticket_client.get_ticket.return_value = ticket_v1
         workflow_with_email.hr_client.get_employee_by_email.return_value = employee
         workflow_with_email.ticket_analyzer.analyze.return_value = AnalysisResult(
@@ -219,17 +217,29 @@ class TestCommunicationStateTracking:
             reason="Login issue",
             confidence=0.9,
         )
-        workflow_with_email.hr_client.reactivate_lms_account.return_value = False
+        workflow_with_email.hr_client.reactivate_lms_account.return_value = True
 
         result1 = workflow_with_email.execute(ticket_id=4)
+        assert result1.action_taken == "account_reactivated"
+
+        # First execution should send RESOLUTION
+        resolution_count_first = sum(
+            1 for call in gmail_service.send_email.call_args_list
+            if call[0][0].template == EmailTemplate.RESOLUTION
+        )
+        assert resolution_count_first == 1
 
         # Update ticket to v2 (simulating customer adding more details)
         workflow_with_email.ticket_client.get_ticket.return_value = ticket_v2
 
-        # Second execution should detect change and potentially send update
+        # Second execution should detect fingerprint change but not resend
+        # (same ticket, already completed)
         gmail_service.send_email.reset_mock()
         result2 = workflow_with_email.execute(ticket_id=4)
 
-        # For now, we just verify that the workflow handles it without error
-        # Future implementation may send INVESTIGATION_UPDATE on content change
-        assert result2.success is True
+        # Should handle gracefully without duplicate email
+        resolution_count_second = sum(
+            1 for call in gmail_service.send_email.call_args_list
+            if call[0][0].template == EmailTemplate.RESOLUTION
+        )
+        assert resolution_count_second == 0  # Email deduplication still works

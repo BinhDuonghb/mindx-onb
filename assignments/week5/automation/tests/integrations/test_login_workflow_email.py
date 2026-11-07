@@ -200,13 +200,13 @@ class TestLoginWorkflowEmailIntegration:
         assert email_context.recipient_email == "unknown@company.com"
         assert email_context.ticket_id == 4
 
-    def test_hr_reactivation_failure_sends_escalation_email(
+    def test_hr_reactivation_failure_schedules_retry(
         self, workflow_with_email, gmail_service
     ):
-        """Should send MANUAL_REVIEW email when HR reactivation fails (not ACK).
+        """Should schedule retry when HR reactivation fails (no email on failure).
 
-        Phase 1 Communication Policy: Send exactly one email per cycle based on outcome.
-        Reactivation failure → escalate → MANUAL_REVIEW only.
+        Phase 5 Retry Logic: Failures schedule retries, emails sent on retry success.
+        Reactivation failure → schedule retry → no email (will be sent on retry success).
         """
         ticket = Ticket(
             id=5,
@@ -236,20 +236,12 @@ class TestLoginWorkflowEmailIntegration:
         # Execute
         result = workflow_with_email.execute(ticket_id=5)
 
-        # Verify escalation (reactivation failed)
-        assert result.success is True
-        assert result.action_taken == "escalated_manual_review"
+        # Verify retry scheduled (not escalation)
+        assert result.success is False
+        assert result.action_taken == "retry_scheduled"
 
-        # Verify EXACTLY ONE email sent (MANUAL_REVIEW only, not ACK or RESOLUTION)
-        assert gmail_service.send_email.call_count == 1
-
-        # Extract template
-        email_context = gmail_service.send_email.call_args[0][0]
-
-        # Verify it's MANUAL_REVIEW, not RESOLUTION
-        assert email_context.template == EmailTemplate.MANUAL_REVIEW
-        assert email_context.recipient_email == "john@company.com"
-        assert email_context.ticket_id == 5
+        # Verify NO email sent on failure (will be sent on retry success)
+        assert gmail_service.send_email.call_count == 0
 
     def test_email_send_failure_does_not_fail_workflow(self, workflow_with_email, gmail_service):
         """Should continue workflow even if email send fails.

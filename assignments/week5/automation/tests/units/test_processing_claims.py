@@ -100,14 +100,14 @@ class TestProcessingClaimsIntegration:
         assert claimed2 is True
 
     def test_fingerprint_change_allows_reclaim(self, repo, ticket):
-        """Fingerprint change should allow re-evaluation and reclaim."""
+        """Fingerprint change allows re-evaluation only if lease has expired."""
         fingerprint1 = TicketFingerprinter.generate(ticket)
 
-        # Claim with original fingerprint
+        # Claim with original fingerprint (very short lease)
         claimed1 = repo.claim_for_processing(
             ticket_id=ticket.id,
             fingerprint=fingerprint1,
-            lease_duration_seconds=300
+            lease_duration_seconds=0  # Already expired
         )
         assert claimed1 is True
 
@@ -115,13 +115,37 @@ class TestProcessingClaimsIntegration:
         ticket.name = "Cannot login - updated"
         fingerprint2 = TicketFingerprinter.generate(ticket)
 
-        # Should allow reclaim due to fingerprint change
+        # Should allow reclaim due to fingerprint change (lease expired)
         claimed2 = repo.claim_for_processing(
             ticket_id=ticket.id,
             fingerprint=fingerprint2,
             lease_duration_seconds=300
         )
         assert claimed2 is True
+
+    def test_fingerprint_change_cannot_bypass_active_lease(self, repo, ticket):
+        """Fingerprint change cannot bypass an active processing lease."""
+        fingerprint1 = TicketFingerprinter.generate(ticket)
+
+        # Claim with original fingerprint (active lease)
+        claimed1 = repo.claim_for_processing(
+            ticket_id=ticket.id,
+            fingerprint=fingerprint1,
+            lease_duration_seconds=300  # Active lease
+        )
+        assert claimed1 is True
+
+        # Simulate ticket content change
+        ticket.name = "Cannot login - updated"
+        fingerprint2 = TicketFingerprinter.generate(ticket)
+
+        # Should NOT allow reclaim (active lease prevents bypass)
+        claimed2 = repo.claim_for_processing(
+            ticket_id=ticket.id,
+            fingerprint=fingerprint2,
+            lease_duration_seconds=300
+        )
+        assert claimed2 is False
 
     def test_claim_preserves_side_effect_flags(self, repo, ticket):
         """Claim should preserve existing side-effect completion flags."""

@@ -4,6 +4,8 @@ import logging
 from dataclasses import dataclass
 from typing import Optional, TYPE_CHECKING
 
+from srcs.repositories.automation_state_repository import AutomationStateRepository
+from srcs.models.automation_state import AutomationState
 from srcs.models import Ticket, Employee
 from srcs.clients.odoo.ticket_client import TicketClient
 from srcs.clients.hr.hr_client import HRClient
@@ -23,11 +25,17 @@ class WorkflowResult:
     """Result of workflow execution."""
 
     success: bool
-    action_taken: str  # "account_reactivated", "escalated_manual_review", "skipped"
+    action_taken: str  # "account_reactivated", "escalated_manual_review", "skipped", "retry_scheduled", "error"
     message: str
     error_message: Optional[str] = None
     ticket_id: Optional[int] = None
     employee_id: Optional[str] = None
+
+    # Side-effect completion flags (for retry scenarios)
+    reactivation_completed: bool = False
+    odoo_note_completed: bool = False
+    customer_response_completed: bool = False
+    stage_update_completed: bool = False
 
 
 class LoginWorkflow:
@@ -48,6 +56,7 @@ class LoginWorkflow:
         hr_client: HRClient,
         ticket_analyzer: TicketAnalyzer,
         gmail_service: Optional["GmailService"] = None,
+        state_repo: Optional[AutomationStateRepository] = None,
     ):
         """Initialize workflow with dependencies.
 
@@ -56,19 +65,21 @@ class LoginWorkflow:
             hr_client: HR system client
             ticket_analyzer: Ticket analysis service
             gmail_service: Optional email service for customer notifications
+            state_repo: Optional repository for persistent communication state
         """
         self.ticket_client = ticket_client
         self.hr_client = hr_client
         self.ticket_analyzer = ticket_analyzer
         self.gmail_service = gmail_service
         self.decision_service = DecisionService()
-        self.communication_state = CommunicationStateTracker()
+        self.communication_state = CommunicationStateTracker(repo=state_repo)
 
-    def execute(self, ticket_id: int) -> WorkflowResult:
+    def execute(self, ticket_id: int, state: Optional[AutomationState] = None) -> WorkflowResult:
         """Execute complete automation workflow for a ticket.
 
         Args:
             ticket_id: Ticket ID from Odoo
+            state: Optional previous AutomationState (for retry scenarios)
 
         Returns:
             WorkflowResult with execution details
@@ -123,9 +134,9 @@ class LoginWorkflow:
             decision = self.decision_service.decide(employee, ticket)
             logger.info(f"Decision for ticket {ticket_id}: {decision.action.value}")
 
-            # Step 5: Execute decision
+            # Step 5: Execute decision (pass state for side-effect tracking)
             result = self._execute_decision(
-                ticket, employee, analysis, decision
+                ticket, employee, analysis, decision, state
             )
 
             # Step 6: Send exactly ONE appropriate email based on outcome
@@ -144,7 +155,8 @@ class LoginWorkflow:
             )
 
     def _execute_decision(
-        self, ticket: Ticket, employee: Optional[Employee], analysis, decision
+        self, ticket: Ticket, employee: Optional[Employee], analysis, decision,
+        state: Optional["AutomationState"] = None
     ) -> WorkflowResult:
         """Execute the decision and perform necessary actions.
 
@@ -153,6 +165,7 @@ class LoginWorkflow:
             employee: Employee model or None
             analysis: Analysis result from TicketAnalyzer
             decision: Decision result from DecisionService
+            state: Optional previous AutomationState (for side-effect tracking)
 
         Returns:
             WorkflowResult
@@ -160,7 +173,7 @@ class LoginWorkflow:
 
         # Decision: APPROVE_REACTIVATION
         if decision.action == Decision.APPROVE_REACTIVATION:
-            return self._handle_reactivation(ticket, employee, decision)
+            return self._handle_reactivation(ticket, employee, decision, state)
 
         # Decision: MANUAL_REVIEW
         elif decision.action == Decision.MANUAL_REVIEW:
@@ -176,65 +189,118 @@ class LoginWorkflow:
             return self._handle_escalation(ticket, employee, decision)
 
     def _handle_reactivation(
-        self, ticket: Ticket, employee: Employee, decision
+        self, ticket: Ticket, employee: Employee, decision,
+        state: Optional["AutomationState"] = None
     ) -> WorkflowResult:
         """Handle account reactivation for active employee.
+
+        Tracks side effects and skips already-completed actions on retry.
 
         Args:
             ticket: Ticket
             employee: Employee
             decision: Decision result
+            state: Optional previous AutomationState (for side-effect tracking)
 
         Returns:
             WorkflowResult
         """
         logger.info(f"Reactivating account for employee {employee.name}")
 
-        # Reactivate LMS account (mark as active in simulated LMS system)
-        success = self.hr_client.reactivate_lms_account(
-            employee_id=employee.employee_id,
-            new_status="active",
-        )
+        # Step 1: Reactivate LMS account (skip if already completed)
+        reactivation_completed = state and state.reactivation_completed
 
-        if not success:
-            logger.warning(f"Failed to reactivate LMS account for {employee.name}")
-            # Post escalation note instead
-            self.ticket_client.add_log(
-                ticket_id=ticket.id,
-                log_message=f"[Automation] Account reactivation approved for {employee.name}, "
-                f"but LMS system update failed. Requires manual verification.",
-            )
-
-            # Return escalated result (email will be sent by caller)
-            return WorkflowResult(
-                success=True,
-                action_taken="escalated_manual_review",
-                message=f"Account reactivation approved but LMS update failed for {employee.name}",
-                ticket_id=ticket.id,
+        if reactivation_completed:
+            logger.info(f"LMS reactivation already completed for ticket {ticket.id}, skipping")
+        else:
+            success = self.hr_client.reactivate_lms_account(
                 employee_id=employee.employee_id,
+                new_status="active",
             )
 
-        # Post internal note with success
-        self.ticket_client.add_log(
-            ticket_id=ticket.id,
-            log_message=f"[Automation] Account reactivated for employee {employee.name} ({employee.email}). "
-            f"Issue: {decision.reason}",
-        )
+            if not success:
+                logger.warning(f"Failed to reactivate LMS account for {employee.name}")
+                # Schedule retry instead of escalating
+                from srcs.repositories.automation_state_repository import AutomationStateRepository
+                # This would be called by main.py after saving state
+                # Mark for retry with error message
+                return WorkflowResult(
+                    success=False,
+                    action_taken="retry_scheduled",
+                    message=f"LMS reactivation failed for {employee.name}",
+                    error_message="LMS system update failed",
+                    ticket_id=ticket.id,
+                    employee_id=employee.employee_id,
+                )
 
-        self.ticket_client.update_stage(
-            ticket_id=ticket.id,
-            stage_id=4,
-        )
+            reactivation_completed = True
+
+        # Step 2: Post internal note (skip if already completed)
+        odoo_note_completed = state and state.odoo_note_completed
+
+        if odoo_note_completed:
+            logger.info(f"Odoo note already posted for ticket {ticket.id}, skipping")
+        else:
+            try:
+                self.ticket_client.add_log(
+                    ticket_id=ticket.id,
+                    log_message=f"[Automation] Account reactivated for employee {employee.name} ({employee.email}). "
+                    f"Issue: {decision.reason}",
+                )
+                odoo_note_completed = True
+            except Exception as e:
+                logger.warning(f"Failed to post Odoo note for ticket {ticket.id}: {str(e)}")
+                # Schedule retry on note posting failure
+                return WorkflowResult(
+                    success=False,
+                    action_taken="retry_scheduled",
+                    message=f"Failed to post Odoo note for ticket {ticket.id}",
+                    error_message=str(e),
+                    ticket_id=ticket.id,
+                    employee_id=employee.employee_id,
+                )
+
+        # Step 3: Update ticket stage (skip if already completed)
+        stage_update_completed = state and state.stage_update_completed
+
+        if stage_update_completed:
+            logger.info(f"Stage update already completed for ticket {ticket.id}, skipping")
+        else:
+            try:
+                self.ticket_client.update_stage(
+                    ticket_id=ticket.id,
+                    stage_id=4,
+                )
+                stage_update_completed = True
+            except Exception as e:
+                logger.warning(f"Failed to update stage for ticket {ticket.id}: {str(e)}")
+                # Schedule retry on stage update failure
+                return WorkflowResult(
+                    success=False,
+                    action_taken="retry_scheduled",
+                    message=f"Failed to update ticket stage",
+                    error_message=str(e),
+                    ticket_id=ticket.id,
+                    employee_id=employee.employee_id,
+                )
 
         logger.info(f"✓ Account reactivation completed for ticket {ticket.id}")
 
-        return WorkflowResult(
+        # Build result with side-effect completion flags for caller to persist
+        result = WorkflowResult(
             success=True,
             action_taken="account_reactivated",
             message=f"Account successfully reactivated for {employee.name}",
             ticket_id=ticket.id,
             employee_id=employee.employee_id,
         )
+
+        # Store side-effect flags in result for caller to persist
+        result.reactivation_completed = reactivation_completed
+        result.odoo_note_completed = odoo_note_completed
+        result.stage_update_completed = stage_update_completed
+
+        return result
 
     def _handle_escalation(
         self, ticket: Ticket, employee: Optional[Employee], decision

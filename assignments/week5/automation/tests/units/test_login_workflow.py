@@ -251,7 +251,7 @@ class TestLoginWorkflowEscalation:
     def test_hr_update_failure_escalated(
         self, workflow, mock_ticket_client, mock_hr_client, mock_analyzer
     ):
-        """Should escalate when HR update fails."""
+        """Should schedule retry when LMS reactivation fails."""
         ticket = Ticket(
             id=6,
             name="Cannot login",
@@ -280,10 +280,10 @@ class TestLoginWorkflowEscalation:
         # Execute workflow
         result = workflow.execute(ticket_id=6)
 
-        # Should escalate on HR failure
-        assert result.success is True
-        assert result.action_taken == "escalated_manual_review"
-        assert "HR" in result.message or "update" in result.message
+        # Should schedule retry on LMS failure (not escalate immediately)
+        assert result.success is False
+        assert result.action_taken == "retry_scheduled"
+        assert result.error_message is not None
 
 
 class TestLoginWorkflowSkip:

@@ -1,7 +1,7 @@
 """Unit tests for AutomationExecutor - main.py orchestration."""
 
 import pytest
-from datetime import datetime, timedelta, UTC
+from datetime import datetime, timedelta, timezone
 from unittest.mock import Mock, MagicMock, patch
 from pathlib import Path
 
@@ -24,7 +24,7 @@ class SimpleExecutor:
         """Simplified run_once for testing."""
         from datetime import datetime as dt
 
-        start_time = dt.now(UTC)
+        start_time = dt.now(timezone.utc)
 
         try:
             tickets = self.poller.poll(limit=limit, min_age_minutes=min_age_minutes)
@@ -37,7 +37,7 @@ class SimpleExecutor:
                     "escalated": 0,
                     "skipped": 0,
                     "failed": 0,
-                    "elapsed_seconds": (dt.now(UTC) - start_time).total_seconds(),
+                    "elapsed_seconds": (dt.now(timezone.utc) - start_time).total_seconds(),
                 }
 
             results = {"successful": 0, "escalated": 0, "skipped": 0, "failed": 0}
@@ -64,7 +64,7 @@ class SimpleExecutor:
                 queued=results["successful"] + results["escalated"],
             )
 
-            elapsed = (dt.now(UTC) - start_time).total_seconds()
+            elapsed = (dt.now(timezone.utc) - start_time).total_seconds()
             results["success"] = True
             results["tickets_processed"] = len(tickets)
             results["elapsed_seconds"] = elapsed
@@ -75,7 +75,7 @@ class SimpleExecutor:
             return {
                 "success": False,
                 "error": str(e),
-                "elapsed_seconds": (dt.now(UTC) - start_time).total_seconds(),
+                "elapsed_seconds": (dt.now(timezone.utc) - start_time).total_seconds(),
             }
 
     def get_metrics(self) -> dict:

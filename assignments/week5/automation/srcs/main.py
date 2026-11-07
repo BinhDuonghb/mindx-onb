@@ -16,7 +16,7 @@ import logging
 import sys
 import time
 from pathlib import Path
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 
 # Load configuration
 try:
@@ -108,12 +108,13 @@ class AutomationExecutor:
             else:
                 logger.warning("Gmail credentials not configured. Email notifications will be disabled.")
 
-            # Initialize workflow with optional email service
+            # Initialize workflow with optional email service and persistent state repo
             self.workflow = LoginWorkflow(
                 ticket_client=self.ticket_client,
                 hr_client=self.hr_client,
                 ticket_analyzer=self.ticket_analyzer,
                 gmail_service=gmail_service,
+                state_repo=self.state_repo,
             )
 
             # Metrics
@@ -138,7 +139,7 @@ class AutomationExecutor:
         logger.info("Starting one-time automation run")
 
         try:
-            start_time = datetime.now(UTC)
+            start_time = datetime.now(timezone.utc)
 
             # Poll for new and changed tickets
             logger.info(f"Polling for new/changed tickets (limit={limit})...")
@@ -157,7 +158,8 @@ class AutomationExecutor:
                     ticket_ids.add(ticket.id)
                     all_tickets.append(ticket)
 
-            for ticket in retry_tickets:
+            # poll_for_retry() returns (ticket, state) tuples - extract just tickets
+            for ticket, state in retry_tickets:
                 if ticket.id not in ticket_ids:
                     ticket_ids.add(ticket.id)
                     all_tickets.append(ticket)
@@ -171,7 +173,7 @@ class AutomationExecutor:
                     "escalated": 0,
                     "skipped": 0,
                     "failed": 0,
-                    "elapsed_seconds": (datetime.now(UTC) - start_time).total_seconds(),
+                    "elapsed_seconds": (datetime.now(timezone.utc) - start_time).total_seconds(),
                 }
 
             logger.info(f"Processing {len(all_tickets)} tickets ({len(tickets)} new/changed, {len(retry_tickets)} retries)")
@@ -204,11 +206,25 @@ class AutomationExecutor:
                         results["skipped"] += 1
                         continue
 
-                    # Execute workflow
-                    result = self.workflow.execute(ticket_id=ticket.id)
+                    # Load existing state for retry scenarios (preserves side-effect flags)
+                    existing_state = self.state_repo.get(ticket.id)
+
+                    # Execute workflow (pass state for side-effect tracking on retries)
+                    result = self.workflow.execute(ticket_id=ticket.id, state=existing_state)
 
                     # Save automation state after processing
                     self._save_ticket_state(ticket, result)
+
+                    # Handle retry scheduling if workflow indicates failure
+                    if result.action_taken == "retry_scheduled":
+                        self.state_repo.schedule_retry(
+                            ticket_id=ticket.id,
+                            retry_after_seconds=3600,  # Retry after 1 hour
+                            error=result.error_message
+                        )
+                        results["failed"] += 1
+                        logger.info(f"Scheduled retry for ticket {ticket.id}: {result.error_message}")
+                        continue
 
                     # Track result
                     if result.success:
@@ -232,7 +248,7 @@ class AutomationExecutor:
                 queued=results["successful"] + results["escalated"],
             )
 
-            elapsed = (datetime.now(UTC) - start_time).total_seconds()
+            elapsed = (datetime.now(timezone.utc) - start_time).total_seconds()
             results["success"] = True
             results["tickets_processed"] = len(all_tickets)
             results["elapsed_seconds"] = elapsed
@@ -250,7 +266,7 @@ class AutomationExecutor:
             return {
                 "success": False,
                 "error": str(e),
-                "elapsed_seconds": (datetime.now(UTC) - start_time).total_seconds(),
+                "elapsed_seconds": (datetime.now(timezone.utc) - start_time).total_seconds(),
             }
 
     def run_continuous(
@@ -275,7 +291,7 @@ class AutomationExecutor:
         try:
             while True:
                 poll_count += 1
-                logger.info(f"--- Poll {poll_count} at {datetime.now(UTC).isoformat()} ---")
+                logger.info(f"--- Poll {poll_count} at {datetime.now(timezone.utc).isoformat()} ---")
 
                 # Run one cycle
                 result = self.run_once(limit=limit, min_age_minutes=min_age_minutes)
@@ -311,6 +327,8 @@ class AutomationExecutor:
     def _save_ticket_state(self, ticket, result) -> None:
         """Save automation state after processing a ticket.
 
+        Updates existing state, preserving side-effect flags and retry metadata.
+
         Args:
             ticket: Ticket model
             result: WorkflowResult from workflow execution
@@ -326,6 +344,8 @@ class AutomationExecutor:
                 status = AutomationStatus.MANUAL_REVIEW
             elif result.action_taken == "skipped":
                 status = AutomationStatus.SKIPPED
+            elif result.action_taken == "retry_scheduled":
+                status = AutomationStatus.RETRY_SCHEDULED
             elif result.action_taken == "error":
                 status = AutomationStatus.FAILED
             else:
@@ -334,14 +354,40 @@ class AutomationExecutor:
             # Generate fingerprint for change detection
             fingerprint = TicketFingerprinter.generate(ticket)
 
-            # Create and save state
-            state = AutomationState(
-                ticket_id=ticket.id,
-                fingerprint=fingerprint,
-                status=status,
-                last_decision=result.action_taken,
-                last_reason=result.message,
-            )
+            # Load existing state to preserve side-effect flags and retry metadata
+            existing_state = self.state_repo.get(ticket.id)
+
+            if existing_state:
+                # Update only what changed, preserve side-effect flags and retry metadata
+                existing_state.fingerprint = fingerprint
+                existing_state.status = status
+                existing_state.last_decision = result.action_taken
+                existing_state.last_reason = result.message
+
+                # Persist side-effect completion flags from workflow result
+                if result.reactivation_completed:
+                    existing_state.reactivation_completed = True
+                if result.odoo_note_completed:
+                    existing_state.odoo_note_completed = True
+                if result.customer_response_completed:
+                    existing_state.customer_response_completed = True
+                if result.stage_update_completed:
+                    existing_state.stage_update_completed = True
+
+                state = existing_state
+            else:
+                # Create new state if none exists
+                state = AutomationState(
+                    ticket_id=ticket.id,
+                    fingerprint=fingerprint,
+                    status=status,
+                    last_decision=result.action_taken,
+                    last_reason=result.message,
+                    reactivation_completed=result.reactivation_completed,
+                    odoo_note_completed=result.odoo_note_completed,
+                    customer_response_completed=result.customer_response_completed,
+                    stage_update_completed=result.stage_update_completed,
+                )
 
             self.state_repo.save(state)
             logger.debug(f"Saved automation state for ticket {ticket.id}: status={status.value}")
@@ -404,7 +450,7 @@ def main():
 
     logger.info("=" * 80)
     logger.info("Odoo Login Issue Automation")
-    logger.info(f"Started at {datetime.now(UTC).isoformat()}")
+    logger.info(f"Started at {datetime.now(timezone.utc).isoformat()}")
     logger.info("=" * 80)
 
     try:

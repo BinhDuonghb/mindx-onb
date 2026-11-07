@@ -1,10 +1,15 @@
 """AutomationStateRepository - SQLite persistence for automation processing state."""
 
+from __future__ import annotations
+
 import logging
 import sqlite3
 from pathlib import Path
-from datetime import datetime, timedelta, UTC
-from typing import Optional
+from datetime import datetime, timedelta, timezone
+from typing import Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from srcs.services.gmail import CommunicationEvent
 
 from srcs.models import AutomationState, AutomationStatus
 
@@ -138,7 +143,7 @@ class AutomationStateRepository:
             True if successful, False otherwise
         """
         try:
-            state.updated_at = datetime.now(UTC)
+            state.updated_at = datetime.now(timezone.utc)
 
             with sqlite3.connect(self.db_path) as conn:
                 cursor = conn.cursor()
@@ -213,7 +218,7 @@ class AutomationStateRepository:
             True if claim successful, False if another process holds it
         """
         try:
-            now = datetime.now(UTC)
+            now = datetime.now(timezone.utc)
             lease_until = now + timedelta(seconds=lease_duration_seconds)
 
             with sqlite3.connect(self.db_path) as conn:
@@ -248,7 +253,21 @@ class AutomationStateRepository:
 
                 status, stored_fingerprint, processing_lease_until_str = row
 
-                # Fingerprint changed - allow re-evaluation
+                # Check if processing lease has expired (BEFORE checking fingerprint)
+                # Active leases cannot be bypassed by fingerprint changes
+                if processing_lease_until_str:
+                    lease_until_dt = datetime.fromisoformat(processing_lease_until_str)
+                    if now < lease_until_dt:
+                        logger.warning(
+                            f"Ticket {ticket_id} is already being processed (lease until {lease_until_dt})"
+                        )
+                        return False
+                    else:
+                        logger.warning(
+                            f"Recovering stale processing for ticket {ticket_id} (lease expired at {lease_until_dt})"
+                        )
+
+                # Fingerprint changed - allow re-evaluation (only if no active lease)
                 if stored_fingerprint != fingerprint:
                     logger.info(
                         f"Ticket {ticket_id} fingerprint changed - allowing re-evaluation"
@@ -261,19 +280,6 @@ class AutomationStateRepository:
                     """, (fingerprint, AutomationStatus.PENDING.value, ticket_id))
                     conn.commit()
                     return True
-
-                # Check if processing lease has expired
-                if processing_lease_until_str:
-                    lease_until_dt = datetime.fromisoformat(processing_lease_until_str)
-                    if now < lease_until_dt:
-                        logger.warning(
-                            f"Ticket {ticket_id} is already being processed (lease until {lease_until_dt})"
-                        )
-                        return False
-                    else:
-                        logger.warning(
-                            f"Recovering stale processing for ticket {ticket_id} (lease expired at {lease_until_dt})"
-                        )
 
                 # Claim for processing
                 cursor.execute("""
@@ -308,7 +314,7 @@ class AutomationStateRepository:
                     WHERE ticket_id = ?
                 """, (
                     AutomationStatus.COMPLETED.value,
-                    datetime.now(UTC).isoformat(),
+                    datetime.now(timezone.utc).isoformat(),
                     ticket_id
                 ))
                 conn.commit()
@@ -339,7 +345,7 @@ class AutomationStateRepository:
                 """, (
                     AutomationStatus.MANUAL_REVIEW.value,
                     reason,
-                    datetime.now(UTC).isoformat(),
+                    datetime.now(timezone.utc).isoformat(),
                     ticket_id
                 ))
                 conn.commit()
@@ -364,7 +370,7 @@ class AutomationStateRepository:
             True if successful, False otherwise
         """
         try:
-            now = datetime.now(UTC)
+            now = datetime.now(timezone.utc)
             next_retry = now + timedelta(seconds=retry_after_seconds)
 
             with sqlite3.connect(self.db_path) as conn:
@@ -406,7 +412,7 @@ class AutomationStateRepository:
             True if successful, False otherwise
         """
         try:
-            now = datetime.now(UTC)
+            now = datetime.now(timezone.utc)
 
             with sqlite3.connect(self.db_path) as conn:
                 cursor = conn.cursor()
@@ -424,7 +430,7 @@ class AutomationStateRepository:
             logger.error(f"Failed to mark communication sent for ticket {ticket_id}: {str(e)}")
             return False
 
-    def has_communication_sent(self, ticket_id: int, event: "CommunicationEvent") -> bool:
+    def has_communication_sent(self, ticket_id: int, event: CommunicationEvent) -> bool:
         """Check if a communication event has been sent for a ticket.
 
         Args:

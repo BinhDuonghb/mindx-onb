@@ -24,9 +24,19 @@ class TestPersistentCommunicationEvents:
         fd, path = tempfile.mkstemp(suffix='.db')
         os.close(fd)
         yield Path(path)
-        # Cleanup
+        # Cleanup - give SQLite time to release lock on Windows
+        import time
+        time.sleep(0.1)
         if os.path.exists(path):
-            os.remove(path)
+            try:
+                os.remove(path)
+            except PermissionError:
+                # File still locked, try again after more time
+                time.sleep(0.5)
+                try:
+                    os.remove(path)
+                except:
+                    pass  # Give up, file will be cleaned by temp cleaner
 
     def test_save_event_persists_to_database(self, temp_db):
         """Mark sent event should persist to SQLite."""
@@ -43,6 +53,9 @@ class TestPersistentCommunicationEvents:
             ticket_id=1,
             event=CommunicationEvent.REACTIVATION_SUCCESSFUL
         ) is True
+
+        # Explicitly close connection to release lock
+        del repo
 
     def test_load_events_on_repository_init(self, temp_db):
         """Events saved in first repo should be found in second repo."""

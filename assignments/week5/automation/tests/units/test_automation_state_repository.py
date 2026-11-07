@@ -4,7 +4,7 @@ import pytest
 import tempfile
 import sqlite3
 from pathlib import Path
-from datetime import datetime, timedelta, UTC
+from datetime import datetime, timedelta, timezone
 
 from srcs.models import AutomationState, AutomationStatus
 from srcs.repositories.automation_state_repository import AutomationStateRepository
@@ -114,7 +114,7 @@ class TestAutomationStateRepositoryBasics:
 
     def test_save_preserves_all_fields(self, repo):
         """Should preserve all fields on save and retrieval."""
-        now = datetime.now(UTC)
+        now = datetime.now(timezone.utc)
         retry_time = now + timedelta(hours=1)
 
         state = AutomationState(
@@ -174,7 +174,7 @@ class TestAutomationStateRepositoryClaimForProcessing:
     def test_claim_for_processing_expires_old_lease(self, repo):
         """Should allow claiming if previous lease expired."""
         # Create state with expired lease
-        now = datetime.now(UTC)
+        now = datetime.now(timezone.utc)
         expired_lease = now - timedelta(seconds=1)
 
         state = AutomationState(
@@ -199,12 +199,12 @@ class TestAutomationStateRepositoryClaimForProcessing:
         assert result is True
 
     def test_claim_for_processing_allows_reprocessing_on_fingerprint_change(self, repo):
-        """Should allow reprocessing if fingerprint changed."""
-        # Initial claim
-        repo.claim_for_processing(ticket_id=1, fingerprint="abc123")
+        """Should allow reprocessing if fingerprint changed and lease expired."""
+        # Initial claim with very short lease
+        repo.claim_for_processing(ticket_id=1, fingerprint="abc123", lease_duration_seconds=0)
 
-        # Try to claim with different fingerprint
-        result = repo.claim_for_processing(ticket_id=1, fingerprint="def456")
+        # Try to claim with different fingerprint (lease expired, fingerprint changed)
+        result = repo.claim_for_processing(ticket_id=1, fingerprint="def456", lease_duration_seconds=300)
 
         # Should succeed and update fingerprint
         assert result is True
@@ -378,9 +378,9 @@ class TestAutomationStateRepositoryScheduleRetry:
         )
         repo.save(state)
 
-        before = datetime.now(UTC)
+        before = datetime.now(timezone.utc)
         repo.schedule_retry(ticket_id=1, retry_after_seconds=3600)
-        after = datetime.now(UTC)
+        after = datetime.now(timezone.utc)
 
         retrieved = repo.get(ticket_id=1)
         assert retrieved.next_retry_at > after

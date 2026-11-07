@@ -1,7 +1,7 @@
 """Unit tests for AutomationState model."""
 
 import pytest
-from datetime import datetime, timedelta, UTC
+from datetime import datetime, timedelta, timezone
 from srcs.models import AutomationState, AutomationStatus
 
 
@@ -24,7 +24,7 @@ class TestAutomationStateCreation:
 
     def test_create_automation_state_with_all_fields(self):
         """Should create state with all fields."""
-        now = datetime.now(UTC)
+        now = datetime.now(timezone.utc)
         retry_time = now + timedelta(hours=1)
 
         state = AutomationState(
@@ -114,7 +114,7 @@ class TestAutomationStateRetryLogic:
 
     def test_not_ready_when_retry_time_in_future(self):
         """Should not be ready if retry time is in the future."""
-        future_time = datetime.now(UTC) + timedelta(hours=1)
+        future_time = datetime.now(timezone.utc) + timedelta(hours=1)
         state = AutomationState(
             ticket_id=1,
             fingerprint="abc123",
@@ -126,7 +126,7 @@ class TestAutomationStateRetryLogic:
 
     def test_ready_when_retry_time_in_past(self):
         """Should be ready if retry time has passed."""
-        past_time = datetime.now(UTC) - timedelta(hours=1)
+        past_time = datetime.now(timezone.utc) - timedelta(hours=1)
         state = AutomationState(
             ticket_id=1,
             fingerprint="abc123",
@@ -142,7 +142,7 @@ class TestAutomationStateSerialization:
 
     def test_to_dict(self):
         """Should convert to dictionary."""
-        now = datetime.now(UTC)
+        now = datetime.now(timezone.utc)
         state = AutomationState(
             ticket_id=1,
             fingerprint="abc123",
@@ -167,7 +167,7 @@ class TestAutomationStateSerialization:
 
     def test_from_dict(self):
         """Should create from dictionary."""
-        now = datetime.now(UTC).isoformat()
+        now = datetime.now(timezone.utc).isoformat()
         data = {
             "ticket_id": 2,
             "fingerprint": "def456",
@@ -195,7 +195,7 @@ class TestAutomationStateSerialization:
 
     def test_roundtrip_serialization(self):
         """Should preserve data through to_dict/from_dict roundtrip."""
-        now = datetime.now(UTC)
+        now = datetime.now(timezone.utc)
         original = AutomationState(
             ticket_id=3,
             fingerprint="ghi789",
@@ -226,42 +226,42 @@ class TestAutomationStateTimestamps:
     """Test timestamp handling."""
 
     def test_created_at_defaults_to_now(self):
-        """Should default created_at to current UTC time."""
-        before = datetime.now(UTC)
+        """Should default created_at to current timezone.utc time."""
+        before = datetime.now(timezone.utc)
         state = AutomationState(
             ticket_id=1,
             fingerprint="abc123",
             status=AutomationStatus.PENDING,
         )
-        after = datetime.now(UTC)
+        after = datetime.now(timezone.utc)
 
         assert before <= state.created_at <= after
 
     def test_updated_at_defaults_to_now(self):
-        """Should default updated_at to current UTC time."""
-        before = datetime.now(UTC)
+        """Should default updated_at to current timezone.utc time."""
+        before = datetime.now(timezone.utc)
         state = AutomationState(
             ticket_id=1,
             fingerprint="abc123",
             status=AutomationStatus.PENDING,
         )
-        after = datetime.now(UTC)
+        after = datetime.now(timezone.utc)
 
         assert before <= state.updated_at <= after
 
     def test_timestamps_are_utc(self):
-        """Timestamps should be in UTC."""
+        """Timestamps should be in timezone.utc."""
         state = AutomationState(
             ticket_id=1,
             fingerprint="abc123",
             status=AutomationStatus.PENDING,
         )
 
-        # datetime.now(UTC) returns timezone-aware datetime in UTC
+        # datetime.now(timezone.utc) returns timezone-aware datetime in timezone.utc
         assert state.created_at.tzinfo is not None
         assert state.updated_at.tzinfo is not None
-        assert state.created_at.tzinfo == UTC
-        assert state.updated_at.tzinfo == UTC
+        assert state.created_at.tzinfo == timezone.utc
+        assert state.updated_at.tzinfo == timezone.utc
 
 
 class TestAutomationStateSideEffectTracking:

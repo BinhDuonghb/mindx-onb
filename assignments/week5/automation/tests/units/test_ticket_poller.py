@@ -1,7 +1,7 @@
 """Unit tests for TicketPoller."""
 
 import pytest
-from datetime import datetime, timedelta, UTC
+from datetime import datetime, timedelta, timezone
 from unittest.mock import Mock, MagicMock
 
 from srcs.models import Ticket, AutomationState, AutomationStatus
@@ -150,7 +150,7 @@ class TestTicketPollerPoll:
 
     def test_poll_respects_min_age(self, poller, mock_ticket_client, mock_state_repo):
         """Should skip very new tickets."""
-        now = datetime.now(UTC)
+        now = datetime.now(timezone.utc)
         ticket = Ticket(
             id=1,
             name="Cannot login",
@@ -168,7 +168,7 @@ class TestTicketPollerPoll:
 
     def test_poll_includes_old_tickets(self, poller, mock_ticket_client, mock_state_repo):
         """Should include tickets old enough."""
-        now = datetime.now(UTC)
+        now = datetime.now(timezone.utc)
         old_time = now - timedelta(minutes=10)
         ticket = Ticket(
             id=1,
@@ -188,7 +188,7 @@ class TestTicketPollerPoll:
 
     def test_poll_mixed_tickets(self, poller, mock_ticket_client, mock_state_repo):
         """Should handle mix of new, unchanged, and changed tickets."""
-        now = datetime.now(UTC)
+        now = datetime.now(timezone.utc)
 
         ticket1 = Ticket(id=1, name="New ticket", email_from="user@company.com")
         ticket2 = Ticket(id=2, name="Unchanged", email_from="user@company.com")
@@ -269,7 +269,7 @@ class TestTicketPollerPollForRetry:
         mock_ticket_client.get_ticket.return_value = ticket  # Return full Ticket object
 
         # Create state ready for retry
-        past_time = datetime.now(UTC) - timedelta(hours=1)
+        past_time = datetime.now(timezone.utc) - timedelta(hours=1)
         state = AutomationState(
             ticket_id=1,
             fingerprint="abc123",
@@ -290,7 +290,7 @@ class TestTicketPollerPollForRetry:
         mock_ticket_client.search_tickets.return_value = [ticket]
 
         # Create state not ready for retry yet
-        future_time = datetime.now(UTC) + timedelta(hours=1)
+        future_time = datetime.now(timezone.utc) + timedelta(hours=1)
         state = AutomationState(
             ticket_id=1,
             fingerprint="abc123",
@@ -319,7 +319,7 @@ class TestTicketPollerPollForRetry:
         ]
         mock_ticket_client.search_tickets.return_value = tickets
 
-        past_time = datetime.now(UTC) - timedelta(hours=1)
+        past_time = datetime.now(timezone.utc) - timedelta(hours=1)
         state = AutomationState(
             ticket_id=1,
             fingerprint="abc123",

@@ -130,7 +130,7 @@ class TestLoginWorkflowEventBasedCommunication:
     def test_failed_reactivation_does_not_send_resolution(
         self, workflow_with_email, gmail_service
     ):
-        """Failed reactivation should NOT send RESOLUTION, should send escalation."""
+        """Failed reactivation should schedule retry (not escalate or send email)."""
         ticket = Ticket(
             id=3,
             name="Cannot login",
@@ -160,23 +160,12 @@ class TestLoginWorkflowEventBasedCommunication:
         # Execute
         result = workflow_with_email.execute(ticket_id=3)
 
-        # Should NOT send RESOLUTION (reactivation failed)
-        resolution_found = False
-        for call in gmail_service.send_email.call_args_list:
-            context = call[0][0]
-            if context.template == EmailTemplate.RESOLUTION:
-                resolution_found = True
+        # Should schedule retry (not escalate immediately)
+        assert result.success is False
+        assert result.action_taken == "retry_scheduled"
 
-        assert not resolution_found, "Should NOT send RESOLUTION when reactivation failed"
-
-        # Should send MANUAL_REVIEW instead
-        manual_review_found = False
-        for call in gmail_service.send_email.call_args_list:
-            context = call[0][0]
-            if context.template == EmailTemplate.MANUAL_REVIEW:
-                manual_review_found = True
-
-        assert manual_review_found, "Should send MANUAL_REVIEW when reactivation failed"
+        # No email should be sent (we're retrying the step, not escalating)
+        gmail_service.send_email.assert_not_called()
 
     def test_terminated_employee_sends_safe_manual_review(
         self, workflow_with_email, gmail_service
