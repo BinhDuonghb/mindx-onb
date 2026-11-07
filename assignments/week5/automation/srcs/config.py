@@ -1,5 +1,12 @@
-"""Configuration module for Odoo automation service."""
+"""Configuration module for Odoo automation service.
 
+Configuration selection:
+- When pytest is running: Uses TEST_ODOO_* configuration (mocked/test systems)
+- When python main.py is running: Uses production ODOO_* configuration
+- Detection: Checks if pytest is in sys.modules or PYTEST_TEMP_TEST_DB env var is set
+"""
+
+import sys
 import os
 from pathlib import Path
 from dotenv import load_dotenv
@@ -9,18 +16,50 @@ env_path = Path(__file__).parent / ".env"
 load_dotenv(env_path)
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 DATA_DIR = BASE_DIR / "data"
-# Odoo API Configuration
+
+# Detect if running under pytest
+_IS_PYTEST = "pytest" in sys.modules or bool(os.environ.get("PYTEST_TEMP_TEST_DB"))
+
+# Production Odoo Configuration
 ODOO_URL = os.getenv("ODOO_URL")
 ODOO_DATABASE = os.getenv("ODOO_DATABASE")
 ODOO_RPC_KEY = os.getenv("ODOO_RPC_KEY")
 
+# Test Odoo Configuration (for pytest and E2E tests)
+TEST_ODOO_URL = os.getenv("TEST_ODOO_URL")
+TEST_ODOO_DATABASE = os.getenv("TEST_ODOO_DATABASE")
+TEST_ODOO_RPC_KEY = os.getenv("TEST_ODOO_RPC_KEY")
 
+# Select active configuration based on execution context
+if _IS_PYTEST:
+    # Use TEST config when running pytest
+    ACTIVE_ODOO_URL = TEST_ODOO_URL
+    ACTIVE_ODOO_DATABASE = TEST_ODOO_DATABASE
+    ACTIVE_ODOO_RPC_KEY = TEST_ODOO_RPC_KEY
+    RUNNING_MODE = "pytest"
+else:
+    # Use production config when running main.py
+    ACTIVE_ODOO_URL = ODOO_URL
+    ACTIVE_ODOO_DATABASE = ODOO_DATABASE
+    ACTIVE_ODOO_RPC_KEY = ODOO_RPC_KEY
+    RUNNING_MODE = "production"
+
+# Validate required configuration
+if not all([ACTIVE_ODOO_URL, ACTIVE_ODOO_DATABASE, ACTIVE_ODOO_RPC_KEY]):
+    raise ValueError(
+        f"Missing required Odoo configuration for {RUNNING_MODE} mode. "
+        f"Ensure {'TEST_ODOO_URL, TEST_ODOO_DATABASE, TEST_ODOO_RPC_KEY' if _IS_PYTEST else 'ODOO_URL, ODOO_DATABASE, ODOO_RPC_KEY'} "
+        f"are set in .env"
+    )
+
+# HR File Configuration
 HR_FILE = DATA_DIR / "hr.json"
 _temp_test_db = os.environ.get("PYTEST_TEMP_TEST_DB")
-TEST_HR_FILE = Path(_temp_test_db) if _temp_test_db else DATA_DIR / "test_hr.json"  
+TEST_HR_FILE = Path(_temp_test_db) if _temp_test_db else DATA_DIR / "test_hr.json"
+
 def ensure_storage():
+    """Ensure data directories and files exist."""
     DATA_DIR.mkdir(exist_ok=True)
 
     if not HR_FILE.exists():
@@ -34,23 +73,6 @@ def ensure_storage():
             "[]",
             encoding="utf-8"
         )
-
-# Test Odoo Configuration (for E2E tests against real instance)
-TEST_ODOO_URL = os.getenv("TEST_ODOO_URL")
-TEST_ODOO_DATABASE = os.getenv("TEST_ODOO_DATABASE")
-TEST_ODOO_RPC_KEY = os.getenv("TEST_ODOO_RPC_KEY")
-
-# Use test config if available, otherwise fall back to production
-ACTIVE_ODOO_URL = TEST_ODOO_URL or ODOO_URL
-ACTIVE_ODOO_DATABASE = TEST_ODOO_DATABASE or ODOO_DATABASE
-ACTIVE_ODOO_RPC_KEY = TEST_ODOO_RPC_KEY or ODOO_RPC_KEY
-
-# Validate required configuration
-if not all([ACTIVE_ODOO_URL, ACTIVE_ODOO_DATABASE, ACTIVE_ODOO_RPC_KEY]):
-    raise ValueError(
-        "Missing required Odoo configuration. "
-        "Ensure ODOO_URL, ODOO_DATABASE, and ODOO_RPC_KEY are set in .env"
-    )
 
 # Derived configuration
 ODOO_API_ENDPOINT = f"{ACTIVE_ODOO_URL}/json/2"
@@ -88,22 +110,31 @@ if not all([SMTP_USERNAME, SMTP_PASSWORD, SMTP_FROM_EMAIL]):
     )
 
 __all__ = [
+    # Production Odoo Config
     "ODOO_URL",
     "ODOO_DATABASE",
     "ODOO_RPC_KEY",
+    # Test Odoo Config
     "TEST_ODOO_URL",
     "TEST_ODOO_DATABASE",
     "TEST_ODOO_RPC_KEY",
+    # Active Config (selected based on running context)
     "ACTIVE_ODOO_URL",
     "ACTIVE_ODOO_DATABASE",
     "ACTIVE_ODOO_RPC_KEY",
+    "RUNNING_MODE",  # "pytest" or "production"
     "ODOO_API_ENDPOINT",
     "ODOO_HEADERS",
+    # HR Configuration
+    "HR_FILE",
+    "TEST_HR_FILE",
+    # Service Configuration
     "LOG_LEVEL",
     "ENVIRONMENT",
     "REQUEST_TIMEOUT",
     "MAX_RETRIES",
     "HR_CACHE_TTL",
+    # Gmail SMTP Configuration
     "SMTP_HOST",
     "SMTP_PORT",
     "SMTP_USERNAME",
