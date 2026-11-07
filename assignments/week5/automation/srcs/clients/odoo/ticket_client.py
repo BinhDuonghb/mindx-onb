@@ -162,39 +162,19 @@ class TicketClient(ODOOClient):
             logger.error(f"Failed to get ticket {ticket_id}: {str(e)}")
             return None
 
-    def add_note(self, ticket_id: int, note: str) -> bool:
-        """Add a customer-visible note/message to a ticket.
-
-        This is a convenience wrapper around add_log() that sends a message
-        visible to the customer. For internal-only notes, use add_log() with
-        is_internal=True.
+    def add_log(self, ticket_id: int, log_message: str) -> bool:
+        """Add an internal log message to a ticket.
 
         Args:
             ticket_id: Ticket ID
-            note: Note text to add
-
-        Returns:
-            True if successful
-        """
-        return self.add_log(ticket_id, note, is_internal=False)
-
-    def add_log(self, ticket_id: int, log_message: str, is_internal: bool = True) -> bool:
-        """Add a log/notification message to a ticket.
-
-        Args:
-            ticket_id: Ticket ID
-            log_message: Log message text
-            is_internal: If True, internal note (not sent to customer).
-                        If False, visible comment (sent to customer).
-
+            log_message: Log message text (internal, not sent to customer)
         Returns:
             True if successful
         """
         # JSON-2 API endpoint: POST /json/2/helpdesk.ticket/message_post
         endpoint = f"/{self.MODEL_NAME}/message_post"
 
-        # Set subtype based on whether it's internal or external
-        subtype_xmlid = "mail.mt_note" if is_internal else "mail.mt_comment"
+        subtype_xmlid = "mail.mt_note"  # Internal log
 
         # Parameters go at TOP LEVEL of request
         payload = {
@@ -205,16 +185,15 @@ class TicketClient(ODOOClient):
         }
 
         try:
-            log_type = "internal log" if is_internal else "customer message"
-            logger.debug(f"Adding {log_type} to ticket {ticket_id}: {log_message}")
+            logger.debug(f"Adding internal log to ticket {ticket_id}: {log_message}")
             response = self.post(endpoint, json=payload)
             result = response.json()
 
             if result:
-                logger.info(f"Added {log_type} to ticket {ticket_id}")
+                logger.info(f"Added internal log to ticket {ticket_id}")
                 return True
 
-            logger.error(f"Failed to add {log_type}: {result}")
+            logger.error(f"Failed to add log: {result}")
             return False
 
         except Exception as e:

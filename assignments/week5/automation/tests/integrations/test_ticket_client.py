@@ -284,7 +284,6 @@ class TestTicketClientAddLog:
             success = client.add_log(
                 ticket_id=42,
                 log_message="[Automation] Internal note",
-                is_internal=True
             )
 
         assert success is True
@@ -296,57 +295,6 @@ class TestTicketClientAddLog:
         assert payload["ids"] == [42]
         assert payload["body"] == "[Automation] Internal note"
         assert payload["subtype_xmlid"] == "mail.mt_note"  # Internal
-
-    def test_add_log_customer_visible(self):
-        """Should add customer-visible message (sent to customer)."""
-        client = TicketClient(
-            api_endpoint=ODOO_API_ENDPOINT,
-            database=ODOO_DATABASE,
-            headers=ODOO_HEADERS,
-        )
-
-        with patch.object(client, "post") as mock_post:
-            mock_response = Mock()
-            mock_response.json.return_value = True
-            mock_post.return_value = mock_response
-
-            success = client.add_log(
-                ticket_id=42,
-                log_message="Your account has been reactivated.",
-                is_internal=False
-            )
-
-        assert success is True
-
-        # Verify the API was called with correct customer-visible message payload
-        call_args = mock_post.call_args
-        payload = call_args[1]["json"]
-        assert payload["subtype_xmlid"] == "mail.mt_comment"  # Customer visible
-
-    def test_add_note_is_wrapper(self):
-        """add_note() should be a wrapper around add_log() with is_internal=False."""
-        client = TicketClient(
-            api_endpoint=ODOO_API_ENDPOINT,
-            database=ODOO_DATABASE,
-            headers=ODOO_HEADERS,
-        )
-
-        with patch.object(client, "add_log") as mock_add_log:
-            mock_add_log.return_value = True
-
-            success = client.add_note(
-                ticket_id=42,
-                note="Account has been reactivated automatically."
-            )
-
-        assert success is True
-
-        # Verify add_note calls add_log with is_internal=False
-        mock_add_log.assert_called_once_with(
-            42,
-            "Account has been reactivated automatically.",
-            is_internal=False
-        )
 
 
 class TestTicketClientParseTicket:

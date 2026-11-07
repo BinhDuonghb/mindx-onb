@@ -178,7 +178,6 @@ class LoginWorkflow:
                 ticket_id=ticket.id,
                 log_message=f"[Automation] Account reactivation approved for {employee.name}, "
                 f"but LMS system update failed. Requires manual verification.",
-                is_internal=True,
             )
             return WorkflowResult(
                 success=True,
@@ -193,7 +192,6 @@ class LoginWorkflow:
             ticket_id=ticket.id,
             log_message=f"[Automation] Account reactivated for employee {employee.name} ({employee.email}). "
             f"Issue: {decision.reason}",
-            is_internal=True,
         )
         
         self.ticket_client.update_stage(
@@ -233,7 +231,6 @@ class LoginWorkflow:
         self.ticket_client.add_log(
             ticket_id=ticket.id,
             log_message=f"[Automation] Escalated for manual review. {decision.reason}",
-            is_internal=True,
         )
 
         return WorkflowResult(

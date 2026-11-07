@@ -97,7 +97,6 @@ class TestLoginWorkflowSuccessfulReactivation:
         mock_ticket_client.add_log.assert_called_once()
         call_args = mock_ticket_client.add_log.call_args
         assert call_args[1]["ticket_id"] == 1
-        assert call_args[1]["is_internal"] is True
         assert "reactivated" in call_args[1]["log_message"].lower()
 
     def test_workflow_posts_internal_note_on_success(
@@ -137,7 +136,6 @@ class TestLoginWorkflowSuccessfulReactivation:
         # Verify internal note was posted with correct parameters
         mock_ticket_client.add_log.assert_called_once()
         call_kwargs = mock_ticket_client.add_log.call_args[1]
-        assert call_kwargs["is_internal"] is True
         assert "Jane Smith" in call_kwargs["log_message"]
 
 

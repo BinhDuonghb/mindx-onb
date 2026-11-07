@@ -43,7 +43,11 @@ class HRClient:
         self._cache: Dict[str, tuple[Employee, datetime]] = {}  # email -> (employee, timestamp)
 
         # Initialize database with graceful handling
-        self._ensure_database()
+        try:
+            self._ensure_database()
+        except ValueError as e:
+            logger.warning(f"Failed to initialize HR database: {str(e)}")
+
         self.db_client = DBClient(self.file_path)
 
     def _ensure_database(self) -> None:

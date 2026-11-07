@@ -75,7 +75,6 @@ class TestTicketClientWriteOperations:
         success = real_ticket_client.add_log(
             ticket_id=ticket_id,
             log_message="[Automation] Internal: Ticket processed by automation engine",
-            is_internal=True
         )
 
         assert success is True
@@ -98,7 +97,6 @@ class TestTicketClientWriteOperations:
         success = real_ticket_client.add_log(
             ticket_id=ticket_id,
             log_message="[Automation] Your account has been reactivated. Please try logging in again.",
-            is_internal=False
         )
 
         assert success is True
@@ -164,7 +162,6 @@ class TestTicketClientAutomationWorkflow:
         log_success = real_ticket_client.add_log(
             ticket_id=ticket_id,
             log_message="[Automation] Starting automation workflow...",
-            is_internal=True
         )
         assert log_success is True
         logger.info(f"Step 3: Added internal automation log")
