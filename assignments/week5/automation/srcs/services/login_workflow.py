@@ -242,11 +242,26 @@ class LoginWorkflow:
             logger.info(f"Odoo note already posted for ticket {ticket.id}, skipping")
         else:
             try:
-                self.ticket_client.add_log(
+                success = self.ticket_client.add_log(
                     ticket_id=ticket.id,
                     log_message=f"[Automation] Account reactivated for employee {employee.name} ({employee.email}). "
                     f"Issue: {decision.reason}",
                 )
+
+                # Check Odoo boolean result - False means failure
+                if not success:
+                    logger.warning(f"Odoo add_log returned False for ticket {ticket.id}")
+                    # Schedule retry on note posting failure
+                    return WorkflowResult(
+                        success=False,
+                        action_taken="retry_scheduled",
+                        message=f"Failed to post Odoo note for ticket {ticket.id}",
+                        error_message="Odoo note posting returned False",
+                        ticket_id=ticket.id,
+                        employee_id=employee.employee_id,
+                        reactivation_completed=reactivation_completed,
+                    )
+
                 odoo_note_completed = True
             except Exception as e:
                 logger.warning(f"Failed to post Odoo note for ticket {ticket.id}: {str(e)}")
@@ -258,6 +273,7 @@ class LoginWorkflow:
                     error_message=str(e),
                     ticket_id=ticket.id,
                     employee_id=employee.employee_id,
+                    reactivation_completed=reactivation_completed,
                 )
 
         # Step 3: Update ticket stage (skip if already completed)
@@ -267,10 +283,26 @@ class LoginWorkflow:
             logger.info(f"Stage update already completed for ticket {ticket.id}, skipping")
         else:
             try:
-                self.ticket_client.update_stage(
+                success = self.ticket_client.update_stage(
                     ticket_id=ticket.id,
                     stage_id=4,
                 )
+
+                # Check Odoo boolean result - False means failure
+                if not success:
+                    logger.warning(f"Odoo update_stage returned False for ticket {ticket.id}")
+                    # Schedule retry on stage update failure
+                    return WorkflowResult(
+                        success=False,
+                        action_taken="retry_scheduled",
+                        message=f"Failed to update ticket stage",
+                        error_message="Odoo stage update returned False",
+                        ticket_id=ticket.id,
+                        employee_id=employee.employee_id,
+                        reactivation_completed=reactivation_completed,
+                        odoo_note_completed=odoo_note_completed,
+                    )
+
                 stage_update_completed = True
             except Exception as e:
                 logger.warning(f"Failed to update stage for ticket {ticket.id}: {str(e)}")
@@ -282,6 +314,8 @@ class LoginWorkflow:
                     error_message=str(e),
                     ticket_id=ticket.id,
                     employee_id=employee.employee_id,
+                    reactivation_completed=reactivation_completed,
+                    odoo_note_completed=odoo_note_completed,
                 )
 
         logger.info(f"✓ Account reactivation completed for ticket {ticket.id}")
