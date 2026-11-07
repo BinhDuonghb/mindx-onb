@@ -34,7 +34,11 @@ class TestCompleteWorkflowLifecycle:
         }
 
     def test_successful_reactivation_complete_lifecycle(self, setup):
-        """Test complete successful workflow: ACK → RESOLUTION → CONFIRMATION."""
+        """Test complete successful workflow: RESOLUTION → CONFIRMATION.
+
+        Phase 1 Communication Policy: Send exactly one email per cycle.
+        Success path sends only RESOLUTION (no ACK).
+        """
         ticket = Ticket(
             id=100,
             name="Cannot login",
@@ -60,27 +64,24 @@ class TestCompleteWorkflowLifecycle:
         )
         setup['workflow'].hr_client.reactivate_lms_account.return_value = True
 
-        # STEP 1: First execution - Send ACK and RESOLUTION
+        # STEP 1: First execution - Send RESOLUTION only
         result1 = setup['workflow'].execute(ticket_id=100)
         assert result1.success is True
         assert result1.action_taken == "account_reactivated"
 
-        # Verify ACK and RESOLUTION sent
+        # Verify EXACTLY ONE email sent (RESOLUTION only)
         templates_sent_1 = [
             call[0][0].template for call in setup['gmail_service'].send_email.call_args_list
         ]
-        assert EmailTemplate.ACKNOWLEDGEMENT in templates_sent_1
+        assert len(templates_sent_1) == 1
         assert EmailTemplate.RESOLUTION in templates_sent_1
 
         # Verify state tracking
         assert setup['communication_state'].should_send(
-            ticket_id=100, event=CommunicationEvent.TICKET_RECEIVED
-        ) is False  # Already sent
-        assert setup['communication_state'].should_send(
             ticket_id=100, event=CommunicationEvent.REACTIVATION_SUCCESSFUL
         ) is False  # Already sent
 
-        # STEP 2: Re-poll - Should NOT resend ACK or RESOLUTION
+        # STEP 2: Re-poll - Should NOT resend RESOLUTION
         setup['gmail_service'].send_email.reset_mock()
         result2 = setup['workflow'].execute(ticket_id=100)
         assert result2.success is True
@@ -101,7 +102,11 @@ class TestCompleteWorkflowLifecycle:
         assert setup['communication_state'].is_confirmed(ticket_id=100)
 
     def test_escalation_complete_lifecycle(self, setup):
-        """Test complete escalation workflow: ACK → MANUAL_REVIEW."""
+        """Test complete escalation workflow: MANUAL_REVIEW.
+
+        Phase 1 Communication Policy: Send exactly one email per cycle.
+        Escalation path sends only MANUAL_REVIEW (no ACK).
+        """
         ticket = Ticket(
             id=101,
             name="Cannot login",
@@ -126,7 +131,7 @@ class TestCompleteWorkflowLifecycle:
             confidence=0.9,
         )
 
-        # STEP 1: First execution - Send ACK and MANUAL_REVIEW
+        # STEP 1: First execution - Send MANUAL_REVIEW only
         result1 = setup['workflow'].execute(ticket_id=101)
         assert result1.success is True
         assert result1.action_taken == "escalated_manual_review"
@@ -134,7 +139,7 @@ class TestCompleteWorkflowLifecycle:
         templates_sent_1 = [
             call[0][0].template for call in setup['gmail_service'].send_email.call_args_list
         ]
-        assert EmailTemplate.ACKNOWLEDGEMENT in templates_sent_1
+        assert len(templates_sent_1) == 1
         assert EmailTemplate.MANUAL_REVIEW in templates_sent_1
 
         # STEP 2: Re-poll - Should NOT resend
@@ -152,7 +157,10 @@ class TestMultipleTicketsIndependent:
     """Test that multiple tickets don't interfere with each other."""
 
     def test_two_tickets_separate_states(self):
-        """Each ticket should have independent email state."""
+        """Each ticket should have independent email state.
+
+        Phase 1 Communication Policy: Each ticket tracks its own email state.
+        """
         gmail_service = Mock(spec=GmailService)
         gmail_service.send_email = Mock(return_value=True)
 
@@ -198,29 +206,34 @@ class TestMultipleTicketsIndependent:
         )
         workflow.hr_client.reactivate_lms_account.return_value = True
 
-        # Process ticket 1
+        # Process ticket 1 - sends RESOLUTION
         result1 = workflow.execute(ticket_id=200)
         assert result1.success is True
 
-        # Process ticket 2
+        # Verify ticket 1 sent RESOLUTION
+        templates_sent_1 = [
+            call[0][0].template for call in gmail_service.send_email.call_args_list
+        ]
+        assert EmailTemplate.RESOLUTION in templates_sent_1
+
+        # Process ticket 2 - should send RESOLUTION (independent state)
         gmail_service.send_email.reset_mock()
         result2 = workflow.execute(ticket_id=201)
         assert result2.success is True
 
-        # Ticket 2 should send emails (not affected by ticket 1)
-        templates_sent = [
+        # Ticket 2 should send RESOLUTION (not affected by ticket 1)
+        templates_sent_2 = [
             call[0][0].template for call in gmail_service.send_email.call_args_list
         ]
-        assert EmailTemplate.ACKNOWLEDGEMENT in templates_sent
-        assert EmailTemplate.RESOLUTION in templates_sent
+        assert EmailTemplate.RESOLUTION in templates_sent_2
 
         # Verify independent states
         assert not workflow.communication_state.should_send(
-            ticket_id=200, event=CommunicationEvent.TICKET_RECEIVED
-        )  # Ticket 1 already sent ACK
+            ticket_id=200, event=CommunicationEvent.REACTIVATION_SUCCESSFUL
+        )  # Ticket 1 already sent
         assert not workflow.communication_state.should_send(
-            ticket_id=201, event=CommunicationEvent.TICKET_RECEIVED
-        )  # Ticket 2 just sent ACK
+            ticket_id=201, event=CommunicationEvent.REACTIVATION_SUCCESSFUL
+        )  # Ticket 2 just sent
 
         # Confirm ticket 1
         workflow.communication_state.mark_confirmed(
@@ -236,7 +249,10 @@ class TestFollowUpReminderIntegration:
     """Test follow-up reminder as part of complete workflow."""
 
     def test_follow_up_eligible_after_resolution(self):
-        """After RESOLUTION sent, FOLLOW_UP should be eligible."""
+        """After RESOLUTION sent, FOLLOW_UP should be eligible.
+
+        Phase 1: Only RESOLUTION is sent (not ACK), so FOLLOW_UP becomes eligible.
+        """
         gmail_service = Mock(spec=GmailService)
         gmail_service.send_email = Mock(return_value=True)
 
@@ -267,7 +283,7 @@ class TestFollowUpReminderIntegration:
         )
         workflow.hr_client.reactivate_lms_account.return_value = True
 
-        # Execute workflow (sends ACK + RESOLUTION)
+        # Execute workflow (sends RESOLUTION only)
         result = workflow.execute(ticket_id=300)
         assert result.success is True
 
@@ -326,7 +342,10 @@ class TestFailurePaths:
         assert result.action_taken == "account_reactivated"
 
     def test_non_login_issue_acknowledgement_only(self):
-        """Non-login issues should send ACKNOWLEDGEMENT but skip further automation."""
+        """Non-login issues should send no email (skipped).
+
+        Phase 1 Communication Policy: Skip non-login issues without customer notification.
+        """
         gmail_service = Mock(spec=GmailService)
         gmail_service.send_email = Mock(return_value=True)
 
@@ -352,11 +371,8 @@ class TestFailurePaths:
         assert result.success is True
         assert result.action_taken == "skipped"
 
-        # ACKNOWLEDGEMENT email should be sent (for all tickets with email)
+        # No emails sent for skipped tickets
         templates_sent = [
             call[0][0].template for call in gmail_service.send_email.call_args_list
         ]
-        assert EmailTemplate.ACKNOWLEDGEMENT in templates_sent
-
-        # Only ACKNOWLEDGEMENT, no other emails (no reactivation, no resolution)
-        assert len(templates_sent) == 1
+        assert len(templates_sent) == 0

@@ -36,7 +36,11 @@ class TestLoginWorkflowEventBasedCommunication:
         )
 
     def test_new_login_ticket_sends_acknowledgement(self, workflow_with_email, gmail_service):
-        """New login ticket should trigger ACKNOWLEDGEMENT via EmailTemplateSelector."""
+        """Successful login reactivation should send RESOLUTION email only.
+
+        Phase 1 Communication Policy: Send exactly one email per cycle based on outcome.
+        Successful reactivation → RESOLUTION only (not ACK).
+        """
         ticket = Ticket(
             id=1,
             name="Cannot login",
@@ -65,20 +69,16 @@ class TestLoginWorkflowEventBasedCommunication:
         # Execute
         result = workflow_with_email.execute(ticket_id=1)
 
-        # Should send ACK email
-        assert gmail_service.send_email.call_count >= 1
+        # Should send exactly ONE email
+        assert gmail_service.send_email.call_count == 1
 
-        # Find the ACK email call (could be multiple calls)
-        ack_call = None
-        for call in gmail_service.send_email.call_args_list:
-            context = call[0][0]
-            if context.template == EmailTemplate.ACKNOWLEDGEMENT:
-                ack_call = context
-                break
+        # Find the email call
+        email_context = gmail_service.send_email.call_args[0][0]
 
-        assert ack_call is not None, "Should send ACKNOWLEDGEMENT email"
-        assert ack_call.recipient_email == "john@company.com"
-        assert ack_call.ticket_id == 1
+        # Should be RESOLUTION (outcome-based), not ACK
+        assert email_context.template == EmailTemplate.RESOLUTION
+        assert email_context.recipient_email == "john@company.com"
+        assert email_context.ticket_id == 1
 
     def test_verified_reactivation_sends_resolution_not_acknowledgement(
         self, workflow_with_email, gmail_service

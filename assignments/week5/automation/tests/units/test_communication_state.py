@@ -31,7 +31,11 @@ class TestCommunicationStateTracking:
         )
 
     def test_acknowledgement_sent_only_once(self, workflow_with_email, gmail_service):
-        """ACKNOWLEDGEMENT should be sent only once, not on every poll."""
+        """MANUAL_REVIEW should be sent only once when escalation happens.
+
+        Phase 1 Communication Policy: Send exactly one email per cycle based on outcome.
+        This test verifies deduplication works for escalation scenarios.
+        """
         ticket = Ticket(
             id=1,
             name="Cannot login",
@@ -57,11 +61,11 @@ class TestCommunicationStateTracking:
         )
         workflow_with_email.hr_client.reactivate_lms_account.return_value = False
 
-        # First execution
+        # First execution - reactivation fails, escalate with MANUAL_REVIEW
         result1 = workflow_with_email.execute(ticket_id=1)
-        ack_count_after_first = sum(
+        manual_review_count_after_first = sum(
             1 for call in gmail_service.send_email.call_args_list
-            if call[0][0].template == EmailTemplate.ACKNOWLEDGEMENT
+            if call[0][0].template == EmailTemplate.MANUAL_REVIEW
         )
 
         # Reset mock to count only second execution
@@ -69,16 +73,16 @@ class TestCommunicationStateTracking:
 
         # Second execution (simulating re-poll)
         result2 = workflow_with_email.execute(ticket_id=1)
-        ack_count_after_second = sum(
+        manual_review_count_after_second = sum(
             1 for call in gmail_service.send_email.call_args_list
-            if call[0][0].template == EmailTemplate.ACKNOWLEDGEMENT
+            if call[0][0].template == EmailTemplate.MANUAL_REVIEW
         )
 
-        # First execution should send ACK
-        assert ack_count_after_first == 1
+        # First execution should send MANUAL_REVIEW (escalation)
+        assert manual_review_count_after_first == 1
 
-        # Second execution should NOT send ACK (already sent)
-        assert ack_count_after_second == 0
+        # Second execution should NOT send MANUAL_REVIEW (already sent, deduplication)
+        assert manual_review_count_after_second == 0
 
     def test_resolution_sent_only_once(self, workflow_with_email, gmail_service):
         """RESOLUTION should be sent only once, not on every successful re-poll."""

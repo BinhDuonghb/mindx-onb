@@ -98,10 +98,7 @@ class LoginWorkflow:
                     ticket_id=ticket_id,
                 )
 
-            # Step 3: Send acknowledgement to all tickets with email
-            self._send_acknowledgement(ticket)
-
-            # Step 4: Analyze ticket for login issues
+            # Step 3: Analyze ticket for login issues
             analysis = self.ticket_analyzer.analyze(ticket)
             logger.info(
                 f"Ticket {ticket_id} analysis: is_login_issue={analysis.is_login_issue}, "
@@ -126,10 +123,15 @@ class LoginWorkflow:
             decision = self.decision_service.decide(employee, ticket)
             logger.info(f"Decision for ticket {ticket_id}: {decision.action.value}")
 
-            # Step 5: Execute decision and return result
-            return self._execute_decision(
+            # Step 5: Execute decision
+            result = self._execute_decision(
                 ticket, employee, analysis, decision
             )
+
+            # Step 6: Send exactly ONE appropriate email based on outcome
+            self._send_outcome_email(ticket, employee, result)
+
+            return result
 
         except Exception as e:
             logger.error(f"Workflow error for ticket {ticket_id}: {str(e)}")
@@ -203,27 +205,7 @@ class LoginWorkflow:
                 f"but LMS system update failed. Requires manual verification.",
             )
 
-            # Send escalation email since reactivation failed
-            if self.gmail_service and ticket.email_from:
-                # Check if escalation email already sent
-                if self.communication_state.should_send(ticket.id, CommunicationEvent.MANUAL_REVIEW_REQUIRED):
-                    from srcs.services.gmail import EmailContext, EmailTemplate
-
-                    email_context = EmailContext(
-                        recipient_email=ticket.email_from,
-                        recipient_name=employee.name,
-                        ticket_id=ticket.id,
-                        ticket_title=ticket.name,
-                        template=EmailTemplate.MANUAL_REVIEW,
-                    )
-
-                    email_sent = self.gmail_service.send_email(email_context)
-                    if email_sent:
-                        self.communication_state.mark_sent(ticket.id, CommunicationEvent.MANUAL_REVIEW_REQUIRED)
-                        logger.info(f"Escalation email sent to {ticket.email_from}")
-                    else:
-                        logger.warning(f"Failed to send escalation email to {ticket.email_from}")
-
+            # Return escalated result (email will be sent by caller)
             return WorkflowResult(
                 success=True,
                 action_taken="escalated_manual_review",
@@ -243,27 +225,6 @@ class LoginWorkflow:
             ticket_id=ticket.id,
             stage_id=4,
         )
-
-        # Send success email to customer if Gmail service available
-        if self.gmail_service:
-            # Check if RESOLUTION email already sent
-            if self.communication_state.should_send(ticket.id, CommunicationEvent.REACTIVATION_SUCCESSFUL):
-                from srcs.services.gmail import EmailContext, EmailTemplate
-
-                email_context = EmailContext(
-                    recipient_email=ticket.email_from,
-                    recipient_name=employee.name,
-                    ticket_id=ticket.id,
-                    ticket_title=ticket.name,
-                    template=EmailTemplate.RESOLUTION,
-                )
-
-                email_sent = self.gmail_service.send_email(email_context)
-                if email_sent:
-                    self.communication_state.mark_sent(ticket.id, CommunicationEvent.REACTIVATION_SUCCESSFUL)
-                    logger.info(f"Success email sent to {ticket.email_from}")
-                else:
-                    logger.warning(f"Failed to send success email to {ticket.email_from}")
 
         logger.info(f"✓ Account reactivation completed for ticket {ticket.id}")
 
@@ -299,27 +260,7 @@ class LoginWorkflow:
             log_message=f"[Automation] Escalated for manual review. {decision.reason}",
         )
 
-        # Send escalation email to customer if Gmail service available
-        if self.gmail_service and ticket.email_from:
-            # Check if escalation email already sent
-            if self.communication_state.should_send(ticket.id, CommunicationEvent.MANUAL_REVIEW_REQUIRED):
-                from srcs.services.gmail import EmailContext, EmailTemplate
-
-                email_context = EmailContext(
-                    recipient_email=ticket.email_from,
-                    recipient_name=employee_name,
-                    ticket_id=ticket.id,
-                    ticket_title=ticket.name,
-                    template=EmailTemplate.MANUAL_REVIEW,
-                )
-
-                email_sent = self.gmail_service.send_email(email_context)
-                if email_sent:
-                    self.communication_state.mark_sent(ticket.id, CommunicationEvent.MANUAL_REVIEW_REQUIRED)
-                    logger.info(f"Escalation email sent to {ticket.email_from}")
-                else:
-                    logger.warning(f"Failed to send escalation email to {ticket.email_from}")
-
+        # Email will be sent by caller
         return WorkflowResult(
             success=True,
             action_taken="escalated_manual_review",
@@ -379,3 +320,64 @@ class LoginWorkflow:
             logger.info(f"Acknowledgement email sent to {ticket.email_from}")
         else:
             logger.warning(f"Failed to send acknowledgement email to {ticket.email_from}")
+
+    def _send_outcome_email(
+        self, ticket: Ticket, employee: Optional[Employee], result: WorkflowResult
+    ) -> None:
+        """Send exactly ONE appropriate email based on workflow outcome.
+
+        Communication Policy:
+        - account_reactivated → RESOLUTION email
+        - escalated_manual_review → MANUAL_REVIEW email
+        - skipped → no email
+        - error → no email
+
+        Args:
+            ticket: Ticket model
+            employee: Employee model or None
+            result: WorkflowResult with action taken
+        """
+        if not self.gmail_service or not ticket.email_from:
+            return
+
+        from srcs.services.gmail import EmailContext, EmailTemplate
+
+        # Determine which email to send based on outcome
+        if result.action_taken == "account_reactivated":
+            # Success: Send RESOLUTION email
+            event = CommunicationEvent.REACTIVATION_SUCCESSFUL
+            template = EmailTemplate.RESOLUTION
+            recipient_name = employee.name if employee else "User"
+
+        elif result.action_taken == "escalated_manual_review":
+            # Escalation: Send MANUAL_REVIEW email
+            event = CommunicationEvent.MANUAL_REVIEW_REQUIRED
+            template = EmailTemplate.MANUAL_REVIEW
+            recipient_name = employee.name if employee else "User"
+
+        else:
+            # Skipped or error: No email
+            logger.info(f"No email for outcome: {result.action_taken}")
+            return
+
+        # Check if this email was already sent for this ticket
+        if not self.communication_state.should_send(ticket.id, event):
+            logger.info(f"Email event {event.value} already sent for ticket {ticket.id}, skipping duplicate")
+            return
+
+        # Build email context
+        email_context = EmailContext(
+            recipient_email=ticket.email_from,
+            recipient_name=recipient_name,
+            ticket_id=ticket.id,
+            ticket_title=ticket.name,
+            template=template,
+        )
+
+        # Send email
+        email_sent = self.gmail_service.send_email(email_context)
+        if email_sent:
+            self.communication_state.mark_sent(ticket.id, event)
+            logger.info(f"Outcome email ({template.value}) sent to {ticket.email_from}")
+        else:
+            logger.warning(f"Failed to send outcome email ({template.value}) to {ticket.email_from}")
