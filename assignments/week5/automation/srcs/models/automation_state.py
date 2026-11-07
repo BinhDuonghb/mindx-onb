@@ -53,6 +53,9 @@ class AutomationState:
 
     last_error: Optional[str] = None
 
+    # Processing lease for preventing concurrent execution
+    processing_lease_until: Optional[datetime] = None
+
     # Optional: Track which side effects have actually completed
     # These represent CONFIRMED actions, not attempted ones
     reactivation_completed: bool = False

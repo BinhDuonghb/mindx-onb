@@ -537,6 +537,7 @@ class AutomationStateRepository:
             retry_count=row["retry_count"],
             next_retry_at=datetime.fromisoformat(row["next_retry_at"]) if row["next_retry_at"] else None,
             last_error=row["last_error"],
+            processing_lease_until=datetime.fromisoformat(row["processing_lease_until"]) if row["processing_lease_until"] else None,
             reactivation_completed=bool(row["reactivation_completed"]),
             odoo_note_completed=bool(row["odoo_note_completed"]),
             customer_response_completed=bool(row["customer_response_completed"]),
