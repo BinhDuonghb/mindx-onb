@@ -140,11 +140,29 @@ class AutomationExecutor:
         try:
             start_time = datetime.now(UTC)
 
-            # Poll for tickets
-            logger.info(f"Polling for tickets (limit={limit})...")
+            # Poll for new and changed tickets
+            logger.info(f"Polling for new/changed tickets (limit={limit})...")
             tickets = self.poller.poll(limit=limit, min_age_minutes=min_age_minutes)
 
-            if not tickets:
+            # Poll for retry-scheduled tickets whose retry time has arrived
+            logger.info(f"Polling for due retries (limit={limit})...")
+            retry_tickets = self.poller.poll_for_retry(limit=limit)
+
+            # Merge and deduplicate ticket IDs across both sources
+            ticket_ids = set()
+            all_tickets = []
+
+            for ticket in tickets:
+                if ticket.id not in ticket_ids:
+                    ticket_ids.add(ticket.id)
+                    all_tickets.append(ticket)
+
+            for ticket in retry_tickets:
+                if ticket.id not in ticket_ids:
+                    ticket_ids.add(ticket.id)
+                    all_tickets.append(ticket)
+
+            if not all_tickets:
                 logger.info("No tickets to process")
                 return {
                     "success": True,
@@ -156,7 +174,7 @@ class AutomationExecutor:
                     "elapsed_seconds": (datetime.now(UTC) - start_time).total_seconds(),
                 }
 
-            logger.info(f"Processing {len(tickets)} tickets")
+            logger.info(f"Processing {len(all_tickets)} tickets ({len(tickets)} new/changed, {len(retry_tickets)} retries)")
 
             # Process each ticket
             results = {
@@ -166,9 +184,9 @@ class AutomationExecutor:
                 "failed": 0,
             }
 
-            for i, ticket in enumerate(tickets, 1):
+            for i, ticket in enumerate(all_tickets, 1):
                 try:
-                    logger.info(f"Processing ticket {ticket.id} ({i}/{len(tickets)})")
+                    logger.info(f"Processing ticket {ticket.id} ({i}/{len(all_tickets)})")
 
                     # Generate fingerprint for claim
                     from srcs.services.ticket_fingerprinter import TicketFingerprinter
@@ -210,13 +228,13 @@ class AutomationExecutor:
 
             # Record metrics
             self.metrics.record_poll(
-                fetched=len(tickets),
+                fetched=len(all_tickets),
                 queued=results["successful"] + results["escalated"],
             )
 
             elapsed = (datetime.now(UTC) - start_time).total_seconds()
             results["success"] = True
-            results["tickets_processed"] = len(tickets)
+            results["tickets_processed"] = len(all_tickets)
             results["elapsed_seconds"] = elapsed
 
             logger.info(
