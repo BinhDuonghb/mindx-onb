@@ -325,8 +325,8 @@ class TestFailurePaths:
         assert result.success is True
         assert result.action_taken == "account_reactivated"
 
-    def test_non_login_issue_no_emails(self):
-        """Non-login issues should not trigger any emails."""
+    def test_non_login_issue_acknowledgement_only(self):
+        """Non-login issues should send ACKNOWLEDGEMENT but skip further automation."""
         gmail_service = Mock(spec=GmailService)
         gmail_service.send_email = Mock(return_value=True)
 
@@ -352,5 +352,11 @@ class TestFailurePaths:
         assert result.success is True
         assert result.action_taken == "skipped"
 
-        # No emails should be sent
-        gmail_service.send_email.assert_not_called()
+        # ACKNOWLEDGEMENT email should be sent (for all tickets with email)
+        templates_sent = [
+            call[0][0].template for call in gmail_service.send_email.call_args_list
+        ]
+        assert EmailTemplate.ACKNOWLEDGEMENT in templates_sent
+
+        # Only ACKNOWLEDGEMENT, no other emails (no reactivation, no resolution)
+        assert len(templates_sent) == 1

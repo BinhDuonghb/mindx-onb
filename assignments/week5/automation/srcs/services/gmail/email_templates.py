@@ -41,12 +41,12 @@ class EmailTemplateRenderer:
 
     TEMPLATES = {
         EmailTemplate.ACKNOWLEDGEMENT: {
-            "subject": "RE: LMS Login Issue - Ticket #{ticket_id}",
+            "subject": "RE: {ticket_title} - Ticket #{ticket_id}",
             "body": """Dear {recipient_name},
 
-Thank you for contacting us about your LMS login issue. We have received your support request and understand this may be impacting your access to class materials.
+Thank you for contacting us. We have received your support request and understand this may be urgent for you.
 
-We will investigate your account and employment information to determine the best course of action. Our team typically completes initial investigations within 24 hours.
+We will investigate your request and account information to determine the best course of action. Our team typically completes initial investigations within 24 hours.
 
 Ticket ID: {ticket_id}
 Issue: {ticket_title}
@@ -58,12 +58,12 @@ Support Team
 {support_email}""",
         },
         EmailTemplate.INVESTIGATION_UPDATE: {
-            "subject": "Update: LMS Login Issue - Ticket #{ticket_id}",
+            "subject": "Update: {ticket_title} - Ticket #{ticket_id}",
             "body": """Dear {recipient_name},
 
-Thank you for your patience. We are actively investigating your login issue.
+Thank you for your patience. We are actively investigating your request.
 
-Our team is verifying your account and employment information to determine the appropriate resolution. We will contact you as soon as we have more information.
+Our team is reviewing your account and information to determine the appropriate resolution. We will contact you as soon as we have more information.
 
 Ticket ID: {ticket_id}
 
@@ -73,14 +73,14 @@ Best regards,
 Support Team""",
         },
         EmailTemplate.RESOLUTION: {
-            "subject": "LMS Account Reactivated - Ticket #{ticket_id}",
+            "subject": "Resolution: {ticket_title} - Ticket #{ticket_id}",
             "body": """Dear {recipient_name},
 
-Good news! Your LMS account has been reactivated and access has been restored.
+Good news! We have resolved your issue and your account access has been restored.
 
-Please try logging in again at your earliest convenience. If you are able to successfully access the LMS, please reply to confirm that the issue is resolved.
+Please try accessing your account again at your earliest convenience. If you are able to successfully access everything, please reply to confirm that the issue is resolved.
 
-If you continue to experience any difficulties logging in, please let us know immediately so we can investigate further.
+If you continue to experience any difficulties, please let us know immediately so we can investigate further.
 
 Ticket ID: {ticket_id}
 
@@ -91,10 +91,10 @@ Support Team
 {support_email}""",
         },
         EmailTemplate.MANUAL_REVIEW: {
-            "subject": "Update on Your Login Request - Ticket #{ticket_id}",
+            "subject": "Update on Your Request - Ticket #{ticket_id}",
             "body": """Dear {recipient_name},
 
-Thank you for your support request. Your login issue requires further investigation by our support team.
+Thank you for your support request. Your case requires further investigation by our support team.
 
 We are reviewing your account information and will determine the appropriate next steps. We will contact you as soon as we have completed our review.
 
@@ -107,12 +107,12 @@ Best regards,
 Support Team""",
         },
         EmailTemplate.FOLLOW_UP: {
-            "subject": "Follow-up: LMS Login Issue - Ticket #{ticket_id}",
+            "subject": "Follow-up: {ticket_title} - Ticket #{ticket_id}",
             "body": """Dear {recipient_name},
 
-We wanted to follow up on your LMS login request (Ticket #{ticket_id}).
+We wanted to follow up on your support request (Ticket #{ticket_id}).
 
-Are you now able to access the LMS successfully? Please let us know whether you were able to log in and access your course materials.
+Are you now able to access your account successfully? Please let us know whether your issue has been resolved or if you are still experiencing difficulties.
 
 If you are still experiencing issues, we are happy to assist further. Please reply to this email or contact us at {support_email}.
 
@@ -123,9 +123,9 @@ Support Team""",
             "subject": "Update on Your Support Request - Ticket #{ticket_id}",
             "body": """Dear {recipient_name},
 
-Thank you for reporting your LMS login issue. We are currently experiencing a processing delay and have not yet been able to investigate your request fully.
+Thank you for your support request. We are currently experiencing a processing delay and have not yet been able to investigate your request fully.
 
-Our support team is aware of this issue and is working to resolve it. We will contact you as soon as we can proceed with investigating your account.
+Our support team is aware of this issue and is working to resolve it. We will contact you as soon as we can proceed with investigating your request.
 
 Ticket ID: {ticket_id}
 

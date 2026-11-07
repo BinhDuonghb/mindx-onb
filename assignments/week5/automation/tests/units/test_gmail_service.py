@@ -29,9 +29,10 @@ class TestEmailTemplateRenderer:
 
         subject, body = EmailTemplateRenderer.render(context)
 
-        assert "Reactivated" in subject
+        assert "Resolution" in subject
+        assert "Cannot login" in subject  # Ticket title should be in subject
         assert "John Doe" in body
-        assert "logging in" in body.lower() or "try" in body.lower()
+        assert "access" in body.lower() or "try" in body.lower()
 
     def test_render_manual_review_template(self):
         """Should render manual review template with ticket details."""
@@ -261,7 +262,8 @@ class TestGmailServiceSendEmail:
         call_kwargs = mock_send.call_args[1]
 
         assert call_kwargs["to_email"] == "john@company.com"
-        assert "Reactivated" in call_kwargs["subject"]
+        assert "Resolution" in call_kwargs["subject"]
+        assert "Cannot login" in call_kwargs["subject"]  # Ticket title in subject
         assert "John Doe" in call_kwargs["body"]
 
     def test_send_email_retries_on_smtp_exception(self, gmail_service):

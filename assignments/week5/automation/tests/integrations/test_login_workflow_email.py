@@ -131,8 +131,8 @@ class TestLoginWorkflowEmailIntegration:
         assert EmailTemplate.ACKNOWLEDGEMENT in templates_sent
         assert EmailTemplate.MANUAL_REVIEW in templates_sent
 
-    def test_non_login_issue_does_not_send_email(self, workflow_with_email, gmail_service):
-        """Should NOT send email for non-login issues."""
+    def test_non_login_issue_sends_acknowledgement_only(self, workflow_with_email, gmail_service):
+        """Should send ACKNOWLEDGEMENT only for non-login issues (then skip automation)."""
         ticket = Ticket(
             id=3,
             name="General question",
@@ -150,10 +150,18 @@ class TestLoginWorkflowEmailIntegration:
         # Execute
         result = workflow_with_email.execute(ticket_id=3)
 
-        # Verify skipped and no email sent
+        # Verify skipped but ACKNOWLEDGEMENT sent
         assert result.success is True
         assert result.action_taken == "skipped"
-        gmail_service.send_email.assert_not_called()
+
+        # Should send ACKNOWLEDGEMENT (to all tickets with email)
+        templates_sent = [
+            call[0][0].template for call in gmail_service.send_email.call_args_list
+        ]
+        assert EmailTemplate.ACKNOWLEDGEMENT in templates_sent
+
+        # Only ACKNOWLEDGEMENT, no other emails
+        assert len(templates_sent) == 1
 
     def test_employee_not_found_sends_escalation_email(
         self, workflow_with_email, gmail_service

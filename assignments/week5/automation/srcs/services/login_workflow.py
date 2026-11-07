@@ -88,7 +88,20 @@ class LoginWorkflow:
                     ticket_id=ticket_id,
                 )
 
-            # Step 2: Analyze ticket for login issues
+            # Step 2: Check if ticket has customer email (required for any automation)
+            if ticket.email_from is None or not ticket.email_from.strip():
+                logger.info(f"Skipping ticket {ticket_id}: no customer email set")
+                return WorkflowResult(
+                    success=True,
+                    action_taken="skipped",
+                    message="Ticket does not have customer email set. No automation applied.",
+                    ticket_id=ticket_id,
+                )
+
+            # Step 3: Send acknowledgement to all tickets with email
+            self._send_acknowledgement(ticket)
+
+            # Step 4: Analyze ticket for login issues
             analysis = self.ticket_analyzer.analyze(ticket)
             logger.info(
                 f"Ticket {ticket_id} analysis: is_login_issue={analysis.is_login_issue}, "
@@ -98,10 +111,6 @@ class LoginWorkflow:
             # Update ticket with analysis results
             ticket.is_login_issue = analysis.is_login_issue
             ticket.issue_type = analysis.issue_type
-
-            # Step 2b: Send acknowledgement for new login issues
-            if analysis.is_login_issue and ticket.email_from:
-                self._send_acknowledgement(ticket)
 
             # Step 3: Look up employee by email
             employee = None
