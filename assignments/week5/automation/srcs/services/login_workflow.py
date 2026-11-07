@@ -9,6 +9,8 @@ from srcs.clients.odoo.ticket_client import TicketClient
 from srcs.clients.hr.hr_client import HRClient
 from srcs.services.ticket_analyzer import TicketAnalyzer
 from srcs.services.decision_service import DecisionService, Decision
+from srcs.services.communication_state import CommunicationStateTracker
+from srcs.services.gmail import CommunicationEvent
 
 if TYPE_CHECKING:
     from srcs.services.gmail import GmailService
@@ -60,6 +62,7 @@ class LoginWorkflow:
         self.ticket_analyzer = ticket_analyzer
         self.gmail_service = gmail_service
         self.decision_service = DecisionService()
+        self.communication_state = CommunicationStateTracker()
 
     def execute(self, ticket_id: int) -> WorkflowResult:
         """Execute complete automation workflow for a ticket.
@@ -193,21 +196,24 @@ class LoginWorkflow:
 
             # Send escalation email since reactivation failed
             if self.gmail_service and ticket.email_from:
-                from srcs.services.gmail import EmailContext, EmailTemplate
+                # Check if escalation email already sent
+                if self.communication_state.should_send(ticket.id, CommunicationEvent.MANUAL_REVIEW_REQUIRED):
+                    from srcs.services.gmail import EmailContext, EmailTemplate
 
-                email_context = EmailContext(
-                    recipient_email=ticket.email_from,
-                    recipient_name=employee.name,
-                    ticket_id=ticket.id,
-                    ticket_title=ticket.name,
-                    template=EmailTemplate.MANUAL_REVIEW,
-                )
+                    email_context = EmailContext(
+                        recipient_email=ticket.email_from,
+                        recipient_name=employee.name,
+                        ticket_id=ticket.id,
+                        ticket_title=ticket.name,
+                        template=EmailTemplate.MANUAL_REVIEW,
+                    )
 
-                email_sent = self.gmail_service.send_email(email_context)
-                if email_sent:
-                    logger.info(f"Escalation email sent to {ticket.email_from}")
-                else:
-                    logger.warning(f"Failed to send escalation email to {ticket.email_from}")
+                    email_sent = self.gmail_service.send_email(email_context)
+                    if email_sent:
+                        self.communication_state.mark_sent(ticket.id, CommunicationEvent.MANUAL_REVIEW_REQUIRED)
+                        logger.info(f"Escalation email sent to {ticket.email_from}")
+                    else:
+                        logger.warning(f"Failed to send escalation email to {ticket.email_from}")
 
             return WorkflowResult(
                 success=True,
@@ -231,21 +237,24 @@ class LoginWorkflow:
 
         # Send success email to customer if Gmail service available
         if self.gmail_service:
-            from srcs.services.gmail import EmailContext, EmailTemplate
+            # Check if RESOLUTION email already sent
+            if self.communication_state.should_send(ticket.id, CommunicationEvent.REACTIVATION_SUCCESSFUL):
+                from srcs.services.gmail import EmailContext, EmailTemplate
 
-            email_context = EmailContext(
-                recipient_email=ticket.email_from,
-                recipient_name=employee.name,
-                ticket_id=ticket.id,
-                ticket_title=ticket.name,
-                template=EmailTemplate.RESOLUTION,
-            )
+                email_context = EmailContext(
+                    recipient_email=ticket.email_from,
+                    recipient_name=employee.name,
+                    ticket_id=ticket.id,
+                    ticket_title=ticket.name,
+                    template=EmailTemplate.RESOLUTION,
+                )
 
-            email_sent = self.gmail_service.send_email(email_context)
-            if email_sent:
-                logger.info(f"Success email sent to {ticket.email_from}")
-            else:
-                logger.warning(f"Failed to send success email to {ticket.email_from}")
+                email_sent = self.gmail_service.send_email(email_context)
+                if email_sent:
+                    self.communication_state.mark_sent(ticket.id, CommunicationEvent.REACTIVATION_SUCCESSFUL)
+                    logger.info(f"Success email sent to {ticket.email_from}")
+                else:
+                    logger.warning(f"Failed to send success email to {ticket.email_from}")
 
         logger.info(f"✓ Account reactivation completed for ticket {ticket.id}")
 
@@ -283,21 +292,24 @@ class LoginWorkflow:
 
         # Send escalation email to customer if Gmail service available
         if self.gmail_service and ticket.email_from:
-            from srcs.services.gmail import EmailContext, EmailTemplate
+            # Check if escalation email already sent
+            if self.communication_state.should_send(ticket.id, CommunicationEvent.MANUAL_REVIEW_REQUIRED):
+                from srcs.services.gmail import EmailContext, EmailTemplate
 
-            email_context = EmailContext(
-                recipient_email=ticket.email_from,
-                recipient_name=employee_name,
-                ticket_id=ticket.id,
-                ticket_title=ticket.name,
-                template=EmailTemplate.MANUAL_REVIEW,
-            )
+                email_context = EmailContext(
+                    recipient_email=ticket.email_from,
+                    recipient_name=employee_name,
+                    ticket_id=ticket.id,
+                    ticket_title=ticket.name,
+                    template=EmailTemplate.MANUAL_REVIEW,
+                )
 
-            email_sent = self.gmail_service.send_email(email_context)
-            if email_sent:
-                logger.info(f"Escalation email sent to {ticket.email_from}")
-            else:
-                logger.warning(f"Failed to send escalation email to {ticket.email_from}")
+                email_sent = self.gmail_service.send_email(email_context)
+                if email_sent:
+                    self.communication_state.mark_sent(ticket.id, CommunicationEvent.MANUAL_REVIEW_REQUIRED)
+                    logger.info(f"Escalation email sent to {ticket.email_from}")
+                else:
+                    logger.warning(f"Failed to send escalation email to {ticket.email_from}")
 
         return WorkflowResult(
             success=True,
@@ -328,10 +340,17 @@ class LoginWorkflow:
     def _send_acknowledgement(self, ticket: Ticket) -> None:
         """Send acknowledgement email for new login issue ticket.
 
+        Only sends if not previously sent (deduplication via CommunicationStateTracker).
+
         Args:
             ticket: Ticket that was identified as a login issue
         """
         if not self.gmail_service or not ticket.email_from:
+            return
+
+        # Check if ACK already sent for this ticket
+        if not self.communication_state.should_send(ticket.id, CommunicationEvent.TICKET_RECEIVED):
+            logger.info(f"ACK already sent for ticket {ticket.id}, skipping duplicate")
             return
 
         from srcs.services.gmail import EmailContext, EmailTemplate
@@ -346,6 +365,8 @@ class LoginWorkflow:
 
         email_sent = self.gmail_service.send_email(email_context)
         if email_sent:
+            # Mark as sent in communication state
+            self.communication_state.mark_sent(ticket.id, CommunicationEvent.TICKET_RECEIVED)
             logger.info(f"Acknowledgement email sent to {ticket.email_from}")
         else:
             logger.warning(f"Failed to send acknowledgement email to {ticket.email_from}")
