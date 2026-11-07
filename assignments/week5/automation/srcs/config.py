@@ -70,6 +70,23 @@ MAX_RETRIES = int(os.getenv("MAX_RETRIES", "3"))
 # HR System Cache TTL (seconds)
 HR_CACHE_TTL = int(os.getenv("HR_CACHE_TTL", "300"))
 
+# Gmail SMTP Configuration
+SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
+SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
+SMTP_USERNAME = os.getenv("SMTP_USERNAME")
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
+SMTP_FROM_EMAIL = os.getenv("SMTP_FROM_EMAIL")
+
+# Validate Gmail configuration if required
+if not all([SMTP_USERNAME, SMTP_PASSWORD, SMTP_FROM_EMAIL]):
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.warning(
+        "Gmail SMTP configuration incomplete. "
+        "Email service will not be available. "
+        "Set SMTP_USERNAME, SMTP_PASSWORD, and SMTP_FROM_EMAIL in .env"
+    )
+
 __all__ = [
     "ODOO_URL",
     "ODOO_DATABASE",
@@ -87,4 +104,9 @@ __all__ = [
     "REQUEST_TIMEOUT",
     "MAX_RETRIES",
     "HR_CACHE_TTL",
+    "SMTP_HOST",
+    "SMTP_PORT",
+    "SMTP_USERNAME",
+    "SMTP_PASSWORD",
+    "SMTP_FROM_EMAIL",
 ]

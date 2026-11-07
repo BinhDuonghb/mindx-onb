@@ -2,13 +2,16 @@
 
 import logging
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 from srcs.models import Ticket, Employee
 from srcs.clients.odoo.ticket_client import TicketClient
 from srcs.clients.hr.hr_client import HRClient
 from srcs.services.ticket_analyzer import TicketAnalyzer
 from srcs.services.decision_service import DecisionService, Decision
+
+if TYPE_CHECKING:
+    from srcs.services.gmail import GmailService
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +37,7 @@ class LoginWorkflow:
     3. Business decision (DecisionService)
     4. Account action (HR status update)
     5. Ticket notification (TicketClient)
+    6. Email notification (GmailService - optional)
     """
 
     def __init__(
@@ -41,6 +45,7 @@ class LoginWorkflow:
         ticket_client: TicketClient,
         hr_client: HRClient,
         ticket_analyzer: TicketAnalyzer,
+        gmail_service: Optional["GmailService"] = None,
     ):
         """Initialize workflow with dependencies.
 
@@ -48,10 +53,12 @@ class LoginWorkflow:
             ticket_client: Odoo ticket system client
             hr_client: HR system client
             ticket_analyzer: Ticket analysis service
+            gmail_service: Optional email service for customer notifications
         """
         self.ticket_client = ticket_client
         self.hr_client = hr_client
         self.ticket_analyzer = ticket_analyzer
+        self.gmail_service = gmail_service
         self.decision_service = DecisionService()
 
     def execute(self, ticket_id: int) -> WorkflowResult:
@@ -179,6 +186,29 @@ class LoginWorkflow:
                 log_message=f"[Automation] Account reactivation approved for {employee.name}, "
                 f"but LMS system update failed. Requires manual verification.",
             )
+
+            # Send escalation email since reactivation failed
+            if self.gmail_service and ticket.email_from:
+                from srcs.services.gmail import EmailContext, EmailTemplate
+
+                email_context = EmailContext(
+                    recipient_email=ticket.email_from,
+                    recipient_name=employee.name,
+                    ticket_id=ticket.id,
+                    ticket_title=ticket.name,
+                    template=EmailTemplate.ESCALATED_MANUAL_REVIEW,
+                    employee_name=employee.name,
+                    employee_id=employee.employee_id,
+                    department=employee.department,
+                    deactivation_reason=str(employee.deactivation_reason) if employee.deactivation_reason else None,
+                )
+
+                email_sent = self.gmail_service.send_email(email_context)
+                if email_sent:
+                    logger.info(f"Escalation email sent to {ticket.email_from}")
+                else:
+                    logger.warning(f"Failed to send escalation email to {ticket.email_from}")
+
             return WorkflowResult(
                 success=True,
                 action_taken="escalated_manual_review",
@@ -193,11 +223,33 @@ class LoginWorkflow:
             log_message=f"[Automation] Account reactivated for employee {employee.name} ({employee.email}). "
             f"Issue: {decision.reason}",
         )
-        
+
         self.ticket_client.update_stage(
             ticket_id=ticket.id,
             stage_id=4,
         )
+
+        # Send success email to customer if Gmail service available
+        if self.gmail_service:
+            from srcs.services.gmail import EmailContext, EmailTemplate
+
+            email_context = EmailContext(
+                recipient_email=ticket.email_from,
+                recipient_name=employee.name,
+                ticket_id=ticket.id,
+                ticket_title=ticket.name,
+                template=EmailTemplate.ACCOUNT_REACTIVATED,
+                employee_name=employee.name,
+                employee_id=employee.employee_id,
+                department=employee.department,
+                deactivation_reason=employee.deactivation_reason,
+            )
+
+            email_sent = self.gmail_service.send_email(email_context)
+            if email_sent:
+                logger.info(f"Success email sent to {ticket.email_from}")
+            else:
+                logger.warning(f"Failed to send success email to {ticket.email_from}")
 
         logger.info(f"✓ Account reactivation completed for ticket {ticket.id}")
 
@@ -232,6 +284,28 @@ class LoginWorkflow:
             ticket_id=ticket.id,
             log_message=f"[Automation] Escalated for manual review. {decision.reason}",
         )
+
+        # Send escalation email to customer if Gmail service available
+        if self.gmail_service and ticket.email_from:
+            from srcs.services.gmail import EmailContext, EmailTemplate
+
+            email_context = EmailContext(
+                recipient_email=ticket.email_from,
+                recipient_name=employee_name,
+                ticket_id=ticket.id,
+                ticket_title=ticket.name,
+                template=EmailTemplate.ESCALATED_MANUAL_REVIEW,
+                employee_name=employee_name if employee else None,
+                employee_id=employee_id,
+                department=employee.department if employee else None,
+                deactivation_reason=str(employee.deactivation_reason) if employee and employee.deactivation_reason else None,
+            )
+
+            email_sent = self.gmail_service.send_email(email_context)
+            if email_sent:
+                logger.info(f"Escalation email sent to {ticket.email_from}")
+            else:
+                logger.warning(f"Failed to send escalation email to {ticket.email_from}")
 
         return WorkflowResult(
             success=True,
