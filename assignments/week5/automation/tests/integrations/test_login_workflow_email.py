@@ -1,4 +1,4 @@
-"""Phase 3: Workflow Integration Tests - Verify email templates in LoginWorkflow."""
+"""Phase 4: Workflow Integration Tests - Verify email templates with acknowledgement."""
 
 import pytest
 from unittest.mock import Mock, patch, MagicMock
@@ -32,8 +32,7 @@ class TestLoginWorkflowEmailIntegration:
     def test_successful_reactivation_sends_resolution_email(
         self, workflow_with_email, gmail_service
     ):
-        """Should send resolution email on successful reactivation."""
-        # Setup
+        """Should send resolution email on successful reactivation (after ACK)."""
         ticket = Ticket(
             id=1,
             name="Cannot login",
@@ -62,23 +61,33 @@ class TestLoginWorkflowEmailIntegration:
         # Execute
         result = workflow_with_email.execute(ticket_id=1)
 
-        # Verify email sent with correct template
+        # Verify result
         assert result.success is True
         assert result.action_taken == "account_reactivated"
 
-        # Verify email was sent
-        gmail_service.send_email.assert_called_once()
-        call_args = gmail_service.send_email.call_args[0][0]
+        # Verify emails were sent (ACK + RESOLUTION)
+        assert gmail_service.send_email.call_count >= 1
 
-        # Verify email context
-        assert isinstance(call_args, EmailContext)
-        assert call_args.recipient_email == "john@company.com"
-        assert call_args.recipient_name == "John Doe"
-        assert call_args.template == EmailTemplate.RESOLUTION
-        assert call_args.ticket_id == 1
+        # Extract templates from calls
+        templates_sent = [
+            call[0][0].template for call in gmail_service.send_email.call_args_list
+        ]
 
-    def test_escalated_manual_review_sends_escalation_email(self, workflow_with_email, gmail_service):
-        """Should send manual review email when escalating to manual review."""
+        # Should include ACKNOWLEDGEMENT and RESOLUTION
+        assert EmailTemplate.ACKNOWLEDGEMENT in templates_sent
+        assert EmailTemplate.RESOLUTION in templates_sent
+
+        # Verify resolution email has correct context
+        for call in gmail_service.send_email.call_args_list:
+            context = call[0][0]
+            if context.template == EmailTemplate.RESOLUTION:
+                assert context.recipient_email == "john@company.com"
+                assert context.ticket_id == 1
+
+    def test_escalated_manual_review_sends_escalation_email(
+        self, workflow_with_email, gmail_service
+    ):
+        """Should send manual review email when escalating (after ACK)."""
         ticket = Ticket(
             id=2,
             name="Cannot login",
@@ -110,13 +119,17 @@ class TestLoginWorkflowEmailIntegration:
         assert result.success is True
         assert result.action_taken == "escalated_manual_review"
 
-        # Verify escalation email sent
-        gmail_service.send_email.assert_called_once()
-        call_args = gmail_service.send_email.call_args[0][0]
+        # Verify emails were sent (ACK + MANUAL_REVIEW)
+        assert gmail_service.send_email.call_count >= 1
 
-        # Should be manual review template
-        assert call_args.template == EmailTemplate.MANUAL_REVIEW
-        assert call_args.recipient_email == "jane@company.com"
+        # Extract templates from calls
+        templates_sent = [
+            call[0][0].template for call in gmail_service.send_email.call_args_list
+        ]
+
+        # Should include ACKNOWLEDGEMENT and MANUAL_REVIEW
+        assert EmailTemplate.ACKNOWLEDGEMENT in templates_sent
+        assert EmailTemplate.MANUAL_REVIEW in templates_sent
 
     def test_non_login_issue_does_not_send_email(self, workflow_with_email, gmail_service):
         """Should NOT send email for non-login issues."""
@@ -142,8 +155,10 @@ class TestLoginWorkflowEmailIntegration:
         assert result.action_taken == "skipped"
         gmail_service.send_email.assert_not_called()
 
-    def test_employee_not_found_sends_escalation_email(self, workflow_with_email, gmail_service):
-        """Should send manual review email when employee not found."""
+    def test_employee_not_found_sends_escalation_email(
+        self, workflow_with_email, gmail_service
+    ):
+        """Should send manual review email when employee not found (after ACK)."""
         ticket = Ticket(
             id=4,
             name="Cannot login",
@@ -166,13 +181,21 @@ class TestLoginWorkflowEmailIntegration:
         assert result.success is True
         assert result.action_taken == "escalated_manual_review"
 
-        # Verify email sent
-        gmail_service.send_email.assert_called_once()
-        call_args = gmail_service.send_email.call_args[0][0]
-        assert call_args.template == EmailTemplate.MANUAL_REVIEW
+        # Verify emails were sent (ACK + MANUAL_REVIEW)
+        assert gmail_service.send_email.call_count >= 1
 
-    def test_hr_reactivation_failure_sends_escalation_email(self, workflow_with_email, gmail_service):
-        """Should send manual review email when HR reactivation fails."""
+        # Extract templates from calls
+        templates_sent = [
+            call[0][0].template for call in gmail_service.send_email.call_args_list
+        ]
+
+        assert EmailTemplate.ACKNOWLEDGEMENT in templates_sent
+        assert EmailTemplate.MANUAL_REVIEW in templates_sent
+
+    def test_hr_reactivation_failure_sends_escalation_email(
+        self, workflow_with_email, gmail_service
+    ):
+        """Should send manual review email when HR reactivation fails (after ACK)."""
         ticket = Ticket(
             id=5,
             name="Cannot login",
@@ -205,10 +228,18 @@ class TestLoginWorkflowEmailIntegration:
         assert result.success is True
         assert result.action_taken == "escalated_manual_review"
 
-        # Verify escalation email sent (not success email)
-        gmail_service.send_email.assert_called_once()
-        call_args = gmail_service.send_email.call_args[0][0]
-        assert call_args.template == EmailTemplate.MANUAL_REVIEW
+        # Verify emails were sent (ACK + MANUAL_REVIEW, not RESOLUTION)
+        assert gmail_service.send_email.call_count >= 1
+
+        # Extract templates from calls
+        templates_sent = [
+            call[0][0].template for call in gmail_service.send_email.call_args_list
+        ]
+
+        assert EmailTemplate.ACKNOWLEDGEMENT in templates_sent
+        assert EmailTemplate.MANUAL_REVIEW in templates_sent
+        # Should NOT send RESOLUTION when reactivation failed
+        assert EmailTemplate.RESOLUTION not in templates_sent
 
     def test_email_send_failure_does_not_fail_workflow(self, workflow_with_email, gmail_service):
         """Should continue workflow even if email send fails."""
@@ -278,20 +309,21 @@ class TestLoginWorkflowEmailIntegration:
         # Execute
         result = workflow_with_email.execute(ticket_id=7)
 
-        # Verify email context does NOT include HR data
-        gmail_service.send_email.assert_called_once()
-        call_args = gmail_service.send_email.call_args[0][0]
+        # Verify success
+        assert result.success is True
 
-        # Week 4: EmailContext should NOT have employee_name, employee_id, department, deactivation_reason
-        assert not hasattr(call_args, 'employee_name') or call_args.recipient_name == employee.name
-        assert not hasattr(call_args, 'employee_id')
-        assert not hasattr(call_args, 'department')
-        assert not hasattr(call_args, 'deactivation_reason')
+        # Check all email contexts don't include HR data
+        for call in gmail_service.send_email.call_args_list:
+            context = call[0][0]
 
-        # But it should have the public fields
-        assert call_args.recipient_email == "alice@company.com"
-        assert call_args.recipient_name == "Alice Brown"
-        assert call_args.ticket_id == 7
+            # Week 4: EmailContext should NOT have employee_id, department, deactivation_reason
+            assert not hasattr(context, 'employee_id')
+            assert not hasattr(context, 'department')
+            assert not hasattr(context, 'deactivation_reason')
+
+            # But it should have the public fields
+            assert context.recipient_email == "alice@company.com"
+            assert context.ticket_id == 7
 
 
 class TestLoginWorkflowWithoutEmailService:

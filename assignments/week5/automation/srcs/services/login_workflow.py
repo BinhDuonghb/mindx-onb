@@ -96,6 +96,10 @@ class LoginWorkflow:
             ticket.is_login_issue = analysis.is_login_issue
             ticket.issue_type = analysis.issue_type
 
+            # Step 2b: Send acknowledgement for new login issues
+            if analysis.is_login_issue and ticket.email_from:
+                self._send_acknowledgement(ticket)
+
             # Step 3: Look up employee by email
             employee = None
             if ticket.email_from:
@@ -320,3 +324,28 @@ class LoginWorkflow:
             message="Ticket is not a login issue. No automation applied.",
             ticket_id=ticket.id,
         )
+
+    def _send_acknowledgement(self, ticket: Ticket) -> None:
+        """Send acknowledgement email for new login issue ticket.
+
+        Args:
+            ticket: Ticket that was identified as a login issue
+        """
+        if not self.gmail_service or not ticket.email_from:
+            return
+
+        from srcs.services.gmail import EmailContext, EmailTemplate
+
+        email_context = EmailContext(
+            recipient_email=ticket.email_from,
+            recipient_name=ticket.email_from.split("@")[0],  # Simple name fallback
+            ticket_id=ticket.id,
+            ticket_title=ticket.name,
+            template=EmailTemplate.ACKNOWLEDGEMENT,
+        )
+
+        email_sent = self.gmail_service.send_email(email_context)
+        if email_sent:
+            logger.info(f"Acknowledgement email sent to {ticket.email_from}")
+        else:
+            logger.warning(f"Failed to send acknowledgement email to {ticket.email_from}")
