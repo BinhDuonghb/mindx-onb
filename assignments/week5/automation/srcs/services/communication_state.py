@@ -1,9 +1,12 @@
 """Communication state tracking to prevent duplicate emails on re-polls."""
 
+import logging
 from dataclasses import dataclass, field
 from typing import Set, Dict, Optional
 from datetime import datetime, timezone
 from srcs.services.gmail import CommunicationEvent
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -43,19 +46,43 @@ class TicketCommunicationState:
 class CommunicationStateTracker:
     """Track communication state to prevent duplicate emails.
 
-    Maintains an in-memory registry of which communication events have been
-    sent for each ticket, and tracks customer confirmation status.
+    Maintains a registry (in-memory or persistent) of which communication events
+    have been sent for each ticket, and tracks customer confirmation status.
 
     Prevents duplicate emails on repeated polling cycles and ensures tickets
     aren't closed until customer confirmation is received.
+
+    Optional SQLite persistence via AutomationStateRepository prevents duplicate
+    emails even after process restart.
     """
 
-    def __init__(self):
-        """Initialize tracker with empty state."""
+    def __init__(self, repo=None):
+        """Initialize tracker with optional persistence.
+
+        Args:
+            repo: Optional AutomationStateRepository for persistent communication state.
+                  If None, uses in-memory tracking only (backwards compatible).
+        """
         self._state: Dict[int, TicketCommunicationState] = {}
+        self._repo = repo
+
+        # Load persisted state from repo if available
+        if self._repo:
+            self._load_persisted_state()
+
+    def _load_persisted_state(self) -> None:
+        """Load persisted communication state from repository."""
+        if not self._repo:
+            return
+
+        # Note: This is a best-effort load. In a real scenario, we'd need to
+        # track which tickets have persisted state, but for now we load on-demand.
+        logger.debug("Persistent communication state repository configured")
 
     def should_send(self, ticket_id: int, event: CommunicationEvent) -> bool:
         """Check if an email should be sent for this ticket+event combination.
+
+        Checks both in-memory state and persisted repository.
 
         Args:
             ticket_id: Ticket ID
@@ -64,14 +91,27 @@ class CommunicationStateTracker:
         Returns:
             True if email should be sent (not previously sent), False otherwise
         """
-        if ticket_id not in self._state:
-            return True
+        # Check in-memory state first
+        if ticket_id in self._state:
+            state = self._state[ticket_id]
+            if state.has_sent(event):
+                return False
 
-        state = self._state[ticket_id]
-        return not state.has_sent(event)
+        # Check persisted repository
+        if self._repo:
+            if self._repo.has_communication_sent(ticket_id, event):
+                # Load into memory for future checks
+                if ticket_id not in self._state:
+                    self._state[ticket_id] = TicketCommunicationState(ticket_id=ticket_id)
+                self._state[ticket_id].mark_sent(event)
+                return False
+
+        return True
 
     def mark_sent(self, ticket_id: int, event: CommunicationEvent) -> None:
         """Mark an event as sent for a ticket.
+
+        Persists to repository if available.
 
         Args:
             ticket_id: Ticket ID
@@ -82,8 +122,14 @@ class CommunicationStateTracker:
 
         self._state[ticket_id].mark_sent(event)
 
+        # Persist to repository if available
+        if self._repo:
+            self._repo.mark_communication_sent(ticket_id, event)
+
     def is_confirmed(self, ticket_id: int) -> bool:
         """Check if customer has confirmed resolution for a ticket.
+
+        Checks both in-memory state and persisted repository.
 
         Args:
             ticket_id: Ticket ID
@@ -91,13 +137,26 @@ class CommunicationStateTracker:
         Returns:
             True if customer confirmed, False otherwise
         """
-        if ticket_id not in self._state:
-            return False
+        # Check in-memory state first
+        if ticket_id in self._state and self._state[ticket_id].is_confirmed():
+            return True
 
-        return self._state[ticket_id].is_confirmed()
+        # Check persisted repository
+        if self._repo:
+            confirmed_at = self._repo.get_confirmation(ticket_id)
+            if confirmed_at:
+                # Load into memory for future checks
+                if ticket_id not in self._state:
+                    self._state[ticket_id] = TicketCommunicationState(ticket_id=ticket_id)
+                self._state[ticket_id].mark_confirmed(confirmed_at)
+                return True
+
+        return False
 
     def mark_confirmed(self, ticket_id: int, confirmed_at: datetime) -> None:
         """Record customer confirmation for a ticket.
+
+        Persists to repository if available.
 
         Args:
             ticket_id: Ticket ID
@@ -108,8 +167,14 @@ class CommunicationStateTracker:
 
         self._state[ticket_id].mark_confirmed(confirmed_at)
 
+        # Persist to repository if available
+        if self._repo:
+            self._repo.mark_communication_confirmed(ticket_id, confirmed_at)
+
     def get_confirmed_at(self, ticket_id: int) -> Optional[datetime]:
         """Get the confirmation timestamp for a ticket.
+
+        Checks both in-memory state and persisted repository.
 
         Args:
             ticket_id: Ticket ID
@@ -117,10 +182,21 @@ class CommunicationStateTracker:
         Returns:
             Confirmation datetime if confirmed, None otherwise
         """
-        if ticket_id not in self._state:
-            return None
+        # Check in-memory state first
+        if ticket_id in self._state and self._state[ticket_id].confirmed_at:
+            return self._state[ticket_id].confirmed_at
 
-        return self._state[ticket_id].confirmed_at
+        # Check persisted repository
+        if self._repo:
+            confirmed_at = self._repo.get_confirmation(ticket_id)
+            if confirmed_at:
+                # Load into memory for future checks
+                if ticket_id not in self._state:
+                    self._state[ticket_id] = TicketCommunicationState(ticket_id=ticket_id)
+                self._state[ticket_id].mark_confirmed(confirmed_at)
+                return confirmed_at
+
+        return None
 
     def get_state(self, ticket_id: int) -> TicketCommunicationState:
         """Get the communication state for a ticket.

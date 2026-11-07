@@ -69,6 +69,29 @@ class AutomationStateRepository:
                     CREATE INDEX IF NOT EXISTS idx_next_retry_at ON automation_state(next_retry_at)
                 """)
 
+                # Communication events table - tracks which emails have been sent
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS communication_events (
+                        ticket_id INTEGER NOT NULL,
+                        event TEXT NOT NULL,
+                        sent_at TEXT NOT NULL,
+                        PRIMARY KEY (ticket_id, event)
+                    )
+                """)
+
+                # Create index on ticket_id for efficient lookups
+                cursor.execute("""
+                    CREATE INDEX IF NOT EXISTS idx_comm_ticket ON communication_events(ticket_id)
+                """)
+
+                # Customer confirmation table - tracks when customer confirms resolution
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS customer_confirmations (
+                        ticket_id INTEGER PRIMARY KEY,
+                        confirmed_at TEXT NOT NULL
+                    )
+                """)
+
                 conn.commit()
                 logger.info(f"Database initialized: {self.db_path}")
 
@@ -369,6 +392,136 @@ class AutomationStateRepository:
         except Exception as e:
             logger.error(f"Failed to schedule retry for ticket {ticket_id}: {str(e)}")
             return False
+
+    def mark_communication_sent(
+        self, ticket_id: int, event: "CommunicationEvent"
+    ) -> bool:
+        """Mark a communication event as sent for a ticket.
+
+        Args:
+            ticket_id: Ticket ID
+            event: CommunicationEvent that was sent
+
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            now = datetime.now(UTC)
+
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    INSERT OR REPLACE INTO communication_events
+                    (ticket_id, event, sent_at)
+                    VALUES (?, ?, ?)
+                """, (ticket_id, event.value, now.isoformat()))
+
+                conn.commit()
+                logger.debug(f"Marked communication event {event.value} as sent for ticket {ticket_id}")
+                return True
+
+        except Exception as e:
+            logger.error(f"Failed to mark communication sent for ticket {ticket_id}: {str(e)}")
+            return False
+
+    def has_communication_sent(self, ticket_id: int, event: "CommunicationEvent") -> bool:
+        """Check if a communication event has been sent for a ticket.
+
+        Args:
+            ticket_id: Ticket ID
+            event: CommunicationEvent to check
+
+        Returns:
+            True if event was sent, False otherwise
+        """
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    "SELECT 1 FROM communication_events WHERE ticket_id = ? AND event = ?",
+                    (ticket_id, event.value)
+                )
+                return cursor.fetchone() is not None
+
+        except Exception as e:
+            logger.error(f"Failed to check communication sent for ticket {ticket_id}: {str(e)}")
+            return False
+
+    def get_sent_communications(self, ticket_id: int) -> list:
+        """Get all sent communication events for a ticket.
+
+        Args:
+            ticket_id: Ticket ID
+
+        Returns:
+            List of CommunicationEvent values that were sent
+        """
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    "SELECT event FROM communication_events WHERE ticket_id = ?",
+                    (ticket_id,)
+                )
+                return [row[0] for row in cursor.fetchall()]
+
+        except Exception as e:
+            logger.error(f"Failed to get sent communications for ticket {ticket_id}: {str(e)}")
+            return []
+
+    def mark_communication_confirmed(
+        self, ticket_id: int, confirmed_at: datetime
+    ) -> bool:
+        """Mark a ticket as confirmed by customer.
+
+        Args:
+            ticket_id: Ticket ID
+            confirmed_at: When customer confirmed
+
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    INSERT OR REPLACE INTO customer_confirmations
+                    (ticket_id, confirmed_at)
+                    VALUES (?, ?)
+                """, (ticket_id, confirmed_at.isoformat()))
+
+                conn.commit()
+                logger.debug(f"Marked ticket {ticket_id} as confirmed by customer")
+                return True
+
+        except Exception as e:
+            logger.error(f"Failed to mark communication confirmed for ticket {ticket_id}: {str(e)}")
+            return False
+
+    def get_confirmation(self, ticket_id: int) -> Optional[datetime]:
+        """Get customer confirmation timestamp for a ticket.
+
+        Args:
+            ticket_id: Ticket ID
+
+        Returns:
+            Confirmation datetime if confirmed, None otherwise
+        """
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    "SELECT confirmed_at FROM customer_confirmations WHERE ticket_id = ?",
+                    (ticket_id,)
+                )
+                row = cursor.fetchone()
+                if row:
+                    return datetime.fromisoformat(row[0])
+                return None
+
+        except Exception as e:
+            logger.error(f"Failed to get confirmation for ticket {ticket_id}: {str(e)}")
+            return None
 
     def _row_to_state(self, row: sqlite3.Row) -> AutomationState:
         """Convert database row to AutomationState."""
