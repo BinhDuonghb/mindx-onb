@@ -170,6 +170,22 @@ class AutomationExecutor:
                 try:
                     logger.info(f"Processing ticket {ticket.id} ({i}/{len(tickets)})")
 
+                    # Generate fingerprint for claim
+                    from srcs.services.ticket_fingerprinter import TicketFingerprinter
+                    fingerprint = TicketFingerprinter.generate(ticket)
+
+                    # Attempt to claim ticket for processing (prevents concurrent execution)
+                    if not self.state_repo.claim_for_processing(
+                        ticket_id=ticket.id,
+                        fingerprint=fingerprint,
+                        lease_duration_seconds=300  # 5 minute lease
+                    ):
+                        logger.info(
+                            f"Ticket {ticket.id} already being processed by another worker, skipping"
+                        )
+                        results["skipped"] += 1
+                        continue
+
                     # Execute workflow
                     result = self.workflow.execute(ticket_id=ticket.id)
 
