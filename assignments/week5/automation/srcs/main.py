@@ -242,11 +242,21 @@ class AutomationExecutor:
 
                     # Attempt to claim ticket for processing (prevents concurrent execution)
                     # TASK 3 FIX: claim_for_processing now returns ownership token (or None if claim fails)
-                    owner_token = self.state_repo.claim_for_processing(
-                        ticket_id=ticket.id,
-                        fingerprint=fingerprint,
-                        lease_duration_seconds=300  # 5 minute lease
-                    )
+                    # ISSUE 4 FIX: Distinguish legitimate contention (None) from SQLite failures (exception)
+                    try:
+                        owner_token = self.state_repo.claim_for_processing(
+                            ticket_id=ticket.id,
+                            fingerprint=fingerprint,
+                            lease_duration_seconds=300  # 5 minute lease
+                        )
+                    except Exception as e:
+                        logger.error(f"Exception claiming ticket {ticket.id}: {str(e)}", exc_info=True)
+                        results["failed"] += 1
+                        results["persistence_failures"] += 1
+                        results["error_details"].append(
+                            f"ticket {ticket.id}: claim_for_processing() raised {type(e).__name__}: {str(e)}"
+                        )
+                        continue
 
                     if not owner_token:
                         logger.info(

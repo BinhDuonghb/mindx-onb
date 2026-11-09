@@ -458,7 +458,10 @@ class AutomationStateRepository:
 
         except Exception as e:
             logger.error(f"Failed to claim ticket {ticket_id} for processing: {str(e)}")
-            return None
+            # ISSUE 4 FIX: Re-raise real database errors instead of returning None.
+            # Only return None for legitimate contention (active lease or lost race).
+            # All other exceptions indicate actual persistence failures.
+            raise
 
     def mark_completed(self, ticket_id: int, owner_token: Optional[str] = None) -> bool:
         """Mark ticket processing as completed.
