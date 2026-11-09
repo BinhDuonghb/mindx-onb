@@ -16,7 +16,17 @@ logger = logging.getLogger(__name__)
 
 
 class HRClient:
-    """Client for HR system integration using JSON file storage.
+    """Client for HR system integration using JSON file storage via DBClient.
+
+    ⚠️ CURRENT STATE: Mock/Demo Implementation
+    This is a simulated HR adapter using JSON file storage for development and testing.
+    It is NOT connected to a real HR system (SAP, Workday, ADP, etc.).
+
+    Real HR API Integration Status:
+    - Current: Mock employee data from data/hr.json via DBClient
+    - Required before production: Real HR API endpoint integration
+    - Pending: Credentials and API documentation from HR team
+    - Contact: [HR Team] for real API access
 
     Handles employee status lookups and verification.
     Uses DBClient to read employee data from JSON file.

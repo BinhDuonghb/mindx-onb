@@ -2,7 +2,9 @@
 
 Enterprise-grade support automation for Odoo helpdesk tickets. Automatically detects login issues, validates employee status, reactivates LMS accounts, and manages customer communications with persistent state tracking and intelligent retry scheduling.
 
-**Status**: ✅ **Production Ready** | 394 tests passing | Retry mechanism with state recovery | SQLite persistence | Gmail SMTP integration
+**Status**: 🔄 **Demo / Integration Pending** | 483 tests passing (mocked-only) | Retry mechanism with state recovery | SQLite persistence | Gmail SMTP integration
+
+**Note**: HR/LMS integration currently uses simulated JSON file adapter (mock data). Real HR/LMS API integration pending before production rollout. See [Integration Status](#integration-status) below.
 
 ## Overview
 
@@ -96,17 +98,40 @@ python srcs/main.py --help
 ### Running Tests
 
 ```bash
-# All tests (394 passing)
-pytest tests/ -v
+# All tests (483 passing - mocked-only, offline)
+pytest tests/units/ tests/integration/ tests/integrations/ -q --tb=short
 
 # By category
-pytest tests/units/ -v        # 276 unit tests
-pytest tests/integration/ -v  # 118 integration tests
+pytest tests/units/ -q              # 389 unit tests
+pytest tests/integration/ tests/integrations/ -q        # 94 integration/e2e tests
+
+# With verbose output
+pytest tests/ -v
 
 # With coverage report
 pytest tests/ --cov=srcs --cov-report=html
 # Open htmlcov/index.html in browser
 ```
+
+**Test Execution Example**:
+```
+$ pytest tests/units/ tests/integration/ tests/integrations/ -q --tb=short
+...................................................                     [100%]
+483 passed in 14.12s
+```
+
+**Test Breakdown**:
+- **389 Unit Tests**: Individual service testing (TicketAnalyzer, EmailTemplates, DecisionService, etc.)
+- **94 Integration/E2E Tests**: Multi-service workflows (complete automation flows, restart safety, idempotency)
+
+**Test Environment**:
+- All tests are **mocked-only** (no real external services)
+- HR/LMS integration uses mock JSON data from `data/hr.json`
+- Odoo integration uses mock ticket client fixtures
+- Gmail integration mocked (no actual SMTP calls)
+- SQLite database isolated to temporary files during testing
+- Full automation workflow tested end-to-end with mocks
+
 
 ## Workflow
 
@@ -291,9 +316,9 @@ Lease check happens **before** fingerprint check to prevent bypass via content c
   - Continues processing on service failures
 
 #### Testing & Quality
-- **394 Tests Passing**:
-  - 276 unit tests (isolated service testing)
-  - 118 integration tests (multi-service workflows)
+- **483 Tests Passing** (mocked-only, offline):
+  - 389 unit tests (isolated service testing)
+  - 94 integration/e2e tests (multi-service workflows, restart safety)
   
 - **Test-Driven Development**:
   - RED → GREEN → REFACTOR cycle
@@ -310,6 +335,7 @@ Lease check happens **before** fingerprint check to prevent bypass via content c
   - Processing lease enforcement
   - Communication state persistence
   - Concurrent worker handling
+  - P2 Issue #5: Odoo POST idempotency and restart safety
 
 ## Architecture
 
@@ -658,11 +684,69 @@ Created comprehensive integration tests verifying:
 - Email failures don't crash workflow
 - Full retry flow with actual call counts
 
-Tests file: `tests/integration/test_p0_correctness.py` (6 tests, all passing)
+Tests file: `tests/integration/test_correctness.py` (6 tests, all passing)
 
-## Performance
+## Integration Status
 
-Typical automation run on 5 tickets:
+### Current State: Demo / Mocked Integration
+
+This system is a **fully-functional demo** of the automation workflow with **mocked external services**:
+
+| Component | Current | Real Integration | Status |
+|-----------|---------|------------------|--------|
+| **Odoo API** | Mock ticket client with test fixtures | Real Odoo JSON-2 API | ✓ Code ready, requires credentials |
+| **HR/LMS System** | JSON file adapter (`data/hr.json`) with mock employee data | Real HR API (e.g., SAP, Workday) | ⏳ Pending real API integration |
+| **Gmail SMTP** | Mocked in tests, optional in production | Real Gmail SMTP with app password | ✓ Implemented, requires Gmail account |
+| **SQLite Database** | Real SQLite persistence | Real SQLite deployment | ✓ Production-ready |
+| **Processing Leases** | Real distributed locking | Real coordination across workers | ✓ Production-ready |
+
+### Before Production Rollout
+
+**Required Permissions & Credentials**:
+1. ✓ Odoo instance access (API key, database name, URL)
+2. ⏳ Real HR/LMS API credentials (contact HR team)
+3. ✓ Gmail app password (optional, for email notifications)
+4. ⏳ Access control review (who can see HR data, modify Odoo tickets)
+
+**Pre-Deployment Checklist**:
+- [ ] Real HR/LMS API endpoint documented and tested
+- [ ] Data mapping verified (HR employee fields → automation system)
+- [ ] Permissions review complete (who sees what)
+- [ ] Production Odoo instance credentials configured
+- [ ] Gmail account setup with app password (optional)
+- [ ] SQLite database backup strategy defined
+- [ ] Processing lease TTL tuned for your environment
+- [ ] Monitoring and alerting setup
+- [ ] Runbooks for common failures
+- [ ] Data handling policy review (HR data retention)
+- [ ] Full integration tests run against real (test) services
+- [ ] Load testing completed (expected ticket volume)
+
+### Mock vs. Real Flow
+
+**Mock Flow (Current Demo)**:
+```
+Ticket → [Mock Ticket Client] → Mock Odoo responses
+                ↓
+         [Mock HR Client] → Mock employee data from data/hr.json
+                ↓
+         [SQLite State] → Stores automation progress
+                ↓
+         [Mock Gmail] → Mocked in tests, optional in production
+```
+
+**Real Flow (After Integration)**:
+```
+Ticket → [Real Odoo API] → Actual Odoo JSON-2 API calls
+              ↓
+       [Real HR API] → SAP/Workday/ADP/etc.
+              ↓
+       [SQLite State] → Stores automation progress (unchanged)
+              ↓
+       [Real Gmail] → Actual email delivery via SMTP
+```
+
+
 - **Total time**: ~2 seconds
 - **Per ticket**: ~0.4 seconds (analysis only)
 - **Email bottleneck**: ~4 seconds per email (SMTP + TLS)
@@ -721,18 +805,34 @@ Optimizations:
 
 ## Deployment Checklist
 
-- [ ] Configure `.env` with Odoo credentials
-- [ ] Test Odoo connection: `python srcs/main.py --once --limit 1`
+### For Demo/Testing
+- [x] Mock HR data configured (`data/hr.json`)
+- [x] Mock Odoo ticket client fixtures working
+- [x] 483 tests passing (mocked-only)
+- [x] SQLite persistence working
+- [x] State recovery tested across restarts
+- [x] All automation flows verified with mocks
+
+### For Production Deployment
+- [ ] **HR/LMS Integration**: Real API endpoint integrated and tested
+  - Requires: HR system API credentials and documentation
+  - Action: Implement real HR client to replace mock adapter
+  - Timeline: Coordinate with HR team for access
+  
+- [ ] Configure `.env` with real Odoo credentials
+- [ ] Test Odoo connection against production instance: `python srcs/main.py --once --limit 1`
 - [ ] Setup Gmail app password if email needed
 - [ ] Test email sending with sample ticket
-- [ ] Verify HR data loaded correctly
-- [ ] Run full test suite: `pytest tests/ -v`
-- [ ] Verify 394 tests passing
+- [ ] Verify real HR data loaded correctly
+- [ ] Run full test suite: `pytest tests/units/ tests/integration/ tests/integrations/ -q`
+- [ ] Verify 483 tests passing with real mocks
+- [ ] Run against real (non-production) Odoo test instance first
 - [ ] Monitor first few polling cycles for errors
 - [ ] Setup continuous polling: `python srcs/main.py --poll --interval 60`
 - [ ] Setup monitoring dashboard for metrics
 - [ ] Document any customizations or modifications
 - [ ] Plan retry dead letter review process
+- [ ] Data handling & compliance review complete
 
 ## Development Commands
 
@@ -815,9 +915,10 @@ For questions or issues:
 
 ---
 
-**Last Updated**: 2026-11-07
-**Test Status**: ✅ 394/394 tests passing (276 units + 118 integration)
-**Production Ready**: ✅ Yes
-**Retry Mechanism**: ✅ Implemented with state recovery
-**Email Integration**: ✅ Gmail SMTP working
+**Last Updated**: 2026-11-09
+**Test Status**: ✅ 483/483 tests passing (389 units + 94 integration/e2e, mocked-only, offline)
+**Current Status**: 🔄 Demo / Integration Pending
+**Retry Mechanism**: ✅ Implemented with state recovery and restart safety (P2 Issue #5)
+**Email Integration**: ✅ Gmail SMTP configured (optional)
+**HR/LMS Integration**: ⏳ Currently mocked with JSON file adapter; real API integration pending
 **Configuration**: ✅ Pytest auto-detection enabled
