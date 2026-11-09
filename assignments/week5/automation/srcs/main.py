@@ -228,6 +228,8 @@ class AutomationExecutor:
                 "escalated": 0,
                 "skipped": 0,
                 "failed": 0,
+                "persistence_failures": 0,
+                "error_details": [],
             }
 
             for i, ticket in enumerate(all_tickets, 1):
@@ -261,53 +263,147 @@ class AutomationExecutor:
 
                     # Save automation state after processing
                     # ISSUE 2 FIX: Pass owner_token for atomic SQL validation
-                    self._save_ticket_state(ticket, result, owner_token=owner_token)
+                    # ISSUE 4 FIX: Check return value - if save fails, don't proceed with result counting
+                    save_success = self._save_ticket_state(ticket, result, owner_token=owner_token)
+                    if not save_success:
+                        logger.error(f"Failed to persist state for ticket {ticket.id}, marking as failed")
+                        results["failed"] += 1
+                        results["persistence_failures"] += 1
+                        results["error_details"].append(
+                            f"ticket {ticket.id}: save() failed"
+                        )
+                        continue
 
                     # Handle retry scheduling if workflow indicates failure
                     if result.action_taken == "retry_scheduled":
-                        self.state_repo.schedule_retry(
-                            ticket_id=ticket.id,
-                            retry_after_seconds=3600,  # Retry after 1 hour
-                            error=result.error_message,
-                            owner_token=owner_token  # ISSUE 2 FIX: Pass owner token
-                        )
-                        results["failed"] += 1
-                        logger.info(f"Scheduled retry for ticket {ticket.id}: {result.error_message}")
+                        # ISSUE 4 FIX: Check return value of schedule_retry()
+                        try:
+                            retry_scheduled = self.state_repo.schedule_retry(
+                                ticket_id=ticket.id,
+                                retry_after_seconds=3600,  # Retry after 1 hour
+                                error=result.error_message,
+                                owner_token=owner_token  # ISSUE 2 FIX: Pass owner token
+                            )
+                            if retry_scheduled is False:
+                                logger.error(f"Failed to schedule retry for ticket {ticket.id}")
+                                results["failed"] += 1
+                                results["persistence_failures"] += 1
+                                results["error_details"].append(
+                                    f"ticket {ticket.id}: schedule_retry() failed"
+                                )
+                            else:
+                                results["failed"] += 1
+                                logger.info(f"Scheduled retry for ticket {ticket.id}: {result.error_message}")
+                        except Exception as e:
+                            logger.error(f"Exception scheduling retry for ticket {ticket.id}: {str(e)}", exc_info=True)
+                            results["failed"] += 1
+                            results["persistence_failures"] += 1
+                            results["error_details"].append(
+                                f"ticket {ticket.id}: schedule_retry() raised {type(e).__name__}: {str(e)}"
+                            )
                         continue
 
                     # P1-03: Handle email delivery failure - schedule retry for email only
                     if result.action_taken == "account_reactivated" and not result.email_delivery_completed:
                         logger.warning(f"Email delivery failed for ticket {ticket.id}, scheduling retry")
-                        self.state_repo.schedule_retry(
-                            ticket_id=ticket.id,
-                            retry_after_seconds=300,  # Retry sooner for email failures (5 minutes)
-                            error="Email delivery failed - will retry",
-                            owner_token=owner_token  # ISSUE 2 FIX: Pass owner token
-                        )
-                        results["failed"] += 1
+                        # ISSUE 4 FIX: Check return value of schedule_retry()
+                        try:
+                            email_retry_scheduled = self.state_repo.schedule_retry(
+                                ticket_id=ticket.id,
+                                retry_after_seconds=300,  # Retry sooner for email failures (5 minutes)
+                                error="Email delivery failed - will retry",
+                                owner_token=owner_token  # ISSUE 2 FIX: Pass owner token
+                            )
+                            if email_retry_scheduled is False:
+                                logger.error(f"Failed to schedule email retry for ticket {ticket.id}")
+                                results["failed"] += 1
+                                results["persistence_failures"] += 1
+                                results["error_details"].append(
+                                    f"ticket {ticket.id}: schedule_retry() failed for email retry"
+                                )
+                            else:
+                                results["failed"] += 1
+                        except Exception as e:
+                            logger.error(f"Exception scheduling email retry for ticket {ticket.id}: {str(e)}", exc_info=True)
+                            results["failed"] += 1
+                            results["persistence_failures"] += 1
+                            results["error_details"].append(
+                                f"ticket {ticket.id}: schedule_retry() raised {type(e).__name__} for email retry: {str(e)}"
+                            )
                         continue
 
                     # ISSUE #2 FINAL FIX: Release lease after terminal workflow outcomes
                     # Terminal outcomes: COMPLETED, MANUAL_REVIEW, SKIPPED
                     if result.action_taken == "account_reactivated":
                         # Successful completion - release lease
-                        self.state_repo.mark_completed(ticket_id=ticket.id, owner_token=owner_token)
-                        results["successful"] += 1
-                        logger.info(f"Completed and released lease for ticket {ticket.id}")
+                        # ISSUE 4 FIX: Check return value of mark_completed()
+                        try:
+                            mark_result = self.state_repo.mark_completed(ticket_id=ticket.id, owner_token=owner_token)
+                            if mark_result is False:
+                                logger.error(f"Failed to mark ticket {ticket.id} as completed - lease may not be released")
+                                results["failed"] += 1
+                                results["persistence_failures"] += 1
+                                results["error_details"].append(
+                                    f"ticket {ticket.id}: mark_completed() failed"
+                                )
+                            else:
+                                results["successful"] += 1
+                                logger.info(f"Completed and released lease for ticket {ticket.id}")
+                        except Exception as e:
+                            logger.error(f"Exception marking ticket {ticket.id} as completed: {str(e)}", exc_info=True)
+                            results["failed"] += 1
+                            results["persistence_failures"] += 1
+                            results["error_details"].append(
+                                f"ticket {ticket.id}: mark_completed() raised {type(e).__name__}: {str(e)}"
+                            )
                     elif result.action_taken == "escalated_manual_review":
                         # Manual review escalation - release lease
-                        self.state_repo.mark_manual_review(
-                            ticket_id=ticket.id,
-                            reason="Escalated to manual review",
-                            owner_token=owner_token
-                        )
-                        results["escalated"] += 1
-                        logger.info(f"Escalated to manual review and released lease for ticket {ticket.id}")
+                        # ISSUE 4 FIX: Check return value of mark_manual_review()
+                        try:
+                            review_result = self.state_repo.mark_manual_review(
+                                ticket_id=ticket.id,
+                                reason="Escalated to manual review",
+                                owner_token=owner_token
+                            )
+                            if review_result is False:
+                                logger.error(f"Failed to mark ticket {ticket.id} as manual review - lease may not be released")
+                                results["failed"] += 1
+                                results["persistence_failures"] += 1
+                                results["error_details"].append(
+                                    f"ticket {ticket.id}: mark_manual_review() failed"
+                                )
+                            else:
+                                results["escalated"] += 1
+                                logger.info(f"Escalated to manual review and released lease for ticket {ticket.id}")
+                        except Exception as e:
+                            logger.error(f"Exception marking ticket {ticket.id} as manual review: {str(e)}", exc_info=True)
+                            results["failed"] += 1
+                            results["persistence_failures"] += 1
+                            results["error_details"].append(
+                                f"ticket {ticket.id}: mark_manual_review() raised {type(e).__name__}: {str(e)}"
+                            )
                     elif result.action_taken == "skipped":
                         # Ticket skipped - release lease
-                        self.state_repo.mark_skipped(ticket_id=ticket.id, owner_token=owner_token)
-                        results["skipped"] += 1
-                        logger.info(f"Skipped and released lease for ticket {ticket.id}")
+                        # ISSUE 4 FIX: Check return value of mark_skipped()
+                        try:
+                            skip_result = self.state_repo.mark_skipped(ticket_id=ticket.id, owner_token=owner_token)
+                            if skip_result is False:
+                                logger.error(f"Failed to mark ticket {ticket.id} as skipped - lease may not be released")
+                                results["failed"] += 1
+                                results["persistence_failures"] += 1
+                                results["error_details"].append(
+                                    f"ticket {ticket.id}: mark_skipped() failed"
+                                )
+                            else:
+                                results["skipped"] += 1
+                                logger.info(f"Skipped and released lease for ticket {ticket.id}")
+                        except Exception as e:
+                            logger.error(f"Exception marking ticket {ticket.id} as skipped: {str(e)}", exc_info=True)
+                            results["failed"] += 1
+                            results["persistence_failures"] += 1
+                            results["error_details"].append(
+                                f"ticket {ticket.id}: mark_skipped() raised {type(e).__name__}: {str(e)}"
+                            )
                     else:
                         # Handle any other terminal outcome
                         if result.success:
@@ -328,14 +424,14 @@ class AutomationExecutor:
             )
 
             elapsed = (datetime.now(timezone.utc) - start_time).total_seconds()
-            results["success"] = True
+            results["success"] = results["persistence_failures"] == 0
             results["tickets_processed"] = len(all_tickets)
             results["elapsed_seconds"] = elapsed
 
             logger.info(
                 f"One-time run complete: {results['successful']} successful, "
                 f"{results['escalated']} escalated, {results['skipped']} skipped, "
-                f"{results['failed']} failed in {elapsed:.1f}s"
+                f"{results['failed']} failed, {results['persistence_failures']} persistence failures in {elapsed:.1f}s"
             )
 
             return results
@@ -403,7 +499,7 @@ class AutomationExecutor:
         """
         return self.metrics.to_dict()
 
-    def _save_ticket_state(self, ticket, result, owner_token: str = None) -> None:
+    def _save_ticket_state(self, ticket, result, owner_token: str = None) -> bool:
         """Save automation state after processing a ticket.
 
         Updates existing state, preserving side-effect flags and retry metadata.
@@ -412,24 +508,18 @@ class AutomationExecutor:
             ticket: Ticket model
             result: WorkflowResult from workflow execution
             owner_token: Optional ownership token from claim_for_processing() for atomic SQL validation
+
+        Returns:
+            True if state was successfully persisted, False otherwise
         """
         try:
             from srcs.models import AutomationState, AutomationStatus
             from srcs.services.ticket_fingerprinter import TicketFingerprinter
 
-            # Determine status based on workflow result
-            if result.action_taken == "account_reactivated":
-                status = AutomationStatus.COMPLETED
-            elif result.action_taken == "escalated_manual_review":
-                status = AutomationStatus.MANUAL_REVIEW
-            elif result.action_taken == "skipped":
-                status = AutomationStatus.SKIPPED
-            elif result.action_taken == "retry_scheduled":
-                status = AutomationStatus.RETRY_SCHEDULED
-            elif result.action_taken == "error":
-                status = AutomationStatus.FAILED
-            else:
-                status = AutomationStatus.COMPLETED
+            # ISSUE #4 FINAL FIX: Do NOT determine terminal status here
+            # Keep status as PROCESSING and let repository transitions (schedule_retry, mark_*)
+            # atomically establish final status after side effects persist.
+            # This prevents orphaned records if a transition fails.
 
             # Generate fingerprint for change detection
             fingerprint = TicketFingerprinter.generate(ticket)
@@ -438,9 +528,9 @@ class AutomationExecutor:
             existing_state = self.state_repo.get(ticket.id)
 
             if existing_state:
-                # Update only what changed, preserve side-effect flags and retry metadata
+                # Update fingerprint and side-effect flags from workflow result
+                # ISSUE #4 FINAL FIX: Do NOT change status - keep it as PROCESSING
                 existing_state.fingerprint = fingerprint
-                existing_state.status = status
                 existing_state.last_decision = result.action_taken
                 existing_state.last_reason = result.message
 
@@ -456,13 +546,15 @@ class AutomationExecutor:
                 if result.email_delivery_completed:
                     existing_state.email_delivery_completed = True
 
+                # Keep existing status - don't transition here
                 state = existing_state
             else:
                 # Create new state if none exists
+                # ISSUE #4 FINAL FIX: Start in PROCESSING status, not terminal status
                 state = AutomationState(
                     ticket_id=ticket.id,
                     fingerprint=fingerprint,
-                    status=status,
+                    status=AutomationStatus.PROCESSING,  # Always start as PROCESSING
                     last_decision=result.action_taken,
                     last_reason=result.message,
                     reactivation_completed=result.reactivation_completed,
@@ -472,12 +564,19 @@ class AutomationExecutor:
                     email_delivery_completed=result.email_delivery_completed,
                 )
 
-            self.state_repo.save(state, owner_token=owner_token)
-            logger.debug(f"Saved automation state for ticket {ticket.id}: status={status.value}")
+            # ISSUE #4 FIX: Check return value of save()
+            save_result = self.state_repo.save(state, owner_token=owner_token)
+            if save_result is False:
+                logger.error(f"Failed to persist automation state for ticket {ticket.id}: save() returned False")
+                return False
+
+            logger.debug(f"Saved automation state for ticket {ticket.id}: preserved side effects")
+            return True
 
         except Exception as e:
-            logger.error(f"Failed to save automation state for ticket {ticket.id}: {str(e)}")
-            # Don't raise - processing succeeded, just state saving failed
+            logger.error(f"Failed to save automation state for ticket {ticket.id}: {str(e)}", exc_info=True)
+            # ISSUE #4 FIX: Return False on exception instead of silently continuing
+            return False
 
 
 def main():
