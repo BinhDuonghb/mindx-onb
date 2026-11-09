@@ -1,8 +1,12 @@
 """Phase 4: Workflow Integration Tests - Verify email templates with acknowledgement."""
 
 import pytest
+import tempfile
+from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock
 from srcs.services.login_workflow import LoginWorkflow
+from srcs.services.identity_verifier import IdentityVerifier, VerificationStatus, VerificationResult
+from srcs.repositories.automation_state_repository import AutomationStateRepository
 from srcs.services.gmail import GmailService, EmailContext, EmailTemplate
 from srcs.models import Ticket, Employee, EmployeeStatus
 from srcs.services.ticket_analyzer import AnalysisResult, IssueType
@@ -13,6 +17,22 @@ class TestLoginWorkflowEmailIntegration:
     """Test email service integration with LoginWorkflow."""
 
     @pytest.fixture
+    def temp_db(self):
+        fd, path = tempfile.mkstemp(suffix='.db')
+        import os
+        os.close(fd)
+        yield Path(path)
+        if Path(path).exists():
+            try:
+                Path(path).unlink()
+            except:
+                pass
+
+    @pytest.fixture
+    def state_repo(self, temp_db):
+        return AutomationStateRepository(db_path=temp_db)
+
+    @pytest.fixture
     def gmail_service(self):
         """Create Gmail service mock."""
         service = Mock(spec=GmailService)
@@ -20,13 +40,24 @@ class TestLoginWorkflowEmailIntegration:
         return service
 
     @pytest.fixture
-    def workflow_with_email(self, gmail_service):
+    def workflow_with_email(self, gmail_service, state_repo):
         """Create LoginWorkflow with Gmail service."""
+        # P2 Issue #4: Inject verified mock verifier for legacy test compatibility
+        verifier = Mock(spec=IdentityVerifier)
+        verifier.verify = Mock(return_value=VerificationResult(
+            status=VerificationStatus.VERIFIED,
+            reason="Legacy test fixture: verified",
+            source="test_fixture",
+            verified_email=None
+        ))
+
         return LoginWorkflow(
             ticket_client=Mock(),
             hr_client=Mock(),
             ticket_analyzer=Mock(),
             gmail_service=gmail_service,
+            state_repo=state_repo,
+            identity_verifier=verifier,
         )
 
     def test_successful_reactivation_sends_resolution_email(
@@ -356,12 +387,22 @@ class TestLoginWorkflowWithoutEmailService:
             deactivation_reason=DeactivationReason.INACTIVITY_30_DAYS,
         )
 
+        # P2 Issue #4: Inject verified mock verifier for legacy test compatibility
+        verifier = Mock(spec=IdentityVerifier)
+        verifier.verify = Mock(return_value=VerificationResult(
+            status=VerificationStatus.VERIFIED,
+            reason="Legacy test fixture: verified",
+            source="test_fixture",
+            verified_email="john@company.com"
+        ))
+
         # Create workflow WITHOUT email service
         workflow = LoginWorkflow(
             ticket_client=Mock(),
             hr_client=Mock(),
             ticket_analyzer=Mock(),
             gmail_service=None,
+            identity_verifier=verifier,
         )
 
         workflow.ticket_client.get_ticket.return_value = ticket

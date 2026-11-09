@@ -1,14 +1,24 @@
 """Unit tests for DecisionService - Make business decisions on login issue automation."""
 
 import pytest
+from unittest.mock import Mock
 from srcs.services.decision_service import DecisionService, Decision
+from srcs.services.identity_verifier import IdentityVerifier, VerificationStatus, VerificationResult
 from srcs.models import Employee, EmployeeStatus, Ticket
 
 
 @pytest.fixture
 def service():
-    """Create a DecisionService instance."""
-    return DecisionService()
+    """Create a DecisionService instance with verified mock for legacy test compatibility."""
+    # P2 Issue #4: Inject explicit VERIFIED mock to preserve legacy test coverage
+    verifier = Mock(spec=IdentityVerifier)
+    verifier.verify = Mock(return_value=VerificationResult(
+        status=VerificationStatus.VERIFIED,
+        reason="Legacy test fixture: verified",
+        source="test_fixture",
+        verified_email=None  # Will be set by test
+    ))
+    return DecisionService(verifier=verifier)
 
 
 class TestDecisionServiceActiveEmployee:

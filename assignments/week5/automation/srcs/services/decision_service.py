@@ -6,6 +6,7 @@ from enum import Enum
 from typing import Optional
 
 from srcs.models import Employee, EmployeeStatus, DeactivationReason, Ticket, AutomationState
+from srcs.services.identity_verifier import IdentityVerifier, VerificationStatus
 
 logger = logging.getLogger(__name__)
 
@@ -30,8 +31,12 @@ class DecisionResult:
 class DecisionService:
     """Make business logic decisions for login issue automation.
 
+    P2 Issue #4: Email matching alone does NOT authorize reactivation.
+    Requires explicit trusted identity verification.
+
     This service implements deterministic decision rules:
-    - Active employee + login issue + email match → Approve reactivation
+    - Active employee + login issue + EMAIL MATCH + VERIFIED IDENTITY → Approve reactivation
+    - Verified identity unavailable or failed → Manual review (fail closed)
     - Terminated/inactive/on-leave employee → Manual review
     - Email mismatch or missing → Manual review
     - No login issue → Skip
@@ -39,6 +44,15 @@ class DecisionService:
 
     No external API calls are made here - decisions are based on provided data.
     """
+
+    def __init__(self, verifier: Optional[IdentityVerifier] = None):
+        """Initialize decision service.
+
+        Args:
+            verifier: Identity verifier (typically a mock in training).
+                     If None, creates a default POC verifier.
+        """
+        self.verifier = verifier or IdentityVerifier(verification_source="mock_training_poc")
 
     def decide(
         self, employee: Optional[Employee], ticket: Ticket,
@@ -103,7 +117,8 @@ class DecisionService:
                     reason=f"Employee '{employee.name}' has inactive status. Account reactivation requires manual review.",
                 )
 
-            # Rule 7: Active employee with login issue - APPROVE
+            # Rule 7: Active employee with login issue
+            # P2 Issue #4: Require verified identity in addition to email match
             if employee.status == EmployeeStatus.ACTIVE:
                 if employee.lms_account_status == "active":
                     # P1-01 Fix: Check for pending operations before skipping
@@ -125,13 +140,31 @@ class DecisionService:
 
                 if employee.lms_account_status == "deactivated":
                     if employee.deactivation_reason == DeactivationReason.INACTIVITY_30_DAYS:
-                        return DecisionResult(
-                            action=Decision.APPROVE_REACTIVATION,
-                            reason=(
-                                "Employee is active. LMS account was "
-                                "deactivated due to 30 days of inactivity."
-                            ),
-                        )
+                        # P2 Issue #4: Verify identity before approving reactivation
+                        verification = self.verifier.verify(ticket.email_from, employee.email)
+
+                        if verification.status == VerificationStatus.VERIFIED:
+                            return DecisionResult(
+                                action=Decision.APPROVE_REACTIVATION,
+                                reason=(
+                                    f"Employee is active and identity verified. LMS account was "
+                                    "deactivated due to 30 days of inactivity. Approval granted."
+                                ),
+                            )
+                        elif verification.status == VerificationStatus.UNVERIFIED:
+                            return DecisionResult(
+                                action=Decision.MANUAL_REVIEW,
+                                reason=f"Identity verification failed: {verification.reason}. Requires manual review.",
+                            )
+                        else:
+                            # UNAVAILABLE or FAILED - fail closed
+                            return DecisionResult(
+                                action=Decision.MANUAL_REVIEW,
+                                reason=(
+                                    f"Identity verification {verification.status.value}: {verification.reason} "
+                                    "Cannot automatically approve reactivation without verified identity. Requires manual review."
+                                ),
+                            )
 
                     return DecisionResult(
                         action=Decision.MANUAL_REVIEW,

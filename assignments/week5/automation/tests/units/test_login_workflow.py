@@ -1,11 +1,34 @@
 """Integration tests for LoginWorkflow - Complete automation workflow orchestration."""
 
 import pytest
+import tempfile
+from pathlib import Path
 from unittest.mock import Mock, MagicMock
 from srcs.services.login_workflow import LoginWorkflow, WorkflowResult
+from srcs.services.identity_verifier import IdentityVerifier, VerificationStatus, VerificationResult
+from srcs.repositories.automation_state_repository import AutomationStateRepository
 from srcs.models import Ticket, Employee, EmployeeStatus
 from srcs.services.ticket_analyzer import AnalysisResult, IssueType
 from srcs.services.decision_service import Decision
+
+
+@pytest.fixture
+def temp_db():
+    """Create temporary database."""
+    fd, path = tempfile.mkstemp(suffix='.db')
+    import os
+    os.close(fd)
+    yield Path(path)
+    if Path(path).exists():
+        try:
+            Path(path).unlink()
+        except:
+            pass
+
+
+@pytest.fixture
+def state_repo(temp_db):
+    return AutomationStateRepository(db_path=temp_db)
 
 
 @pytest.fixture
@@ -13,6 +36,7 @@ def mock_ticket_client():
     """Mock Odoo ticket client."""
     client = Mock()
     client.add_log = Mock(return_value=True)
+    client.update_stage = Mock(return_value=True)
     return client
 
 
@@ -34,12 +58,28 @@ def mock_analyzer():
 
 
 @pytest.fixture
-def workflow(mock_ticket_client, mock_hr_client, mock_analyzer):
-    """Create LoginWorkflow with mocked dependencies."""
+def mock_verifier():
+    """P2 Issue #4: Mock verified identity verifier for legacy test compatibility."""
+    verifier = Mock(spec=IdentityVerifier)
+    verifier.verify = Mock(return_value=VerificationResult(
+        status=VerificationStatus.VERIFIED,
+        reason="Legacy test fixture: verified",
+        source="test_fixture",
+        verified_email=None
+    ))
+    return verifier
+
+
+@pytest.fixture
+def workflow(mock_ticket_client, mock_hr_client, mock_analyzer, mock_verifier, state_repo):
+    """Create LoginWorkflow with mocked dependencies and verified identity verifier."""
     return LoginWorkflow(
         ticket_client=mock_ticket_client,
         hr_client=mock_hr_client,
         ticket_analyzer=mock_analyzer,
+        gmail_service=None,
+        state_repo=state_repo,
+        identity_verifier=mock_verifier,
     )
 
 

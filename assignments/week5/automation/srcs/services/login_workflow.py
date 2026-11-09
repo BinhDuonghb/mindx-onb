@@ -58,6 +58,7 @@ class LoginWorkflow:
         ticket_analyzer: TicketAnalyzer,
         gmail_service: Optional["GmailService"] = None,
         state_repo: Optional[AutomationStateRepository] = None,
+        identity_verifier: Optional["IdentityVerifier"] = None,
     ):
         """Initialize workflow with dependencies.
 
@@ -67,12 +68,16 @@ class LoginWorkflow:
             ticket_analyzer: Ticket analysis service
             gmail_service: Optional email service for customer notifications
             state_repo: Optional repository for persistent communication state
+            identity_verifier: Optional identity verifier (P2 Issue #4)
         """
+        from srcs.services.identity_verifier import IdentityVerifier
+
         self.ticket_client = ticket_client
         self.hr_client = hr_client
         self.ticket_analyzer = ticket_analyzer
         self.gmail_service = gmail_service
-        self.decision_service = DecisionService()
+        self.identity_verifier = identity_verifier or IdentityVerifier(verification_source="mock_training_poc")
+        self.decision_service = DecisionService(verifier=self.identity_verifier)
         self.communication_state = CommunicationStateTracker(repo=state_repo)
 
     def execute(self, ticket_id: int, state: Optional[AutomationState] = None) -> WorkflowResult:
@@ -101,14 +106,61 @@ class LoginWorkflow:
                 )
 
             # Step 2: Check if ticket has customer email (required for any automation)
+            # P2 Issue #4: For login tickets, escalate to manual review if email missing
+            # Don't silently skip - it might be a genuine request
             if ticket.email_from is None or not ticket.email_from.strip():
-                logger.info(f"Skipping ticket {ticket_id}: no customer email set")
-                return WorkflowResult(
-                    success=True,
-                    action_taken="skipped",
-                    message="Ticket does not have customer email set. No automation applied.",
-                    ticket_id=ticket_id,
-                )
+                # Analyze first to see if it's a login issue
+                analysis = self.ticket_analyzer.analyze(ticket)
+                ticket.is_login_issue = analysis.is_login_issue
+
+                if analysis.is_login_issue:
+                    # Login issue but no email - escalate for manual review
+                    # P2 Issue #4 Fix 1: Post a clear Odoo note explaining why manual review is required
+                    logger.warning(f"Login ticket {ticket_id} has no customer email - escalating to manual review")
+
+                    try:
+                        note_success = self.ticket_client.add_log(
+                            ticket_id=ticket_id,
+                            log_message="[Automation] Login issue identified but ticket has no customer email. "
+                            "Unable to verify employee identity. Escalated to manual review for verification and reactivation."
+                        )
+
+                        # Check boolean result - if False, don't report successful escalation
+                        if not note_success:
+                            logger.warning(f"Failed to post Odoo note for missing email ticket {ticket_id}, scheduling retry")
+                            return WorkflowResult(
+                                success=False,
+                                action_taken="retry_scheduled",
+                                message="Login issue identified but failed to record escalation reason in Odoo",
+                                error_message="Failed to post manual review note",
+                                ticket_id=ticket_id,
+                            )
+                    except Exception as e:
+                        logger.warning(f"Exception posting Odoo note for ticket {ticket_id}: {str(e)}")
+                        return WorkflowResult(
+                            success=False,
+                            action_taken="retry_scheduled",
+                            message="Login issue identified but failed to record escalation reason in Odoo",
+                            error_message=str(e),
+                            ticket_id=ticket_id,
+                        )
+
+                    return WorkflowResult(
+                        success=True,
+                        action_taken="escalated_manual_review",
+                        message="Login issue identified but ticket has no customer email. Escalated for manual review.",
+                        ticket_id=ticket_id,
+                        odoo_note_completed=True,
+                    )
+                else:
+                    # Not a login issue and no email - safe to skip
+                    logger.info(f"Skipping ticket {ticket_id}: no customer email and not a login issue")
+                    return WorkflowResult(
+                        success=True,
+                        action_taken="skipped",
+                        message="Ticket does not have customer email set and is not a login issue. No automation applied.",
+                        ticket_id=ticket_id,
+                    )
 
             # Step 3: Analyze ticket for login issues
             analysis = self.ticket_analyzer.analyze(ticket)
@@ -285,10 +337,32 @@ class LoginWorkflow:
         if stage_update_completed:
             logger.info(f"Stage update already completed for ticket {ticket.id}, skipping")
         else:
+            # P2 Issue #4: Use configurable stage mapping instead of hardcoded stage_id=4
+            from srcs import config
+
+            stage_id = config.ODOO_STAGE_MAPPING.get("awaiting_confirmation", 0)
+            if stage_id == 0:
+                logger.error(
+                    f"Odoo awaiting_confirmation stage not configured. "
+                    f"Set ODOO_STAGE_AWAITING_CONFIRMATION in .env. "
+                    f"Cannot update ticket {ticket.id} stage without configuration."
+                )
+                # Fail closed: Don't proceed without proper configuration
+                return WorkflowResult(
+                    success=False,
+                    action_taken="retry_scheduled",
+                    message="Odoo stage mapping not configured",
+                    error_message="ODOO_STAGE_AWAITING_CONFIRMATION not set in configuration",
+                    ticket_id=ticket.id,
+                    employee_id=employee.employee_id,
+                    reactivation_completed=reactivation_completed,
+                    odoo_note_completed=odoo_note_completed,
+                )
+
             try:
                 success = self.ticket_client.update_stage(
                     ticket_id=ticket.id,
-                    stage_id=4,
+                    stage_id=stage_id,
                 )
 
                 # Check Odoo boolean result - False means failure
@@ -358,10 +432,34 @@ class LoginWorkflow:
         logger.info(f"Escalating ticket {ticket.id} for manual review: {decision.reason}")
 
         # Post internal note with escalation reason
-        self.ticket_client.add_log(
-            ticket_id=ticket.id,
-            log_message=f"[Automation] Escalated for manual review. {decision.reason}",
-        )
+        # P2 Issue #4 Fix 1: Check boolean result of add_log
+        try:
+            note_success = self.ticket_client.add_log(
+                ticket_id=ticket.id,
+                log_message=f"[Automation] Escalated for manual review. {decision.reason}",
+            )
+
+            # If note posting failed, don't report successful escalation
+            if not note_success:
+                logger.warning(f"Failed to post Odoo note for escalation on ticket {ticket.id}")
+                return WorkflowResult(
+                    success=False,
+                    action_taken="retry_scheduled",
+                    message="Failed to record escalation reason in Odoo",
+                    error_message="Note posting returned False",
+                    ticket_id=ticket.id,
+                    employee_id=employee_id,
+                )
+        except Exception as e:
+            logger.warning(f"Exception posting escalation note for ticket {ticket.id}: {str(e)}")
+            return WorkflowResult(
+                success=False,
+                action_taken="retry_scheduled",
+                message="Failed to record escalation reason in Odoo",
+                error_message=str(e),
+                ticket_id=ticket.id,
+                employee_id=employee_id,
+            )
 
         # Email will be sent by caller
         return WorkflowResult(
@@ -370,6 +468,7 @@ class LoginWorkflow:
             message=f"Ticket escalated for manual review: {decision.reason}",
             ticket_id=ticket.id,
             employee_id=employee_id,
+            odoo_note_completed=True,
         )
 
     def _handle_skip(self, ticket: Ticket) -> WorkflowResult:

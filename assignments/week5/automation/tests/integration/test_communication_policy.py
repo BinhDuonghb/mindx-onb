@@ -5,7 +5,7 @@ Never send ACK + Resolution in same execution (outcome-first policy).
 """
 
 import pytest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 from pathlib import Path
 
 from srcs.models import (
@@ -14,6 +14,7 @@ from srcs.models import (
 )
 from srcs.services.ticket_analyzer import IssueType, AnalysisResult
 from srcs.services.login_workflow import LoginWorkflow
+from srcs.services.identity_verifier import IdentityVerifier, VerificationStatus, VerificationResult
 from srcs.services.communication_state import CommunicationStateTracker
 from srcs.services.gmail import EmailTemplate, CommunicationEvent
 from srcs.services.decision_service import Decision
@@ -46,12 +47,23 @@ class TestOutcomeCommunicationPolicy:
     def workflow(self, state_repo):
         """Create workflow with mocked clients and persistent state."""
         gmail_service = Mock()
+
+        # P2 Issue #4: Inject verified mock verifier for legacy test compatibility
+        verifier = Mock(spec=IdentityVerifier)
+        verifier.verify = Mock(return_value=VerificationResult(
+            status=VerificationStatus.VERIFIED,
+            reason="Legacy test fixture: verified",
+            source="test_fixture",
+            verified_email=None
+        ))
+
         workflow = LoginWorkflow(
             ticket_client=Mock(),
             hr_client=Mock(),
             ticket_analyzer=Mock(),
             gmail_service=gmail_service,
             state_repo=state_repo,
+            identity_verifier=verifier,
         )
         return workflow
 
@@ -82,8 +94,10 @@ class TestOutcomeCommunicationPolicy:
         )
         workflow.hr_client.reactivate_lms_account.return_value = True
 
-        # Execute
-        result = workflow.execute(ticket_id=1)
+        # P2 Issue #4: Mock stage configuration for test
+        with patch('srcs.config.ODOO_STAGE_MAPPING', {"awaiting_confirmation": 5}):
+            # Execute
+            result = workflow.execute(ticket_id=1)
 
         # Verify exactly ONE email sent: RESOLUTION
         assert workflow.gmail_service.send_email.call_count == 1

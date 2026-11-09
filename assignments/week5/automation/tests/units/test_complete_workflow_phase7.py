@@ -1,9 +1,13 @@
 """Phase 7 TDD: Comprehensive workflow tests - RED phase tests."""
 
 import pytest
+import tempfile
+from pathlib import Path
 from unittest.mock import Mock, patch
 from datetime import datetime, timezone
 from srcs.services.login_workflow import LoginWorkflow
+from srcs.services.identity_verifier import IdentityVerifier, VerificationStatus, VerificationResult
+from srcs.repositories.automation_state_repository import AutomationStateRepository
 from srcs.services.gmail import GmailService, EmailTemplate, CommunicationEvent
 from srcs.services.communication_state import CommunicationStateTracker
 from srcs.models import Ticket, Employee, EmployeeStatus
@@ -15,16 +19,43 @@ class TestCompleteWorkflowLifecycle:
     """Test complete workflow from ticket received to confirmation."""
 
     @pytest.fixture
-    def setup(self):
+    def temp_db(self):
+        fd, path = tempfile.mkstemp(suffix='.db')
+        import os
+        os.close(fd)
+        yield Path(path)
+        if Path(path).exists():
+            try:
+                Path(path).unlink()
+            except:
+                pass
+
+    @pytest.fixture
+    def state_repo(self, temp_db):
+        return AutomationStateRepository(db_path=temp_db)
+
+    @pytest.fixture
+    def setup(self, state_repo):
         """Setup workflow with all dependencies."""
         gmail_service = Mock(spec=GmailService)
         gmail_service.send_email = Mock(return_value=True)
+
+        # P2 Issue #4: Inject verified mock verifier for legacy test compatibility
+        verifier = Mock(spec=IdentityVerifier)
+        verifier.verify = Mock(return_value=VerificationResult(
+            status=VerificationStatus.VERIFIED,
+            reason="Legacy test fixture: verified",
+            source="test_fixture",
+            verified_email=None
+        ))
 
         workflow = LoginWorkflow(
             ticket_client=Mock(),
             hr_client=Mock(),
             ticket_analyzer=Mock(),
             gmail_service=gmail_service,
+            state_repo=state_repo,
+            identity_verifier=verifier,
         )
 
         return {
@@ -164,11 +195,21 @@ class TestMultipleTicketsIndependent:
         gmail_service = Mock(spec=GmailService)
         gmail_service.send_email = Mock(return_value=True)
 
+        # P2 Issue #4: Inject verified mock verifier for legacy test compatibility
+        verifier = Mock(spec=IdentityVerifier)
+        verifier.verify = Mock(return_value=VerificationResult(
+            status=VerificationStatus.VERIFIED,
+            reason="Legacy test fixture: verified",
+            source="test_fixture",
+            verified_email=None
+        ))
+
         workflow = LoginWorkflow(
             ticket_client=Mock(),
             hr_client=Mock(),
             ticket_analyzer=Mock(),
             gmail_service=gmail_service,
+            identity_verifier=verifier,
         )
 
         # Setup ticket 1
@@ -309,11 +350,21 @@ class TestFailurePaths:
         gmail_service = Mock(spec=GmailService)
         gmail_service.send_email = Mock(return_value=False)  # Email fails
 
+        # P2 Issue #4: Inject verified mock verifier for legacy test compatibility
+        verifier = Mock(spec=IdentityVerifier)
+        verifier.verify = Mock(return_value=VerificationResult(
+            status=VerificationStatus.VERIFIED,
+            reason="Legacy test fixture: verified",
+            source="test_fixture",
+            verified_email=None
+        ))
+
         workflow = LoginWorkflow(
             ticket_client=Mock(),
             hr_client=Mock(),
             ticket_analyzer=Mock(),
             gmail_service=gmail_service,
+            identity_verifier=verifier,
         )
 
         ticket = Ticket(id=400, name="Issue", email_from="user@company.com")

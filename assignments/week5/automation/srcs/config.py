@@ -92,6 +92,25 @@ MAX_RETRIES = int(os.getenv("MAX_RETRIES", "3"))
 # HR System Cache TTL (seconds)
 HR_CACHE_TTL = int(os.getenv("HR_CACHE_TTL", "300"))
 
+# Odoo Stage Mapping (P2 Issue #4: Remove hardcoded stage IDs)
+# Maps workflow outcomes to Odoo stage IDs for ticket updates
+# These must be configured by the Odoo administrator based on their system setup
+ODOO_STAGE_MAPPING = {
+    # Stage ID used when awaiting confirmation from the ticket owner
+    # Typically applied after account reactivation is completed
+    "awaiting_confirmation": int(os.getenv("ODOO_STAGE_AWAITING_CONFIRMATION", "0")),
+}
+
+# Validate stage mapping is configured
+if ODOO_STAGE_MAPPING["awaiting_confirmation"] == 0:
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.warning(
+        "Odoo stage mapping not configured. "
+        "Set ODOO_STAGE_AWAITING_CONFIRMATION in .env to the ID of your 'Awaiting Confirmation' stage. "
+        "Reactivation workflow will fail safely rather than using a guessed stage ID."
+    )
+
 # Gmail SMTP Configuration
 SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
 SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))

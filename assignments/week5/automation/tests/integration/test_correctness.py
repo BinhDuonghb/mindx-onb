@@ -19,6 +19,7 @@ from srcs.models import (
 )
 from srcs.services.ticket_analyzer import IssueType, AnalysisResult
 from srcs.services.login_workflow import LoginWorkflow
+from srcs.services.identity_verifier import IdentityVerifier, VerificationStatus, VerificationResult
 from srcs.repositories.automation_state_repository import AutomationStateRepository
 from srcs.services.gmail import EmailTemplate, CommunicationEvent
 
@@ -44,12 +45,22 @@ class TestOdooBooleanResults:
 
     @pytest.fixture
     def workflow(self, state_repo):
+        # P2 Issue #4: Inject verified mock verifier for legacy test compatibility
+        verifier = Mock(spec=IdentityVerifier)
+        verifier.verify = Mock(return_value=VerificationResult(
+            status=VerificationStatus.VERIFIED,
+            reason="Legacy test fixture: verified",
+            source="test_fixture",
+            verified_email=None
+        ))
+
         return LoginWorkflow(
             ticket_client=Mock(),
             hr_client=Mock(),
             ticket_analyzer=Mock(),
             gmail_service=Mock(),
             state_repo=state_repo,
+            identity_verifier=verifier,
         )
 
     def test_odoo_note_failure_schedules_retry(self, workflow):
@@ -150,12 +161,21 @@ class TestPartialRecovery:
 
     @pytest.fixture
     def workflow(self, state_repo):
+        # P2 Issue #4: Inject verified mock verifier for legacy test compatibility
+        verifier = Mock(spec=IdentityVerifier)
+        verifier.verify = Mock(return_value=VerificationResult(
+            status=VerificationStatus.VERIFIED,
+            reason="Legacy test fixture: verified",
+            source="test_fixture",
+            verified_email=None
+        ))
         return LoginWorkflow(
             ticket_client=Mock(),
             hr_client=Mock(),
             ticket_analyzer=Mock(),
             gmail_service=Mock(),
             state_repo=state_repo,
+            identity_verifier=verifier,
         )
 
     def test_retry_skips_completed_reactivation(self, workflow, state_repo):
@@ -282,12 +302,21 @@ class TestEmailFailureRecovery:
 
     @pytest.fixture
     def workflow(self, state_repo):
+        # P2 Issue #4: Inject verified mock verifier for legacy test compatibility
+        verifier = Mock(spec=IdentityVerifier)
+        verifier.verify = Mock(return_value=VerificationResult(
+            status=VerificationStatus.VERIFIED,
+            reason="Legacy test fixture: verified",
+            source="test_fixture",
+            verified_email=None
+        ))
         return LoginWorkflow(
             ticket_client=Mock(),
             hr_client=Mock(),
             ticket_analyzer=Mock(),
             gmail_service=Mock(),
             state_repo=state_repo,
+            identity_verifier=verifier,
         )
 
     def test_email_send_failure_persists_state(self, workflow):
@@ -366,6 +395,15 @@ class TestFullRetryFlowWithCallCounts:
             deactivation_reason=DeactivationReason.INACTIVITY_30_DAYS,
         )
 
+        # P2 Issue #4: Inject verified mock verifier for legacy test compatibility
+        verifier1 = Mock(spec=IdentityVerifier)
+        verifier1.verify = Mock(return_value=VerificationResult(
+            status=VerificationStatus.VERIFIED,
+            reason="Legacy test fixture: verified",
+            source="test_fixture",
+            verified_email=None
+        ))
+
         # First attempt: mock clients
         workflow1 = LoginWorkflow(
             ticket_client=Mock(),
@@ -373,6 +411,7 @@ class TestFullRetryFlowWithCallCounts:
             ticket_analyzer=Mock(),
             gmail_service=Mock(),
             state_repo=state_repo,
+            identity_verifier=verifier1,
         )
 
         workflow1.ticket_client.get_ticket.return_value = ticket
@@ -417,12 +456,21 @@ class TestFullRetryFlowWithCallCounts:
         assert state_after_first.odoo_note_completed is False
 
         # Second attempt (retry): fresh workflow, same repo
+        verifier2 = Mock(spec=IdentityVerifier)
+        verifier2.verify = Mock(return_value=VerificationResult(
+            status=VerificationStatus.VERIFIED,
+            reason="Legacy test fixture: verified",
+            source="test_fixture",
+            verified_email=None
+        ))
+
         workflow2 = LoginWorkflow(
             ticket_client=Mock(),
             hr_client=Mock(),
             ticket_analyzer=Mock(),
             gmail_service=Mock(),
             state_repo=state_repo,
+            identity_verifier=verifier2,
         )
 
         workflow2.ticket_client.get_ticket.return_value = ticket

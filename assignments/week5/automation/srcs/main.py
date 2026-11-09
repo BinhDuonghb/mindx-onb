@@ -52,7 +52,7 @@ class AutomationExecutor:
     """Executes the complete automation workflow."""
 
     def __init__(self, ticket_client=None, hr_client=None, ticket_analyzer=None,
-                 gmail_service=None, state_repo=None):
+                 gmail_service=None, state_repo=None, identity_verifier=None):
         """Initialize executor with clients and services.
 
         Args:
@@ -61,6 +61,7 @@ class AutomationExecutor:
             ticket_analyzer: Optional mocked ticket analyzer for testing
             gmail_service: Optional mocked Gmail service for testing
             state_repo: Optional mocked state repository for testing
+            identity_verifier: Optional identity verifier (P2 Issue #4)
         """
         try:
             # If dependencies are provided (for testing), use them directly
@@ -70,6 +71,7 @@ class AutomationExecutor:
                 self.ticket_analyzer = ticket_analyzer
                 self.gmail_service = gmail_service
                 self.state_repo = state_repo
+                self.identity_verifier = identity_verifier
                 self.poller = None  # For testing, we don't need poller
                 self.decision_service = None
                 self.workflow = None
@@ -137,6 +139,7 @@ class AutomationExecutor:
                 ticket_analyzer=self.ticket_analyzer,
                 gmail_service=gmail_service,
                 state_repo=self.state_repo,
+                identity_verifier=None,  # P2 Issue #4: Use default POC verifier
             )
 
             # Metrics
