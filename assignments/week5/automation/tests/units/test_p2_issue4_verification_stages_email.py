@@ -23,6 +23,7 @@ from srcs.services.login_workflow import LoginWorkflow
 from srcs.services.identity_verifier import IdentityVerifier, VerificationStatus
 from srcs.services.decision_service import DecisionService, Decision
 from srcs.services.ticket_poller import PollingMetrics
+from srcs.clients.odoo.write_outcome import WriteOutcome, WriteOutcomeStatus
 
 
 class TestIdentityVerification:
@@ -226,8 +227,8 @@ class TestOdooStageMapping:
 
             # Mock clients
             ticket_client = Mock()
-            ticket_client.update_stage = Mock(return_value=True)
-            ticket_client.add_log = Mock(return_value=True)
+            ticket_client.update_stage = Mock(return_value=WriteOutcome(status=WriteOutcomeStatus.SUCCESS))
+            ticket_client.add_log = Mock(return_value=WriteOutcome(status=WriteOutcomeStatus.SUCCESS))
 
             hr_client = Mock()
             hr_client.reactivate_lms_account = Mock(return_value=True)
@@ -341,7 +342,7 @@ class TestMissingEmailHandling:
         # Mock clients - return real objects, not mocks
         ticket_client = Mock()
         ticket_client.get_ticket = Mock(return_value=ticket)
-        ticket_client.add_log = Mock(return_value=True)
+        ticket_client.add_log = Mock(return_value=WriteOutcome(status=WriteOutcomeStatus.SUCCESS))
 
         hr_client = Mock()
 
@@ -381,7 +382,7 @@ class TestMissingEmailHandling:
         # Mock clients - return real objects
         ticket_client = Mock()
         ticket_client.get_ticket = Mock(return_value=ticket)
-        ticket_client.add_log = Mock(return_value=True)
+        ticket_client.add_log = Mock(return_value=WriteOutcome(status=WriteOutcomeStatus.SUCCESS))
 
         hr_client = Mock()
         hr_client.reactivate_lms_account = Mock()
@@ -457,7 +458,10 @@ class TestMissingEmailHandling:
         # Mock clients - return real objects
         ticket_client = Mock()
         ticket_client.get_ticket = Mock(return_value=ticket)
-        ticket_client.add_log = Mock(return_value=False)  # Note posting fails
+        from srcs.clients.odoo.write_outcome import WriteOutcome, WriteOutcomeStatus
+        ticket_client.add_log = Mock(return_value=WriteOutcome(
+            status=WriteOutcomeStatus.CONFIRMED_FAILURE, error="Rejected before execution"
+        ))  # Confirmed non-execution is safely retryable
 
         hr_client = Mock()
 

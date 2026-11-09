@@ -23,6 +23,7 @@ from srcs.services.ticket_analyzer import IssueType, AnalysisResult
 from srcs.services.login_workflow import LoginWorkflow
 from srcs.repositories.automation_state_repository import AutomationStateRepository
 from srcs.services.ticket_fingerprinter import TicketFingerprinter
+from srcs.clients.odoo.write_outcome import WriteOutcome, WriteOutcomeStatus
 
 
 class TestPhase1Round2FullReliability:
@@ -101,8 +102,8 @@ class TestPhase1Round2FullReliability:
             confidence=0.9,
         )
         workflow.hr_client.reactivate_lms_account.return_value = True  # Success
-        workflow.ticket_client.add_log.return_value = True  # Success
-        workflow.ticket_client.update_stage.return_value = True  # Success
+        workflow.ticket_client.add_log.return_value = WriteOutcome(status=WriteOutcomeStatus.SUCCESS)  # Success
+        workflow.ticket_client.update_stage.return_value = WriteOutcome(status=WriteOutcomeStatus.SUCCESS)  # Success
         workflow.gmail_service.send_email.return_value = False  # SMTP fails
 
         # Worker A claims ticket
@@ -184,8 +185,8 @@ class TestPhase1Round2FullReliability:
             confidence=0.9,
         )
         workflow.hr_client.reactivate_lms_account.return_value = True
-        workflow.ticket_client.add_log.return_value = True
-        workflow.ticket_client.update_stage.return_value = True
+        workflow.ticket_client.add_log.return_value = WriteOutcome(status=WriteOutcomeStatus.SUCCESS)
+        workflow.ticket_client.update_stage.return_value = WriteOutcome(status=WriteOutcomeStatus.SUCCESS)
         workflow.gmail_service.send_email.return_value = True  # Email succeeds this time
 
         # Execute with recovered state

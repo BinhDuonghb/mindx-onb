@@ -13,6 +13,7 @@ from srcs.services.communication_state import CommunicationStateTracker
 from srcs.models import Ticket, Employee, EmployeeStatus
 from srcs.services.ticket_analyzer import AnalysisResult, IssueType
 from srcs.services.decision_service import DeactivationReason
+from srcs.clients.odoo.write_outcome import WriteOutcome, WriteOutcomeStatus
 
 
 class TestCompleteWorkflowLifecycle:
@@ -49,8 +50,13 @@ class TestCompleteWorkflowLifecycle:
             verified_email=None
         ))
 
+        # P2 Issue #5: Configure ticket_client to return WriteOutcome objects
+        ticket_client = Mock()
+        ticket_client.add_log = Mock(return_value=WriteOutcome(status=WriteOutcomeStatus.SUCCESS))
+        ticket_client.update_stage = Mock(return_value=WriteOutcome(status=WriteOutcomeStatus.SUCCESS))
+
         workflow = LoginWorkflow(
-            ticket_client=Mock(),
+            ticket_client=ticket_client,
             hr_client=Mock(),
             ticket_analyzer=Mock(),
             gmail_service=gmail_service,
@@ -297,8 +303,13 @@ class TestFollowUpReminderIntegration:
         gmail_service = Mock(spec=GmailService)
         gmail_service.send_email = Mock(return_value=True)
 
+        # P2 Issue #5: Configure ticket_client to return WriteOutcome objects
+        ticket_client = Mock()
+        ticket_client.add_log = Mock(return_value=WriteOutcome(status=WriteOutcomeStatus.SUCCESS))
+        ticket_client.update_stage = Mock(return_value=WriteOutcome(status=WriteOutcomeStatus.SUCCESS))
+
         workflow = LoginWorkflow(
-            ticket_client=Mock(),
+            ticket_client=ticket_client,
             hr_client=Mock(),
             ticket_analyzer=Mock(),
             gmail_service=gmail_service,

@@ -68,6 +68,12 @@ class AutomationState:
     stage_update_completed: bool = False
     email_delivery_completed: bool = False  # P1-03: Track email delivery success separately
 
+    # P2 Issue #5: Track ambiguous Odoo write outcomes
+    # Distinguishes between confirmed success/failure and unknown outcomes
+    # Format: "operation_type:status" e.g., "message_post:unknown", "write:confirmed_failure"
+    ambiguous_write_outcome: Optional[str] = None
+    ambiguous_write_context: Optional[str] = None  # Error message or context for manual review
+
     def __post_init__(self) -> None:
         """Validate state after initialization."""
         if not self.ticket_id or self.ticket_id <= 0:

@@ -18,6 +18,7 @@ from srcs.models import (
 from srcs.services.ticket_analyzer import IssueType, AnalysisResult
 from srcs.services.login_workflow import LoginWorkflow
 from srcs.services.identity_verifier import IdentityVerifier, VerificationStatus, VerificationResult
+from srcs.clients.odoo.write_outcome import WriteOutcome, WriteOutcomeStatus
 from srcs.repositories.automation_state_repository import AutomationStateRepository
 from srcs.services.gmail import EmailTemplate, CommunicationEvent
 from srcs.services.ticket_fingerprinter import TicketFingerprinter
@@ -108,8 +109,8 @@ class TestP101PartialRetryWorkflow:
             confidence=0.9,
         )
         workflow.hr_client.reactivate_lms_account.return_value = True
-        workflow.ticket_client.add_log.return_value = True  # Now succeeds
-        workflow.ticket_client.update_stage.return_value = True  # Now succeeds
+        workflow.ticket_client.add_log.return_value = WriteOutcome(status=WriteOutcomeStatus.SUCCESS)
+        workflow.ticket_client.update_stage.return_value = WriteOutcome(status=WriteOutcomeStatus.SUCCESS)
         workflow.gmail_service.send_email.return_value = True
 
         # Execute retry with prior state
@@ -160,8 +161,12 @@ class TestP101PartialRetryWorkflow:
             confidence=0.9,
         )
         workflow.hr_client.reactivate_lms_account.return_value = True
-        workflow.ticket_client.add_log.return_value = False  # Fails in Run 1
-        workflow.ticket_client.update_stage.return_value = True
+        workflow.ticket_client.add_log.return_value = WriteOutcome(
+            status=WriteOutcomeStatus.CONFIRMED_FAILURE,
+            error="Note posting failed",
+            is_retryable=True
+        )  # Fails in Run 1
+        workflow.ticket_client.update_stage.return_value = WriteOutcome(status=WriteOutcomeStatus.SUCCESS)
         workflow.gmail_service.send_email.return_value = True
 
         # Run 1 Execution
@@ -207,8 +212,8 @@ class TestP101PartialRetryWorkflow:
             confidence=0.9,
         )
         workflow.hr_client.reactivate_lms_account.return_value = True
-        workflow.ticket_client.add_log.return_value = True  # Now succeeds
-        workflow.ticket_client.update_stage.return_value = True
+        workflow.ticket_client.add_log.return_value = WriteOutcome(status=WriteOutcomeStatus.SUCCESS)  # Now succeeds
+        workflow.ticket_client.update_stage.return_value = WriteOutcome(status=WriteOutcomeStatus.SUCCESS)
         workflow.gmail_service.send_email.return_value = True
 
         # Run 2 Execution with prior state
@@ -378,8 +383,14 @@ class TestP103EmailDeliveryFailure:
             source="test_fixture",
             verified_email=None
         ))
+
+        # P2 Issue #5: Configure ticket_client to return WriteOutcome objects
+        ticket_client = Mock()
+        ticket_client.add_log = Mock(return_value=WriteOutcome(status=WriteOutcomeStatus.SUCCESS))
+        ticket_client.update_stage = Mock(return_value=WriteOutcome(status=WriteOutcomeStatus.SUCCESS))
+
         return LoginWorkflow(
-            ticket_client=Mock(),
+            ticket_client=ticket_client,
             hr_client=Mock(),
             ticket_analyzer=Mock(),
             gmail_service=Mock(),
@@ -418,8 +429,8 @@ class TestP103EmailDeliveryFailure:
             confidence=0.9,
         )
         workflow.hr_client.reactivate_lms_account.return_value = True
-        workflow.ticket_client.add_log.return_value = True
-        workflow.ticket_client.update_stage.return_value = True
+        workflow.ticket_client.add_log.return_value = WriteOutcome(status=WriteOutcomeStatus.SUCCESS)
+        workflow.ticket_client.update_stage.return_value = WriteOutcome(status=WriteOutcomeStatus.SUCCESS)
         workflow.gmail_service.send_email.return_value = False  # SMTP fails
 
         # Execute
@@ -464,8 +475,8 @@ class TestP103EmailDeliveryFailure:
             confidence=0.9,
         )
         workflow.hr_client.reactivate_lms_account.return_value = True
-        workflow.ticket_client.add_log.return_value = True
-        workflow.ticket_client.update_stage.return_value = True
+        workflow.ticket_client.add_log.return_value = WriteOutcome(status=WriteOutcomeStatus.SUCCESS)
+        workflow.ticket_client.update_stage.return_value = WriteOutcome(status=WriteOutcomeStatus.SUCCESS)
         workflow.gmail_service.send_email.return_value = False  # Email fails
 
         result1 = workflow.execute(ticket_id=3002)
@@ -511,8 +522,8 @@ class TestP103EmailDeliveryFailure:
             confidence=0.9,
         )
         workflow.hr_client.reactivate_lms_account.return_value = True
-        workflow.ticket_client.add_log.return_value = True
-        workflow.ticket_client.update_stage.return_value = True
+        workflow.ticket_client.add_log.return_value = WriteOutcome(status=WriteOutcomeStatus.SUCCESS)
+        workflow.ticket_client.update_stage.return_value = WriteOutcome(status=WriteOutcomeStatus.SUCCESS)
         workflow.gmail_service.send_email.return_value = True  # Email succeeds
 
         # Retry with prior state
@@ -559,8 +570,8 @@ class TestP103EmailDeliveryFailure:
             confidence=0.9,
         )
         workflow.hr_client.reactivate_lms_account.return_value = True
-        workflow.ticket_client.add_log.return_value = True
-        workflow.ticket_client.update_stage.return_value = True
+        workflow.ticket_client.add_log.return_value = WriteOutcome(status=WriteOutcomeStatus.SUCCESS)
+        workflow.ticket_client.update_stage.return_value = WriteOutcome(status=WriteOutcomeStatus.SUCCESS)
         workflow.gmail_service.send_email.return_value = True
 
         result1 = workflow.execute(ticket_id=3003)
@@ -593,8 +604,8 @@ class TestP103EmailDeliveryFailure:
             confidence=0.9,
         )
         workflow.hr_client.reactivate_lms_account.return_value = True
-        workflow.ticket_client.add_log.return_value = True
-        workflow.ticket_client.update_stage.return_value = True
+        workflow.ticket_client.add_log.return_value = WriteOutcome(status=WriteOutcomeStatus.SUCCESS)
+        workflow.ticket_client.update_stage.return_value = WriteOutcome(status=WriteOutcomeStatus.SUCCESS)
         workflow.gmail_service.send_email.return_value = True
 
         retrieved_state = state_repo.get(3003)

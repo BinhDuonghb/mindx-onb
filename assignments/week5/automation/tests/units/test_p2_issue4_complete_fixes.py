@@ -19,6 +19,7 @@ from srcs.repositories.automation_state_repository import AutomationStateReposit
 from srcs.services.ticket_analyzer import IssueType, AnalysisResult
 from srcs.services.login_workflow import LoginWorkflow
 from srcs.services.identity_verifier import IdentityVerifier, VerificationStatus, VerificationResult
+from srcs.clients.odoo.write_outcome import WriteOutcome, WriteOutcomeStatus
 
 
 class TestMissingEmailEscalation:
@@ -52,7 +53,7 @@ class TestMissingEmailEscalation:
         # Mock clients
         ticket_client = Mock()
         ticket_client.get_ticket = Mock(return_value=ticket)
-        ticket_client.add_log = Mock(return_value=True)  # Success
+        ticket_client.add_log = Mock(return_value=WriteOutcome(status=WriteOutcomeStatus.SUCCESS))  # Success
 
         hr_client = Mock()
 
@@ -96,7 +97,11 @@ class TestMissingEmailEscalation:
         # Mock clients - note posting fails
         ticket_client = Mock()
         ticket_client.get_ticket = Mock(return_value=ticket)
-        ticket_client.add_log = Mock(return_value=False)  # Failure
+        ticket_client.add_log = Mock(return_value=WriteOutcome(
+            status=WriteOutcomeStatus.CONFIRMED_FAILURE,
+            error="Note posting failed",
+            is_retryable=True
+        ))  # Failure
 
         hr_client = Mock()
 
@@ -138,7 +143,7 @@ class TestMissingEmailEscalation:
         # Mock clients
         ticket_client = Mock()
         ticket_client.get_ticket = Mock(return_value=ticket)
-        ticket_client.add_log = Mock(return_value=True)
+        ticket_client.add_log = Mock(return_value=WriteOutcome(status=WriteOutcomeStatus.SUCCESS))
 
         hr_client = Mock()
         hr_client.get_employee_by_email = Mock()  # Should not be called
@@ -209,8 +214,8 @@ class TestLegacyFixtureInjection:
         # Mock clients
         ticket_client = Mock()
         ticket_client.get_ticket = Mock(return_value=ticket)
-        ticket_client.add_log = Mock(return_value=True)
-        ticket_client.update_stage = Mock(return_value=True)
+        ticket_client.add_log = Mock(return_value=WriteOutcome(status=WriteOutcomeStatus.SUCCESS))
+        ticket_client.update_stage = Mock(return_value=WriteOutcome(status=WriteOutcomeStatus.SUCCESS))
 
         hr_client = Mock()
         hr_client.get_employee_by_email = Mock(return_value=employee)
@@ -273,7 +278,7 @@ class TestLegacyFixtureInjection:
         # Mock clients
         ticket_client = Mock()
         ticket_client.get_ticket = Mock(return_value=ticket)
-        ticket_client.add_log = Mock(return_value=True)
+        ticket_client.add_log = Mock(return_value=WriteOutcome(status=WriteOutcomeStatus.SUCCESS))
 
         hr_client = Mock()
         hr_client.get_employee_by_email = Mock(return_value=employee)
@@ -348,8 +353,8 @@ class TestStageAndEscalationSafety:
         # Mock clients
         ticket_client = Mock()
         ticket_client.get_ticket = Mock(return_value=ticket)
-        ticket_client.add_log = Mock(return_value=True)
-        ticket_client.update_stage = Mock(return_value=True)
+        ticket_client.add_log = Mock(return_value=WriteOutcome(status=WriteOutcomeStatus.SUCCESS))
+        ticket_client.update_stage = Mock(return_value=WriteOutcome(status=WriteOutcomeStatus.SUCCESS))
 
         hr_client = Mock()
         hr_client.get_employee_by_email = Mock(return_value=employee)
@@ -410,7 +415,11 @@ class TestStageAndEscalationSafety:
         # Mock clients - note posting will fail
         ticket_client = Mock()
         ticket_client.get_ticket = Mock(return_value=ticket)
-        ticket_client.add_log = Mock(return_value=False)  # Failure
+        ticket_client.add_log = Mock(return_value=WriteOutcome(
+            status=WriteOutcomeStatus.CONFIRMED_FAILURE,
+            error="Note posting failed",
+            is_retryable=True
+        ))  # Failure
 
         hr_client = Mock()
         hr_client.get_employee_by_email = Mock(return_value=employee)

@@ -63,7 +63,9 @@ class AutomationStateRepository:
                         stage_update_completed INTEGER NOT NULL DEFAULT 0,
                         email_delivery_completed INTEGER NOT NULL DEFAULT 0,
                         processing_lease_until TEXT,
-                        lease_owner_token TEXT
+                        lease_owner_token TEXT,
+                        ambiguous_write_outcome TEXT,
+                        ambiguous_write_context TEXT
                     )
                 """)
 
@@ -120,6 +122,8 @@ class AutomationStateRepository:
         Handles:
         - email_delivery_completed: Track email delivery success separately (P1-03)
         - lease_owner_token: Ownership tokens for lease safety (TASK 3)
+        - ambiguous_write_outcome: P2 Issue #5 unknown write tracking
+        - ambiguous_write_context: P2 Issue #5 unknown write error context
 
         Args:
             conn: Active database connection
@@ -137,7 +141,9 @@ class AutomationStateRepository:
             # List of required columns with their definitions
             required_columns = {
                 "email_delivery_completed": "INTEGER NOT NULL DEFAULT 0",
-                "lease_owner_token": "TEXT"
+                "lease_owner_token": "TEXT",
+                "ambiguous_write_outcome": "TEXT",
+                "ambiguous_write_context": "TEXT"
             }
 
             # Migrate any missing columns
@@ -257,7 +263,8 @@ class AutomationStateRepository:
                             next_retry_at = ?, last_error = ?, reactivation_completed = ?,
                             odoo_note_completed = ?, customer_response_completed = ?,
                             stage_update_completed = ?, email_delivery_completed = ?,
-                            processing_lease_until = COALESCE(?, processing_lease_until)
+                            processing_lease_until = COALESCE(?, processing_lease_until),
+                            ambiguous_write_outcome = ?, ambiguous_write_context = ?
                         WHERE ticket_id = ? AND lease_owner_token = ? AND
                               (processing_lease_until IS NULL OR processing_lease_until > ?)
                     """, (
@@ -276,6 +283,8 @@ class AutomationStateRepository:
                         1 if state.stage_update_completed else 0,
                         1 if state.email_delivery_completed else 0,
                         state.processing_lease_until.isoformat() if state.processing_lease_until else None,
+                        state.ambiguous_write_outcome,
+                        state.ambiguous_write_context,
                         state.ticket_id,
                         owner_token,
                         now.isoformat()
@@ -296,8 +305,8 @@ class AutomationStateRepository:
                             next_retry_at, last_error, reactivation_completed,
                             odoo_note_completed, customer_response_completed,
                             stage_update_completed, email_delivery_completed, processing_lease_until,
-                            lease_owner_token
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            lease_owner_token, ambiguous_write_outcome, ambiguous_write_context
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         ON CONFLICT(ticket_id) DO UPDATE SET
                             fingerprint = excluded.fingerprint,
                             status = excluded.status,
@@ -314,7 +323,9 @@ class AutomationStateRepository:
                             stage_update_completed = excluded.stage_update_completed,
                             email_delivery_completed = excluded.email_delivery_completed,
                             processing_lease_until = COALESCE(excluded.processing_lease_until, processing_lease_until),
-                            lease_owner_token = COALESCE(excluded.lease_owner_token, lease_owner_token)
+                            lease_owner_token = COALESCE(excluded.lease_owner_token, lease_owner_token),
+                            ambiguous_write_outcome = excluded.ambiguous_write_outcome,
+                            ambiguous_write_context = excluded.ambiguous_write_context
                     """, (
                         state.ticket_id,
                         state.fingerprint,
@@ -334,6 +345,8 @@ class AutomationStateRepository:
                         1 if state.email_delivery_completed else 0,
                         state.processing_lease_until.isoformat() if state.processing_lease_until else None,
                         state.lease_owner_token,
+                        state.ambiguous_write_outcome,
+                        state.ambiguous_write_context,
                     ))
 
                 conn.commit()
@@ -893,6 +906,17 @@ class AutomationStateRepository:
         except (IndexError, KeyError):
             lease_owner_token = None
 
+        # P2 Issue #5: Handle ambiguous write outcome fields (backward compatibility)
+        try:
+            ambiguous_write_outcome = row["ambiguous_write_outcome"]
+        except (IndexError, KeyError):
+            ambiguous_write_outcome = None
+
+        try:
+            ambiguous_write_context = row["ambiguous_write_context"]
+        except (IndexError, KeyError):
+            ambiguous_write_context = None
+
         return AutomationState(
             ticket_id=row["ticket_id"],
             fingerprint=row["fingerprint"],
@@ -912,4 +936,6 @@ class AutomationStateRepository:
             stage_update_completed=bool(row["stage_update_completed"]),
             email_delivery_completed=email_delivery_completed,
             lease_owner_token=lease_owner_token,
+            ambiguous_write_outcome=ambiguous_write_outcome,
+            ambiguous_write_context=ambiguous_write_context,
         )

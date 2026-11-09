@@ -28,6 +28,7 @@ from srcs.services.login_workflow import LoginWorkflow
 from srcs.repositories.automation_state_repository import AutomationStateRepository
 from srcs.services.ticket_poller import TicketPoller, PollingMetrics
 from srcs.main import AutomationExecutor
+from srcs.clients.odoo.write_outcome import WriteOutcome, WriteOutcomeStatus
 
 
 class TestRunnerP2Issue4Final:
@@ -98,6 +99,8 @@ class TestRunnerP2Issue4Final:
         # Setup: Mock clients
         ticket_client = Mock()
         ticket_client.get_ticket.return_value = ticket
+        ticket_client.add_log = Mock(return_value=WriteOutcome(status=WriteOutcomeStatus.SUCCESS))
+        ticket_client.update_stage = Mock(return_value=WriteOutcome(status=WriteOutcomeStatus.SUCCESS))
 
         hr_client = Mock()
         hr_client.get_employee_by_email.return_value = employee
@@ -223,6 +226,8 @@ class TestRunnerP2Issue4Final:
         # Setup: Mock clients
         ticket_client = Mock()
         ticket_client.get_ticket.return_value = ticket
+        ticket_client.add_log = Mock(return_value=WriteOutcome(status=WriteOutcomeStatus.SUCCESS))
+        ticket_client.update_stage = Mock(return_value=WriteOutcome(status=WriteOutcomeStatus.SUCCESS))
 
         hr_client = Mock()
         hr_client.get_employee_by_email.return_value = employee
@@ -316,6 +321,8 @@ class TestRunnerP2Issue4Final:
         # Setup: Mock clients
         ticket_client = Mock()
         ticket_client.get_ticket.return_value = ticket
+        ticket_client.add_log = Mock(return_value=WriteOutcome(status=WriteOutcomeStatus.SUCCESS))
+        ticket_client.update_stage = Mock(return_value=WriteOutcome(status=WriteOutcomeStatus.SUCCESS))
 
         hr_client = Mock()
         hr_client.get_employee_by_email.return_value = employee

@@ -55,7 +55,7 @@ class TestTicketClientWriteOperations:
             log_message="[Automation] Account reactivation processed successfully"
         )
 
-        assert success is True
+        assert success.is_success()
         logger.info(f"✓ Note added to ticket {ticket_id}")
 
     def test_add_internal_log_to_ticket(self, real_ticket_client : TicketClient):
@@ -77,7 +77,7 @@ class TestTicketClientWriteOperations:
             log_message="[Automation] Internal: Ticket processed by automation engine",
         )
 
-        assert success is True
+        assert success.is_success()
         logger.info(f"✓ Internal log added to ticket {ticket_id}")
 
     def test_add_customer_message_to_ticket(self, real_ticket_client : TicketClient):
@@ -99,7 +99,7 @@ class TestTicketClientWriteOperations:
             log_message="[Automation] Your account has been reactivated. Please try logging in again.",
         )
 
-        assert success is True
+        assert success.is_success()
         logger.info(f"✓ Customer message added to ticket {ticket_id}")
 
     def test_update_ticket_stage(self, real_ticket_client : TicketClient):
@@ -128,7 +128,7 @@ class TestTicketClientWriteOperations:
             stage_id=new_stage_id
         )
 
-        assert success is True
+        assert success.is_success()
         logger.info(f"✓ Stage updated for ticket {ticket_id} to {new_stage_id}")
 
         # Verify the stage was updated
@@ -163,7 +163,7 @@ class TestTicketClientAutomationWorkflow:
             ticket_id=ticket_id,
             log_message="[Automation] Starting automation workflow...",
         )
-        assert log_success is True
+        assert log_success.is_success()
         logger.info(f"Step 3: Added internal automation log")
 
         # Step 4: Update stage (if needed)
@@ -172,7 +172,7 @@ class TestTicketClientAutomationWorkflow:
                 ticket_id=ticket_id,
                 stage_id=2
             )
-            assert stage_success is True
+            assert stage_success.is_success()
             logger.info(f"Step 4: Updated stage to 2")
         else:
             logger.info(f"Step 4: Stage already 2, skipping update")
@@ -182,7 +182,7 @@ class TestTicketClientAutomationWorkflow:
             ticket_id=ticket_id,
             log_message="[Automation] Workflow completed successfully"
         )
-        assert note_success is True
+        assert note_success.is_success()
         logger.info(f"Step 5: Added completion note")
 
         logger.info(f"✓ Complete automation workflow test PASSED for ticket {ticket_id}")

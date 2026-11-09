@@ -1,6 +1,7 @@
 """Base Odoo API client with common HTTP functionality."""
 
 import logging
+import time
 from typing import Any, Optional, Dict
 import requests
 from requests.adapters import HTTPAdapter
@@ -41,6 +42,12 @@ class ODOOClient:
     def _create_session(self, max_retries: int) -> requests.Session:
         """Create requests session with retry strategy.
 
+        P2 Issue #5 FIX: Separate read and write retry policies.
+
+        Read operations (GET, HEAD, OPTIONS) are idempotent and safe to retry on transient failures.
+        Write operations (POST, PUT, DELETE) are non-idempotent and must not be automatically retried.
+        This prevents duplicate Odoo notes and other non-idempotent side effects on timeouts or 5xx.
+
         Args:
             max_retries: Maximum number of retries
 
@@ -49,15 +56,23 @@ class ODOOClient:
         """
         session = requests.Session()
 
-        # Configure retry strategy with exponential backoff
-        retry_strategy = Retry(
+        # SAFE: Retry policy for idempotent read operations
+        # These operations are safe to retry on transient failures.
+        # Retries use exponential backoff: 1, 2, 4 seconds between attempts.
+        read_retry_strategy = Retry(
             total=max_retries,
-            backoff_factor=1,  # 1, 2, 4 seconds between retries
+            status=max_retries,
+            connect=0,  # Never replay a possibly transmitted write after connection errors.
+            read=0,
+            other=0,
+            backoff_factor=1,
             status_forcelist=[429, 500, 502, 503, 504],
-            allowed_methods=["HEAD", "GET", "OPTIONS", "POST"],
+            allowed_methods=["HEAD", "GET", "OPTIONS"],
         )
 
-        adapter = HTTPAdapter(max_retries=retry_strategy)
+        # Mount read retry strategy for all requests
+        # Since write operations have no retry-eligible methods, they will not be auto-retried
+        adapter = HTTPAdapter(max_retries=read_retry_strategy)
         session.mount("http://", adapter)
         session.mount("https://", adapter)
 
@@ -108,6 +123,28 @@ class ODOOClient:
     def post(self, endpoint: str, **kwargs) -> requests.Response:
         """Make POST request."""
         return self._request("POST", endpoint, **kwargs)
+
+    def post_readonly(self, endpoint: str, **kwargs) -> requests.Response:
+        """Retry only explicitly selected read-only JSON-2 POST operations.
+
+        Never call this for message_post, write, or other remote mutations.
+        """
+        safe_methods = {"search", "read", "search_read", "search_count"}
+        if endpoint.rstrip("/").split("/")[-1] not in safe_methods:
+            raise ValueError(f"Not an approved read-only JSON-2 endpoint: {endpoint}")
+        for attempt in range(self.max_retries + 1):
+            try:
+                return self.post(endpoint, **kwargs)
+            except requests.exceptions.HTTPError as exc:
+                status = exc.response.status_code if exc.response is not None else None
+                if status not in (429, 500, 502, 503, 504) or attempt >= self.max_retries:
+                    raise
+            except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
+                if attempt >= self.max_retries:
+                    raise
+            # Small bounded exponential delay; no retries for non-read operations.
+            time.sleep(min(0.1 * (2 ** attempt), 1.0))
+        raise RuntimeError("unreachable")
 
     def put(self, endpoint: str, **kwargs) -> requests.Response:
         """Make PUT request."""

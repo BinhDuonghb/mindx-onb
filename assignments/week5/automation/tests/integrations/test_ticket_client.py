@@ -286,7 +286,7 @@ class TestTicketClientAddLog:
                 log_message="[Automation] Internal note",
             )
 
-        assert success is True
+        assert success.is_success()
 
         # Verify the API was called with correct internal message payload
         call_args = mock_post.call_args
@@ -431,7 +431,7 @@ class TestTicketClientUpdateStage:
 
             success = client.update_stage(ticket_id=42, stage_id=2)
 
-        assert success is True
+        assert success.is_success()
 
         # Verify the API was called with correct payload using 'vals'
         call_args = mock_post.call_args
@@ -455,7 +455,7 @@ class TestTicketClientUpdateStage:
 
             success = client.update_stage(ticket_id=42, stage_id=2)
 
-        assert success is False
+        assert success.is_failure()
 
 
 class TestTicketClientErrorHandling:
@@ -523,4 +523,4 @@ class TestTicketClientErrorHandling:
 
             success = client.add_log(ticket_id=42, log_message="Test")
 
-        assert success is False
+        assert success.is_unknown()  # Unexpected exception cannot prove remote non-execution

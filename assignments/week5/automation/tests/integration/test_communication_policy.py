@@ -19,6 +19,7 @@ from srcs.services.communication_state import CommunicationStateTracker
 from srcs.services.gmail import EmailTemplate, CommunicationEvent
 from srcs.services.decision_service import Decision
 from srcs.repositories.automation_state_repository import AutomationStateRepository
+from srcs.clients.odoo.write_outcome import WriteOutcome, WriteOutcomeStatus
 
 
 class TestOutcomeCommunicationPolicy:
@@ -57,8 +58,13 @@ class TestOutcomeCommunicationPolicy:
             verified_email=None
         ))
 
+        # P2 Issue #5: Configure ticket_client to return WriteOutcome objects
+        ticket_client = Mock()
+        ticket_client.add_log = Mock(return_value=WriteOutcome(status=WriteOutcomeStatus.SUCCESS))
+        ticket_client.update_stage = Mock(return_value=WriteOutcome(status=WriteOutcomeStatus.SUCCESS))
+
         workflow = LoginWorkflow(
-            ticket_client=Mock(),
+            ticket_client=ticket_client,
             hr_client=Mock(),
             ticket_analyzer=Mock(),
             gmail_service=gmail_service,

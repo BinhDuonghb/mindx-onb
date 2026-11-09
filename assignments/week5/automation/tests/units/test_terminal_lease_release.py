@@ -21,6 +21,7 @@ from srcs.services.ticket_fingerprinter import TicketFingerprinter
 from srcs.services.ticket_analyzer import IssueType, AnalysisResult
 from srcs.services.login_workflow import WorkflowResult
 from srcs.services.ticket_poller import PollingMetrics
+from srcs.clients.odoo.write_outcome import WriteOutcome, WriteOutcomeStatus
 
 
 class TestTerminalLeaseRelease:
@@ -96,8 +97,8 @@ class TestTerminalLeaseRelease:
             confidence=0.9
         )
         executor.hr_client.reactivate_lms_account.return_value = True
-        executor.ticket_client.add_log.return_value = True
-        executor.ticket_client.update_stage.return_value = True
+        executor.ticket_client.add_log.return_value = WriteOutcome(status=WriteOutcomeStatus.SUCCESS)
+        executor.ticket_client.update_stage.return_value = WriteOutcome(status=WriteOutcomeStatus.SUCCESS)
         executor.gmail_service.send_email.return_value = True
 
         # Mock workflow execution
@@ -266,8 +267,8 @@ class TestTerminalLeaseRelease:
             confidence=0.9
         )
         executor.hr_client.reactivate_lms_account.return_value = True
-        executor.ticket_client.add_log.return_value = True
-        executor.ticket_client.update_stage.return_value = True
+        executor.ticket_client.add_log.return_value = WriteOutcome(status=WriteOutcomeStatus.SUCCESS)
+        executor.ticket_client.update_stage.return_value = WriteOutcome(status=WriteOutcomeStatus.SUCCESS)
         executor.gmail_service.send_email.return_value = True
 
         workflow_result = WorkflowResult(

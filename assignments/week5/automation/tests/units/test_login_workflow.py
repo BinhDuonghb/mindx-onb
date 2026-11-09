@@ -10,6 +10,7 @@ from srcs.repositories.automation_state_repository import AutomationStateReposit
 from srcs.models import Ticket, Employee, EmployeeStatus
 from srcs.services.ticket_analyzer import AnalysisResult, IssueType
 from srcs.services.decision_service import Decision
+from srcs.clients.odoo.write_outcome import WriteOutcome, WriteOutcomeStatus
 
 
 @pytest.fixture
@@ -33,10 +34,11 @@ def state_repo(temp_db):
 
 @pytest.fixture
 def mock_ticket_client():
-    """Mock Odoo ticket client."""
+    """Mock Odoo ticket client - returns WriteOutcome objects for write methods."""
     client = Mock()
-    client.add_log = Mock(return_value=True)
-    client.update_stage = Mock(return_value=True)
+    # P2 Issue #5: Return WriteOutcome objects instead of bool
+    client.add_log = Mock(return_value=WriteOutcome(status=WriteOutcomeStatus.SUCCESS))
+    client.update_stage = Mock(return_value=WriteOutcome(status=WriteOutcomeStatus.SUCCESS))
     return client
 
 

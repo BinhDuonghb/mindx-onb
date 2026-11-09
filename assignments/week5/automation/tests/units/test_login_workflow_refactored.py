@@ -17,6 +17,7 @@ from srcs.services.gmail import (
 from srcs.models import Ticket, Employee, EmployeeStatus
 from srcs.services.ticket_analyzer import AnalysisResult, IssueType
 from srcs.services.decision_service import Decision, DeactivationReason
+from srcs.clients.odoo.write_outcome import WriteOutcome, WriteOutcomeStatus
 
 
 class TestLoginWorkflowEventBasedCommunication:
@@ -57,8 +58,13 @@ class TestLoginWorkflowEventBasedCommunication:
             verified_email=None
         ))
 
+        # P2 Issue #5: Configure ticket_client to return WriteOutcome objects
+        ticket_client = Mock()
+        ticket_client.add_log = Mock(return_value=WriteOutcome(status=WriteOutcomeStatus.SUCCESS))
+        ticket_client.update_stage = Mock(return_value=WriteOutcome(status=WriteOutcomeStatus.SUCCESS))
+
         return LoginWorkflow(
-            ticket_client=Mock(),
+            ticket_client=ticket_client,
             hr_client=Mock(),
             ticket_analyzer=Mock(),
             gmail_service=gmail_service,

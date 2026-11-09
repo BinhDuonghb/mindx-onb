@@ -22,6 +22,7 @@ from srcs.services.login_workflow import LoginWorkflow
 from srcs.services.identity_verifier import IdentityVerifier, VerificationStatus, VerificationResult
 from srcs.repositories.automation_state_repository import AutomationStateRepository
 from srcs.services.gmail import EmailTemplate, CommunicationEvent
+from srcs.clients.odoo.write_outcome import WriteOutcome, WriteOutcomeStatus
 
 
 class TestOdooBooleanResults:
@@ -89,7 +90,12 @@ class TestOdooBooleanResults:
             confidence=0.9,
         )
         workflow.hr_client.reactivate_lms_account.return_value = True  # Success
-        workflow.ticket_client.add_log.return_value = False  # Odoo note FAILS
+        # P2 Issue #5: Return WriteOutcome instead of bool
+        workflow.ticket_client.add_log.return_value = WriteOutcome(
+            status=WriteOutcomeStatus.CONFIRMED_FAILURE,
+            error="Odoo note posting failed",
+            is_retryable=True
+        )
 
         # Execute
         result = workflow.execute(ticket_id=101)
@@ -127,8 +133,13 @@ class TestOdooBooleanResults:
             confidence=0.9,
         )
         workflow.hr_client.reactivate_lms_account.return_value = True  # Success
-        workflow.ticket_client.add_log.return_value = True  # Success
-        workflow.ticket_client.update_stage.return_value = False  # Stage update FAILS
+        workflow.ticket_client.add_log.return_value = WriteOutcome(status=WriteOutcomeStatus.SUCCESS)
+        # P2 Issue #5: Return WriteOutcome instead of bool
+        workflow.ticket_client.update_stage.return_value = WriteOutcome(
+            status=WriteOutcomeStatus.CONFIRMED_FAILURE,
+            error="Stage update failed",
+            is_retryable=True
+        )
 
         # Execute
         result = workflow.execute(ticket_id=102)
@@ -216,8 +227,8 @@ class TestPartialRecovery:
         )
         # This time, all succeed
         workflow.hr_client.reactivate_lms_account.return_value = True
-        workflow.ticket_client.add_log.return_value = True
-        workflow.ticket_client.update_stage.return_value = True
+        workflow.ticket_client.add_log.return_value = WriteOutcome(status=WriteOutcomeStatus.SUCCESS)
+        workflow.ticket_client.update_stage.return_value = WriteOutcome(status=WriteOutcomeStatus.SUCCESS)
 
         # Execute retry with prior state
         result = workflow.execute(ticket_id=201, state=prior_state)
@@ -345,8 +356,8 @@ class TestEmailFailureRecovery:
             confidence=0.9,
         )
         workflow.hr_client.reactivate_lms_account.return_value = True
-        workflow.ticket_client.add_log.return_value = True
-        workflow.ticket_client.update_stage.return_value = True
+        workflow.ticket_client.add_log.return_value = WriteOutcome(status=WriteOutcomeStatus.SUCCESS)
+        workflow.ticket_client.update_stage.return_value = WriteOutcome(status=WriteOutcomeStatus.SUCCESS)
         workflow.gmail_service.send_email.return_value = False  # Email send FAILS
 
         # Execute
@@ -423,7 +434,11 @@ class TestFullRetryFlowWithCallCounts:
             confidence=0.9,
         )
         workflow1.hr_client.reactivate_lms_account.return_value = True  # Success
-        workflow1.ticket_client.add_log.return_value = False  # Fails
+        workflow1.ticket_client.add_log.return_value = WriteOutcome(
+            status=WriteOutcomeStatus.CONFIRMED_FAILURE,
+            error="Note posting failed",
+            is_retryable=True
+        )  # Fails
 
         # First execution
         result1 = workflow1.execute(ticket_id=501)
@@ -482,8 +497,8 @@ class TestFullRetryFlowWithCallCounts:
             confidence=0.9,
         )
         workflow2.hr_client.reactivate_lms_account.return_value = True
-        workflow2.ticket_client.add_log.return_value = True  # Now succeeds
-        workflow2.ticket_client.update_stage.return_value = True
+        workflow2.ticket_client.add_log.return_value = WriteOutcome(status=WriteOutcomeStatus.SUCCESS)  # Now succeeds
+        workflow2.ticket_client.update_stage.return_value = WriteOutcome(status=WriteOutcomeStatus.SUCCESS)
 
         # Retry with prior state
         result2 = workflow2.execute(ticket_id=501, state=state_after_first)

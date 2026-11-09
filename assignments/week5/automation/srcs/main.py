@@ -559,6 +559,11 @@ class AutomationExecutor:
                 if result.email_delivery_completed:
                     existing_state.email_delivery_completed = True
 
+                # P2 Issue #5: Persist ambiguous write outcomes
+                if result.ambiguous_write_outcome:
+                    existing_state.ambiguous_write_outcome = result.ambiguous_write_outcome
+                    existing_state.ambiguous_write_context = result.error_message
+
                 # Keep existing status - don't transition here
                 state = existing_state
             else:
@@ -575,6 +580,8 @@ class AutomationExecutor:
                     customer_response_completed=result.customer_response_completed,
                     stage_update_completed=result.stage_update_completed,
                     email_delivery_completed=result.email_delivery_completed,
+                    ambiguous_write_outcome=result.ambiguous_write_outcome,
+                    ambiguous_write_context=result.error_message if result.ambiguous_write_outcome else None,
                 )
 
             # ISSUE #4 FIX: Check return value of save()

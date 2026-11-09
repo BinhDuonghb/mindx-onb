@@ -38,6 +38,9 @@ class WorkflowResult:
     stage_update_completed: bool = False
     email_delivery_completed: bool = False  # P1-03: Track email delivery success separately
 
+    # P2 Issue #5: Track ambiguous Odoo write outcomes
+    ambiguous_write_outcome: Optional[str] = None  # e.g., "message_post:unknown", "write:unknown"
+
 
 class LoginWorkflow:
     """Complete login issue automation workflow.
@@ -115,6 +118,22 @@ class LoginWorkflow:
 
                 if analysis.is_login_issue:
                     # Login issue but no email - escalate for manual review
+                    # P2 Issue #5 Task 1: Check for persisted UNKNOWN write outcome before posting note
+                    if state and state.ambiguous_write_outcome:
+                        logger.warning(
+                            f"Login ticket {ticket_id} has no email and persisted ambiguous outcome: {state.ambiguous_write_outcome}. "
+                            f"Cannot post note without manual review."
+                        )
+                        return WorkflowResult(
+                            success=False,
+                            action_taken="escalated_manual_review",
+                            message="Ticket has no customer email and previous write attempt left ambiguous outcome. "
+                                    "Escalating for manual review.",
+                            error_message=f"Ambiguous write outcome: {state.ambiguous_write_context}",
+                            ticket_id=ticket_id,
+                            ambiguous_write_outcome=state.ambiguous_write_outcome,
+                        )
+
                     # P2 Issue #4 Fix 1: Post a clear Odoo note explaining why manual review is required
                     logger.warning(f"Login ticket {ticket_id} has no customer email - escalating to manual review")
 
@@ -125,24 +144,34 @@ class LoginWorkflow:
                             "Unable to verify employee identity. Escalated to manual review for verification and reactivation."
                         )
 
-                        # Check boolean result - if False, don't report successful escalation
-                        if not note_success:
-                            logger.warning(f"Failed to post Odoo note for missing email ticket {ticket_id}, scheduling retry")
+                        # A lost response is not evidence that Odoo did not create the note.
+                        if note_success.is_unknown():
+                            return WorkflowResult(
+                                success=False,
+                                action_taken="escalated_manual_review",
+                                message="Odoo note outcome unknown; manual reconciliation required",
+                                error_message=note_success.error or "Odoo note outcome unknown",
+                                ticket_id=ticket_id,
+                                ambiguous_write_outcome="message_post:unknown",
+                            )
+                        if not note_success.is_success():
                             return WorkflowResult(
                                 success=False,
                                 action_taken="retry_scheduled",
                                 message="Login issue identified but failed to record escalation reason in Odoo",
-                                error_message="Failed to post manual review note",
+                                error_message=note_success.error or "Failed to post manual review note",
                                 ticket_id=ticket_id,
                             )
                     except Exception as e:
-                        logger.warning(f"Exception posting Odoo note for ticket {ticket_id}: {str(e)}")
+                        # The request might have been committed before the exception.
+                        logger.warning(f"Uncertain Odoo note result for ticket {ticket_id}: {e}")
                         return WorkflowResult(
                             success=False,
-                            action_taken="retry_scheduled",
-                            message="Login issue identified but failed to record escalation reason in Odoo",
+                            action_taken="escalated_manual_review",
+                            message="Odoo note result unconfirmed; manual reconciliation required",
                             error_message=str(e),
                             ticket_id=ticket_id,
+                            ambiguous_write_outcome="message_post:unknown",
                         )
 
                     return WorkflowResult(
@@ -232,7 +261,7 @@ class LoginWorkflow:
 
         # Decision: MANUAL_REVIEW
         elif decision.action == Decision.MANUAL_REVIEW:
-            return self._handle_escalation(ticket, employee, decision)
+            return self._handle_escalation(ticket, employee, decision, state)
 
         # Decision: SKIP
         elif decision.action == Decision.SKIP:
@@ -241,7 +270,7 @@ class LoginWorkflow:
         # Unknown decision
         else:
             logger.warning(f"Unknown decision action: {decision.action}")
-            return self._handle_escalation(ticket, employee, decision)
+            return self._handle_escalation(ticket, employee, decision, state)
 
     def _handle_reactivation(
         self, ticket: Ticket, employee: Employee, decision,
@@ -250,6 +279,9 @@ class LoginWorkflow:
         """Handle account reactivation for active employee.
 
         Tracks side effects and skips already-completed actions on retry.
+
+        P2 Issue #5 Task 1: If a previous execution left message_post:unknown,
+        do not attempt add_log() again automatically. Escalate to manual review instead.
 
         Args:
             ticket: Ticket
@@ -261,6 +293,27 @@ class LoginWorkflow:
             WorkflowResult
         """
         logger.info(f"Reactivating account for employee {employee.name}")
+
+        # P2 Issue #5 Task 1: Check for persisted UNKNOWN write outcome
+        # If previous execution left ambiguous_write_outcome, do not retry the write automatically
+        if state and state.ambiguous_write_outcome:
+            logger.warning(
+                f"Ticket {ticket.id} has persisted ambiguous outcome: {state.ambiguous_write_outcome}. "
+                f"Cannot safely retry without manual review."
+            )
+            return WorkflowResult(
+                success=False,
+                action_taken="escalated_manual_review",
+                message=f"Previous write attempt left ambiguous outcome ({state.ambiguous_write_outcome}). "
+                        f"Escalating for manual review to prevent duplicate operations.",
+                error_message=f"Ambiguous write outcome: {state.ambiguous_write_context}",
+                ticket_id=ticket.id,
+                employee_id=employee.employee_id,
+                reactivation_completed=state.reactivation_completed,
+                odoo_note_completed=state.odoo_note_completed,
+                stage_update_completed=state.stage_update_completed,
+                ambiguous_write_outcome=state.ambiguous_write_outcome,
+            )
 
         # Step 1: Reactivate LMS account (skip if already completed)
         reactivation_completed = state and state.reactivation_completed
@@ -297,38 +350,57 @@ class LoginWorkflow:
             logger.info(f"Odoo note already posted for ticket {ticket.id}, skipping")
         else:
             try:
-                success = self.ticket_client.add_log(
+                outcome = self.ticket_client.add_log(
                     ticket_id=ticket.id,
                     log_message=f"[Automation] Account reactivated for employee {employee.name} ({employee.email}). "
                     f"Issue: {decision.reason}",
                 )
 
-                # Check Odoo boolean result - False means failure
-                if not success:
-                    logger.warning(f"Odoo add_log returned False for ticket {ticket.id}")
-                    # Schedule retry on note posting failure
+                # P2 Issue #5: Handle three outcome types
+                if outcome.is_success():
+                    odoo_note_completed = True
+                    logger.info(f"Successfully posted Odoo note for ticket {ticket.id}")
+                elif outcome.is_unknown():
+                    # Unknown outcome: server may have committed the note
+                    # Persist ambiguous state and escalate to manual review
+                    logger.warning(f"Ambiguous Odoo note outcome for ticket {ticket.id}: {outcome.error}")
+                    if state:
+                        state.ambiguous_write_outcome = "message_post:unknown"
+                        state.ambiguous_write_context = outcome.error
+                    return WorkflowResult(
+                        success=False,
+                        action_taken="escalated_manual_review",
+                        message=f"Ambiguous Odoo note outcome for ticket {ticket.id}",
+                        error_message=f"Unknown write outcome: {outcome.error}",
+                        ticket_id=ticket.id,
+                        employee_id=employee.employee_id,
+                        reactivation_completed=reactivation_completed,
+                        ambiguous_write_outcome="message_post:unknown",
+                    )
+                else:
+                    # Confirmed failure
+                    logger.warning(f"Odoo add_log failed (confirmed) for ticket {ticket.id}: {outcome.error}")
                     return WorkflowResult(
                         success=False,
                         action_taken="retry_scheduled",
                         message=f"Failed to post Odoo note for ticket {ticket.id}",
-                        error_message="Odoo note posting returned False",
+                        error_message=outcome.error,
                         ticket_id=ticket.id,
                         employee_id=employee.employee_id,
                         reactivation_completed=reactivation_completed,
                     )
 
-                odoo_note_completed = True
             except Exception as e:
-                logger.warning(f"Failed to post Odoo note for ticket {ticket.id}: {str(e)}")
-                # Schedule retry on note posting failure
+                logger.warning(f"Uncertain Odoo note result for ticket {ticket.id}: {e}")
                 return WorkflowResult(
                     success=False,
-                    action_taken="retry_scheduled",
-                    message=f"Failed to post Odoo note for ticket {ticket.id}",
+                    action_taken="escalated_manual_review",
+                    message="Odoo note result unconfirmed; manual reconciliation required",
                     error_message=str(e),
                     ticket_id=ticket.id,
                     employee_id=employee.employee_id,
                     reactivation_completed=reactivation_completed,
+                    ambiguous_write_outcome="message_post:unknown",
                 )
 
         # Step 3: Update ticket stage (skip if already completed)
@@ -360,39 +432,59 @@ class LoginWorkflow:
                 )
 
             try:
-                success = self.ticket_client.update_stage(
+                outcome = self.ticket_client.update_stage(
                     ticket_id=ticket.id,
                     stage_id=stage_id,
                 )
 
-                # Check Odoo boolean result - False means failure
-                if not success:
-                    logger.warning(f"Odoo update_stage returned False for ticket {ticket.id}")
-                    # Schedule retry on stage update failure
+                # P2 Issue #5: Handle three outcome types
+                if outcome.is_success():
+                    stage_update_completed = True
+                    logger.info(f"Successfully updated stage for ticket {ticket.id}")
+                elif outcome.is_unknown():
+                    # Unknown outcome: server may have committed the stage update
+                    # Persist ambiguous state and escalate to manual review
+                    logger.warning(f"Ambiguous stage update outcome for ticket {ticket.id}: {outcome.error}")
+                    if state:
+                        state.ambiguous_write_outcome = "write:unknown"
+                        state.ambiguous_write_context = outcome.error
+                    return WorkflowResult(
+                        success=False,
+                        action_taken="escalated_manual_review",
+                        message=f"Ambiguous stage update outcome for ticket {ticket.id}",
+                        error_message=f"Unknown write outcome: {outcome.error}",
+                        ticket_id=ticket.id,
+                        employee_id=employee.employee_id,
+                        reactivation_completed=reactivation_completed,
+                        odoo_note_completed=odoo_note_completed,
+                        ambiguous_write_outcome="write:unknown",
+                    )
+                else:
+                    # Confirmed failure
+                    logger.warning(f"Odoo update_stage failed (confirmed) for ticket {ticket.id}: {outcome.error}")
                     return WorkflowResult(
                         success=False,
                         action_taken="retry_scheduled",
                         message=f"Failed to update ticket stage",
-                        error_message="Odoo stage update returned False",
+                        error_message=outcome.error,
                         ticket_id=ticket.id,
                         employee_id=employee.employee_id,
                         reactivation_completed=reactivation_completed,
                         odoo_note_completed=odoo_note_completed,
                     )
 
-                stage_update_completed = True
             except Exception as e:
-                logger.warning(f"Failed to update stage for ticket {ticket.id}: {str(e)}")
-                # Schedule retry on stage update failure
+                logger.warning(f"Uncertain Odoo stage update for ticket {ticket.id}: {e}")
                 return WorkflowResult(
                     success=False,
-                    action_taken="retry_scheduled",
-                    message=f"Failed to update ticket stage",
+                    action_taken="escalated_manual_review",
+                    message="Odoo stage update unconfirmed; manual reconciliation required",
                     error_message=str(e),
                     ticket_id=ticket.id,
                     employee_id=employee.employee_id,
                     reactivation_completed=reactivation_completed,
                     odoo_note_completed=odoo_note_completed,
+                    ambiguous_write_outcome="write:unknown",
                 )
 
         logger.info(f"✓ Account reactivation completed for ticket {ticket.id}")
@@ -414,14 +506,19 @@ class LoginWorkflow:
         return result
 
     def _handle_escalation(
-        self, ticket: Ticket, employee: Optional[Employee], decision
+        self, ticket: Ticket, employee: Optional[Employee], decision,
+        state: Optional["AutomationState"] = None
     ) -> WorkflowResult:
         """Handle escalation to manual review.
+
+        P2 Issue #5 Task 1: Check for persisted UNKNOWN write outcome before posting note.
+        If previous add_log() left ambiguous outcome, do not attempt to post another note.
 
         Args:
             ticket: Ticket
             employee: Employee or None
             decision: Decision result
+            state: Optional previous AutomationState (for UNKNOWN guard)
 
         Returns:
             WorkflowResult
@@ -431,34 +528,64 @@ class LoginWorkflow:
 
         logger.info(f"Escalating ticket {ticket.id} for manual review: {decision.reason}")
 
+        # P2 Issue #5 Task 1: Check for persisted UNKNOWN write outcome
+        # If previous execution left ambiguous_write_outcome, do not attempt add_log() again
+        if state and state.ambiguous_write_outcome:
+            logger.warning(
+                f"Ticket {ticket.id} has persisted ambiguous outcome: {state.ambiguous_write_outcome}. "
+                f"Cannot post escalation note without manual review."
+            )
+            return WorkflowResult(
+                success=False,
+                action_taken="escalated_manual_review",
+                message=f"Previous write attempt left ambiguous outcome ({state.ambiguous_write_outcome}). "
+                        f"Escalating for manual review.",
+                error_message=f"Ambiguous write outcome: {state.ambiguous_write_context}",
+                ticket_id=ticket.id,
+                employee_id=employee_id,
+                ambiguous_write_outcome=state.ambiguous_write_outcome,
+            )
+
         # Post internal note with escalation reason
-        # P2 Issue #4 Fix 1: Check boolean result of add_log
+        # P2 Issue #5: Handle explicit write outcomes
         try:
-            note_success = self.ticket_client.add_log(
+            outcome = self.ticket_client.add_log(
                 ticket_id=ticket.id,
                 log_message=f"[Automation] Escalated for manual review. {decision.reason}",
             )
 
             # If note posting failed, don't report successful escalation
-            if not note_success:
+            if outcome.is_unknown():
+                logger.warning(f"Ambiguous note outcome for escalation on ticket {ticket.id}")
+                return WorkflowResult(
+                    success=False,
+                    action_taken="escalated_manual_review",
+                    message="Failed to record escalation reason in Odoo (ambiguous outcome)",
+                    error_message=outcome.error,
+                    ticket_id=ticket.id,
+                    employee_id=employee_id,
+                    ambiguous_write_outcome="message_post:unknown",
+                )
+            elif not outcome.is_success():
                 logger.warning(f"Failed to post Odoo note for escalation on ticket {ticket.id}")
                 return WorkflowResult(
                     success=False,
                     action_taken="retry_scheduled",
                     message="Failed to record escalation reason in Odoo",
-                    error_message="Note posting returned False",
+                    error_message=outcome.error,
                     ticket_id=ticket.id,
                     employee_id=employee_id,
                 )
         except Exception as e:
-            logger.warning(f"Exception posting escalation note for ticket {ticket.id}: {str(e)}")
+            logger.warning(f"Uncertain escalation note result for ticket {ticket.id}: {e}")
             return WorkflowResult(
                 success=False,
-                action_taken="retry_scheduled",
-                message="Failed to record escalation reason in Odoo",
+                action_taken="escalated_manual_review",
+                message="Odoo escalation note result unconfirmed; manual reconciliation required",
                 error_message=str(e),
                 ticket_id=ticket.id,
                 employee_id=employee_id,
+                ambiguous_write_outcome="message_post:unknown",
             )
 
         # Email will be sent by caller
