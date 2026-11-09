@@ -36,6 +36,7 @@ class WorkflowResult:
     odoo_note_completed: bool = False
     customer_response_completed: bool = False
     stage_update_completed: bool = False
+    email_delivery_completed: bool = False  # P1-03: Track email delivery success separately
 
 
 class LoginWorkflow:
@@ -130,8 +131,8 @@ class LoginWorkflow:
                         f"status={employee.status.value}"
                     )
 
-            # Step 4: Make business decision
-            decision = self.decision_service.decide(employee, ticket)
+            # Step 4: Make business decision (pass state for P1-01 fix: retry side-effect handling)
+            decision = self.decision_service.decide(employee, ticket, state=state)
             logger.info(f"Decision for ticket {ticket_id}: {decision.action.value}")
 
             # Step 5: Execute decision (pass state for side-effect tracking)
@@ -140,7 +141,9 @@ class LoginWorkflow:
             )
 
             # Step 6: Send exactly ONE appropriate email based on outcome
-            self._send_outcome_email(ticket, employee, result)
+            # P1-03: Capture email send result for retry handling
+            email_sent = self._send_outcome_email(ticket, employee, result)
+            result.email_delivery_completed = email_sent
 
             return result
 
@@ -423,7 +426,7 @@ class LoginWorkflow:
 
     def _send_outcome_email(
         self, ticket: Ticket, employee: Optional[Employee], result: WorkflowResult
-    ) -> None:
+    ) -> bool:
         """Send exactly ONE appropriate email based on workflow outcome.
 
         Communication Policy:
@@ -432,13 +435,20 @@ class LoginWorkflow:
         - skipped → no email
         - error → no email
 
+        TASK 2 FIX: Catch SMTP exceptions safely without losing completed side-effect flags.
+        Both send_email() returning False and raising exceptions are treated as retryable failures.
+
         Args:
             ticket: Ticket model
             employee: Employee model or None
             result: WorkflowResult with action taken
+
+        Returns:
+            True if email sent successfully (or no email needed), False if email send failed
         """
         if not self.gmail_service or not ticket.email_from:
-            return
+            # No email service or no recipient - treat as success (no action needed)
+            return True
 
         from srcs.services.gmail import EmailContext, EmailTemplate
 
@@ -456,14 +466,14 @@ class LoginWorkflow:
             recipient_name = employee.name if employee else "User"
 
         else:
-            # Skipped or error: No email
+            # Skipped or error: No email (treat as success - no action required)
             logger.info(f"No email for outcome: {result.action_taken}")
-            return
+            return True
 
         # Check if this email was already sent for this ticket
         if not self.communication_state.should_send(ticket.id, event):
             logger.info(f"Email event {event.value} already sent for ticket {ticket.id}, skipping duplicate")
-            return
+            return True  # Already sent - treat as success
 
         # Build email context
         email_context = EmailContext(
@@ -474,10 +484,18 @@ class LoginWorkflow:
             template=template,
         )
 
-        # Send email
-        email_sent = self.gmail_service.send_email(email_context)
-        if email_sent:
-            self.communication_state.mark_sent(ticket.id, event)
-            logger.info(f"Outcome email ({template.value}) sent to {ticket.email_from}")
-        else:
-            logger.warning(f"Failed to send outcome email ({template.value}) to {ticket.email_from}")
+        try:
+            # TASK 2 FIX: Send email and catch exceptions
+            email_sent = self.gmail_service.send_email(email_context)
+            if email_sent:
+                self.communication_state.mark_sent(ticket.id, event)
+                logger.info(f"Outcome email ({template.value}) sent to {ticket.email_from}")
+                return True
+            else:
+                logger.warning(f"Failed to send outcome email ({template.value}) to {ticket.email_from}")
+                return False  # Retryable failure
+
+        except Exception as e:
+            # TASK 2 FIX: Catch SMTP and other exceptions - treat as retryable failure
+            logger.warning(f"Exception sending outcome email ({template.value}) to {ticket.email_from}: {str(e)}")
+            return False  # Retryable failure (do not propagate exception)

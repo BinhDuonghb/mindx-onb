@@ -140,7 +140,7 @@ class TestRunOnceIntegration:
             fingerprint=fingerprint,
             lease_duration_seconds=300  # 5 minute active lease
         )
-        assert claimed1 is True
+        assert claimed1 is not None  # TASK 3 FIX: Returns token on successful claim
 
         # Second worker (in another run_once instance) tries to claim
         claimed2 = executor.state_repo.claim_for_processing(
@@ -148,7 +148,7 @@ class TestRunOnceIntegration:
             fingerprint=fingerprint,
             lease_duration_seconds=300
         )
-        assert claimed2 is False  # Should fail - lease active
+        assert claimed2 is None  # TASK 3 FIX: Returns None on failed claim
 
     def test_run_once_recovers_expired_processing_lease(self, executor):
         """run_once() should recover expired processing leases."""
@@ -168,7 +168,7 @@ class TestRunOnceIntegration:
             fingerprint=fingerprint,
             lease_duration_seconds=0  # Already expired
         )
-        assert claimed1 is True
+        assert claimed1 is not None  # TASK 3 FIX: Returns token on successful claim
 
         # Next run should be able to reclaim
         claimed2 = executor.state_repo.claim_for_processing(
@@ -176,7 +176,7 @@ class TestRunOnceIntegration:
             fingerprint=fingerprint,
             lease_duration_seconds=300
         )
-        assert claimed2 is True
+        assert claimed2 is not None  # TASK 3 FIX: Returns token on successful claim
 
     def test_run_once_state_persistence_across_restarts(self, executor):
         """Ticket processing state should survive application restart."""
@@ -252,7 +252,7 @@ class TestRunOnceIntegration:
             fingerprint=fingerprint,
             lease_duration_seconds=300
         )
-        assert claimed is True
+        assert claimed is not None  # TASK 3 FIX: Returns token on successful claim
 
         # Verify lease is set and active
         state = executor.state_repo.get(ticket.id)

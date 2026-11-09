@@ -158,18 +158,18 @@ class TestAutomationStateRepositoryClaimForProcessing:
         """Should create and claim new ticket for processing."""
         result = repo.claim_for_processing(ticket_id=1, fingerprint="abc123")
 
-        assert result is True
+        assert result is not None  # TASK 3 FIX: Returns token on successful claim
         retrieved = repo.get(ticket_id=1)
         assert retrieved.status == AutomationStatus.PROCESSING
 
     def test_claim_for_processing_prevents_concurrent_claim(self, repo):
         """Should prevent concurrent processing by lease."""
         # First claim succeeds
-        assert repo.claim_for_processing(ticket_id=1, fingerprint="abc123") is True
+        assert repo.claim_for_processing(ticket_id=1, fingerprint="abc123") is not None  # TASK 3 FIX: Returns token
 
         # Second claim should fail (lease still active)
         result = repo.claim_for_processing(ticket_id=1, fingerprint="abc123")
-        assert result is False
+        assert result is None  # TASK 3 FIX: Returns None on failed claim
 
     def test_claim_for_processing_expires_old_lease(self, repo):
         """Should allow claiming if previous lease expired."""
@@ -196,21 +196,24 @@ class TestAutomationStateRepositoryClaimForProcessing:
 
         # Should be able to recover
         result = repo.claim_for_processing(ticket_id=1, fingerprint="abc123")
-        assert result is True
+        assert result is not None  # TASK 3 FIX: Returns token on successful claim
 
     def test_claim_for_processing_allows_reprocessing_on_fingerprint_change(self, repo):
-        """Should allow reprocessing if fingerprint changed and lease expired."""
+        """Should allow reprocessing if fingerprint changed and lease expired.
+        """
         # Initial claim with very short lease
         repo.claim_for_processing(ticket_id=1, fingerprint="abc123", lease_duration_seconds=0)
 
         # Try to claim with different fingerprint (lease expired, fingerprint changed)
         result = repo.claim_for_processing(ticket_id=1, fingerprint="def456", lease_duration_seconds=300)
 
-        # Should succeed and update fingerprint
-        assert result is True
+        # Should succeed and update fingerprint, immediately setting PROCESSING with new lease
+        assert result is not None  # TASK 3 FIX: Returns token on successful claim
         retrieved = repo.get(ticket_id=1)
         assert retrieved.fingerprint == "def456"
-        assert retrieved.status == AutomationStatus.PENDING
+        # P1-02 Fix: Status is PROCESSING (atomically claimed) not PENDING
+        assert retrieved.status == AutomationStatus.PROCESSING
+        assert retrieved.processing_lease_until is not None
 
     def test_claim_for_processing_custom_lease_duration(self, repo):
         """Should respect custom lease duration."""
@@ -220,7 +223,7 @@ class TestAutomationStateRepositoryClaimForProcessing:
             lease_duration_seconds=60
         )
 
-        assert result is True
+        assert result is not None  # TASK 3 FIX: Returns token on successful claim
 
         # Verify lease was set (by trying again immediately - should fail)
         result = repo.claim_for_processing(
@@ -228,7 +231,7 @@ class TestAutomationStateRepositoryClaimForProcessing:
             fingerprint="abc123",
             lease_duration_seconds=60
         )
-        assert result is False
+        assert result is None  # TASK 3 FIX: Returns None when lease is active
 
 
 class TestAutomationStateRepositoryMarkCompleted:
@@ -444,9 +447,9 @@ class TestAutomationStateRepositoryTransactions:
             repo.save(state)
 
         # Process half of them
-        repo.claim_for_processing(ticket_id=1, fingerprint="fingerprint_0")
+        token_1 = repo.claim_for_processing(ticket_id=1, fingerprint="fingerprint_0")
         repo.claim_for_processing(ticket_id=2, fingerprint="fingerprint_1")
-        repo.mark_completed(ticket_id=1)
+        repo.mark_completed(ticket_id=1, owner_token=token_1)
 
         # Verify state
         assert repo.get(ticket_id=1).status == AutomationStatus.COMPLETED

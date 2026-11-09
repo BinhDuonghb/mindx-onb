@@ -117,6 +117,10 @@ class TicketPoller:
         Returns tickets that were previously processed but scheduled for retry
         (e.g., transient failures that need re-attempt).
 
+        TASK 1 FIX: Query automation_state database directly to find due retries,
+        independent of Odoo ticket stage. This handles retries for stage-4 tickets
+        (completed workflow with pending email), not just stages 1-2.
+
         Args:
             limit: Maximum tickets to fetch
 
@@ -124,33 +128,36 @@ class TicketPoller:
             List of (Ticket, AutomationState) tuples ready for retry
         """
         try:
-            # Get tickets with RETRY_SCHEDULED status and retry time passed
+            # TASK 1 FIX: Query automation_state database directly for due retries
+            # This is the source of truth for retry-eligible tickets
+            retry_states = self.state_repo.get_due_retries(limit=limit)
+
+            if not retry_states:
+                logger.debug("No tickets ready for retry")
+                return []
+
+            logger.info(f"Found {len(retry_states)} due retries in automation_state")
+
+            # Fetch Odoo tickets for each retry state (may be in any stage)
             retry_tickets = []
-
-            # Fetch all ticket IDs (this is a limitation of current design)
-            # In production, might store retry queue separately
-            ticket_ids = self.ticket_client.search_tickets(
-                domain=[("stage_id", "in", [1, 2])],
-                limit=limit * 5,  # Over-fetch since most won't be retry scheduled
-            )
-
-            for ticket_id in ticket_ids:
+            for state in retry_states:
                 try:
-                    ticket = self.ticket_client.get_ticket(ticket_id)
+                    ticket = self.ticket_client.get_ticket(state.ticket_id)
+
                     if not ticket:
+                        # TASK 1 FIX: Ticket deleted from Odoo - mark retry as completed
+                        # to prevent orphaning the retry record
+                        logger.warning(f"Odoo ticket {state.ticket_id} not found, completing retry")
+                        self.state_repo.mark_completed(state.ticket_id)
                         continue
 
-                    state = self.state_repo.get(ticket.id)
-                    if state and state.is_ready_for_retry():
-                        retry_tickets.append((ticket, state))
+                    retry_tickets.append((ticket, state))
 
-                    if len(retry_tickets) >= limit:
-                        break
                 except Exception as e:
-                    logger.warning(f"Failed to fetch ticket {ticket_id} for retry check: {str(e)}")
+                    logger.warning(f"Failed to fetch ticket {state.ticket_id} for retry: {str(e)}")
                     continue
 
-            logger.info(f"Found {len(retry_tickets)} tickets ready for retry")
+            logger.info(f"Retrieved {len(retry_tickets)} retry tickets from Odoo")
             return retry_tickets
 
         except Exception as e:

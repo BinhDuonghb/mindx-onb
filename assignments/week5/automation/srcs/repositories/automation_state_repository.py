@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import sqlite3
+import uuid
 from pathlib import Path
 from datetime import datetime, timedelta, timezone
 from typing import Optional, TYPE_CHECKING
@@ -38,7 +39,7 @@ class AutomationStateRepository:
         self._init_db()
 
     def _init_db(self) -> None:
-        """Initialize database schema."""
+        """Initialize database schema and apply migrations."""
         try:
             with sqlite3.connect(self.db_path) as conn:
                 cursor = conn.cursor()
@@ -60,7 +61,9 @@ class AutomationStateRepository:
                         odoo_note_completed INTEGER NOT NULL DEFAULT 0,
                         customer_response_completed INTEGER NOT NULL DEFAULT 0,
                         stage_update_completed INTEGER NOT NULL DEFAULT 0,
-                        processing_lease_until TEXT
+                        email_delivery_completed INTEGER NOT NULL DEFAULT 0,
+                        processing_lease_until TEXT,
+                        lease_owner_token TEXT
                     )
                 """)
 
@@ -98,11 +101,66 @@ class AutomationStateRepository:
                 """)
 
                 conn.commit()
+
+                # TASK 5 FIX: Apply schema migrations for legacy databases
+                self._apply_migrations(conn)
+
                 logger.info(f"Database initialized: {self.db_path}")
 
         except Exception as e:
             logger.error(f"Failed to initialize database: {str(e)}")
             raise
+
+    def _apply_migrations(self, conn: sqlite3.Connection) -> None:
+        """Apply schema migrations for legacy databases.
+
+        TASK 5 FIX: Detect and migrate databases that don't have new columns.
+        This allows the system to work with databases created by older versions.
+
+        Handles:
+        - email_delivery_completed: Track email delivery success separately (P1-03)
+        - lease_owner_token: Ownership tokens for lease safety (TASK 3)
+
+        Args:
+            conn: Active database connection
+
+        Raises:
+            Exception: If migration fails (wrapped for logging)
+        """
+        try:
+            cursor = conn.cursor()
+
+            # Get all existing columns
+            cursor.execute("PRAGMA table_info(automation_state)")
+            columns = {row[1] for row in cursor.fetchall()}
+
+            # List of required columns with their definitions
+            required_columns = {
+                "email_delivery_completed": "INTEGER NOT NULL DEFAULT 0",
+                "lease_owner_token": "TEXT"
+            }
+
+            # Migrate any missing columns
+            for column_name, column_def in required_columns.items():
+                if column_name not in columns:
+                    try:
+                        logger.info(f"Migrating database: adding {column_name} column")
+                        cursor.execute(f"""
+                            ALTER TABLE automation_state
+                            ADD COLUMN {column_name} {column_def}
+                        """)
+                        conn.commit()
+                        logger.info(f"Migration complete: {column_name} column added")
+                    except sqlite3.OperationalError as e:
+                        # Column may already exist (race condition or previous attempt)
+                        if "duplicate column name" in str(e):
+                            logger.info(f"Column {column_name} already exists")
+                        else:
+                            raise
+
+        except Exception as e:
+            logger.error(f"Database migration failed: {str(e)}")
+            raise  # Per Issue 1 requirement: Raise error if migration fails
 
     def get(self, ticket_id: int) -> Optional[AutomationState]:
         """Get automation state for a ticket.
@@ -133,62 +191,150 @@ class AutomationStateRepository:
             logger.error(f"Failed to get state for ticket {ticket_id}: {str(e)}")
             return None
 
-    def save(self, state: AutomationState) -> bool:
+    def save(self, state: AutomationState, owner_token: Optional[str] = None) -> bool:
         """Save or update automation state (upsert).
+
+        ISSUE #2 FINAL FIX 2: Rejects writes after lease expiration.
+
+        If a record has a lease_owner_token (ownership is claimed), reject ANY write
+        unless the supplied token matches and the lease is still active.
+
+        Expired tokens cannot bypass protection. Missing tokens reject owned records.
+        Unowned records can be created or updated via standard upsert.
 
         Args:
             state: AutomationState to save
+            owner_token: Ownership token from claim_for_processing() - validates if record is owned
 
         Returns:
-            True if successful, False otherwise
+            True if successful, False if ownership validation fails
         """
         try:
             state.updated_at = datetime.now(timezone.utc)
+            now = datetime.now(timezone.utc)
 
             with sqlite3.connect(self.db_path) as conn:
                 cursor = conn.cursor()
 
+                # FIX 2: Check if record exists and has ownership token
                 cursor.execute("""
-                    INSERT INTO automation_state (
-                        ticket_id, fingerprint, status, last_decision, last_reason,
-                        created_at, updated_at, last_checked_at, retry_count,
-                        next_retry_at, last_error, reactivation_completed,
-                        odoo_note_completed, customer_response_completed,
-                        stage_update_completed, processing_lease_until
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    ON CONFLICT(ticket_id) DO UPDATE SET
-                        fingerprint = excluded.fingerprint,
-                        status = excluded.status,
-                        last_decision = excluded.last_decision,
-                        last_reason = excluded.last_reason,
-                        updated_at = excluded.updated_at,
-                        last_checked_at = excluded.last_checked_at,
-                        retry_count = excluded.retry_count,
-                        next_retry_at = excluded.next_retry_at,
-                        last_error = excluded.last_error,
-                        reactivation_completed = excluded.reactivation_completed,
-                        odoo_note_completed = excluded.odoo_note_completed,
-                        customer_response_completed = excluded.customer_response_completed,
-                        stage_update_completed = excluded.stage_update_completed,
-                        processing_lease_until = excluded.processing_lease_until
-                """, (
-                    state.ticket_id,
-                    state.fingerprint,
-                    state.status.value,
-                    state.last_decision,
-                    state.last_reason,
-                    state.created_at.isoformat(),
-                    state.updated_at.isoformat(),
-                    state.last_checked_at.isoformat() if state.last_checked_at else None,
-                    state.retry_count,
-                    state.next_retry_at.isoformat() if state.next_retry_at else None,
-                    state.last_error,
-                    1 if state.reactivation_completed else 0,
-                    1 if state.odoo_note_completed else 0,
-                    1 if state.customer_response_completed else 0,
-                    1 if state.stage_update_completed else 0,
-                    None,
-                ))
+                    SELECT lease_owner_token, processing_lease_until
+                    FROM automation_state
+                    WHERE ticket_id = ?
+                """, (state.ticket_id,))
+                existing = cursor.fetchone()
+
+                if existing:
+                    stored_token, lease_until_str = existing
+
+                    # FIX 2: If record has ownership token, validate it strictly
+                    if stored_token is not None:
+                        # Token exists - require exact match
+                        if owner_token != stored_token:
+                            logger.warning(
+                                f"Token mismatch for ticket {state.ticket_id}: "
+                                f"save rejected (expected token not provided or incorrect)"
+                            )
+                            return False
+
+                        # FIX 2: Check lease expiration - even with correct token, reject if lease expired
+                        if lease_until_str:
+                            lease_until = datetime.fromisoformat(lease_until_str)
+                            if now >= lease_until:
+                                logger.warning(
+                                    f"Lease expired for ticket {state.ticket_id}: "
+                                    f"save rejected (token valid but lease no longer active)"
+                                )
+                                return False
+
+                # FIX 2: If ownership is present, use atomic UPDATE with strict validation
+                if existing and existing[0] is not None:
+                    # Record is owned - use atomic UPDATE
+                    cursor.execute("""
+                        UPDATE automation_state
+                        SET fingerprint = ?, status = ?, last_decision = ?, last_reason = ?,
+                            updated_at = ?, last_checked_at = ?, retry_count = ?,
+                            next_retry_at = ?, last_error = ?, reactivation_completed = ?,
+                            odoo_note_completed = ?, customer_response_completed = ?,
+                            stage_update_completed = ?, email_delivery_completed = ?,
+                            processing_lease_until = COALESCE(?, processing_lease_until)
+                        WHERE ticket_id = ? AND lease_owner_token = ? AND
+                              (processing_lease_until IS NULL OR processing_lease_until > ?)
+                    """, (
+                        state.fingerprint,
+                        state.status.value,
+                        state.last_decision,
+                        state.last_reason,
+                        state.updated_at.isoformat(),
+                        state.last_checked_at.isoformat() if state.last_checked_at else None,
+                        state.retry_count,
+                        state.next_retry_at.isoformat() if state.next_retry_at else None,
+                        state.last_error,
+                        1 if state.reactivation_completed else 0,
+                        1 if state.odoo_note_completed else 0,
+                        1 if state.customer_response_completed else 0,
+                        1 if state.stage_update_completed else 0,
+                        1 if state.email_delivery_completed else 0,
+                        state.processing_lease_until.isoformat() if state.processing_lease_until else None,
+                        state.ticket_id,
+                        owner_token,
+                        now.isoformat()
+                    ))
+
+                    if cursor.rowcount == 0:
+                        logger.warning(
+                            f"Atomic validation failed for ticket {state.ticket_id}: "
+                            f"save rejected"
+                        )
+                        return False
+                else:
+                    # No ownership or unowned record - use standard upsert
+                    cursor.execute("""
+                        INSERT INTO automation_state (
+                            ticket_id, fingerprint, status, last_decision, last_reason,
+                            created_at, updated_at, last_checked_at, retry_count,
+                            next_retry_at, last_error, reactivation_completed,
+                            odoo_note_completed, customer_response_completed,
+                            stage_update_completed, email_delivery_completed, processing_lease_until,
+                            lease_owner_token
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        ON CONFLICT(ticket_id) DO UPDATE SET
+                            fingerprint = excluded.fingerprint,
+                            status = excluded.status,
+                            last_decision = excluded.last_decision,
+                            last_reason = excluded.last_reason,
+                            updated_at = excluded.updated_at,
+                            last_checked_at = excluded.last_checked_at,
+                            retry_count = excluded.retry_count,
+                            next_retry_at = excluded.next_retry_at,
+                            last_error = excluded.last_error,
+                            reactivation_completed = excluded.reactivation_completed,
+                            odoo_note_completed = excluded.odoo_note_completed,
+                            customer_response_completed = excluded.customer_response_completed,
+                            stage_update_completed = excluded.stage_update_completed,
+                            email_delivery_completed = excluded.email_delivery_completed,
+                            processing_lease_until = COALESCE(excluded.processing_lease_until, processing_lease_until),
+                            lease_owner_token = COALESCE(excluded.lease_owner_token, lease_owner_token)
+                    """, (
+                        state.ticket_id,
+                        state.fingerprint,
+                        state.status.value,
+                        state.last_decision,
+                        state.last_reason,
+                        state.created_at.isoformat(),
+                        state.updated_at.isoformat(),
+                        state.last_checked_at.isoformat() if state.last_checked_at else None,
+                        state.retry_count,
+                        state.next_retry_at.isoformat() if state.next_retry_at else None,
+                        state.last_error,
+                        1 if state.reactivation_completed else 0,
+                        1 if state.odoo_note_completed else 0,
+                        1 if state.customer_response_completed else 0,
+                        1 if state.stage_update_completed else 0,
+                        1 if state.email_delivery_completed else 0,
+                        state.processing_lease_until.isoformat() if state.processing_lease_until else None,
+                        state.lease_owner_token,
+                    ))
 
                 conn.commit()
                 logger.debug(f"Saved state for ticket {state.ticket_id}")
@@ -200,10 +346,14 @@ class AutomationStateRepository:
 
     def claim_for_processing(
         self, ticket_id: int, fingerprint: str, lease_duration_seconds: int = 300
-    ) -> bool:
-        """Atomically claim a ticket for processing.
+    ) -> str:
+        """Atomically claim a ticket for processing and return ownership token.
 
-        Prevents duplicate concurrent processing by setting a processing lease.
+        ISSUE #2 FINAL FIX 1: Atomic claim using SQLite BEGIN IMMEDIATE.
+
+        Ensures exactly one worker succeeds even with simultaneous claims on expired leases.
+        Uses single conditional UPDATE to prevent race conditions.
+
         Only succeeds if:
         1. No state exists yet, OR
         2. Fingerprint matches (content unchanged), OR
@@ -215,108 +365,144 @@ class AutomationStateRepository:
             lease_duration_seconds: How long to hold the processing lease
 
         Returns:
-            True if claim successful, False if another process holds it
+            Ownership token if successful, None if another process holds it
         """
         try:
             now = datetime.now(timezone.utc)
             lease_until = now + timedelta(seconds=lease_duration_seconds)
 
             with sqlite3.connect(self.db_path) as conn:
+                # FIX 1: Use BEGIN IMMEDIATE for atomic claim
+                conn.execute("BEGIN IMMEDIATE")
                 cursor = conn.cursor()
 
-                # Check current state
-                cursor.execute(
-                    "SELECT status, fingerprint, processing_lease_until FROM automation_state WHERE ticket_id = ?",
-                    (ticket_id,)
-                )
-                row = cursor.fetchone()
-
-                # No state exists - create new processing state with lease
-                if not row:
-                    cursor.execute("""
-                        INSERT INTO automation_state (
-                            ticket_id, fingerprint, status, created_at, updated_at,
-                            retry_count, processing_lease_until
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?)
-                    """, (
-                        ticket_id,
-                        fingerprint,
-                        AutomationStatus.PROCESSING.value,
-                        now.isoformat(),
-                        now.isoformat(),
-                        0,
-                        lease_until.isoformat(),
-                    ))
-                    conn.commit()
-                    logger.info(f"Claimed new ticket {ticket_id} for processing")
-                    return True
-
-                status, stored_fingerprint, processing_lease_until_str = row
-
-                # Check if processing lease has expired (BEFORE checking fingerprint)
-                # Active leases cannot be bypassed by fingerprint changes
-                if processing_lease_until_str:
-                    lease_until_dt = datetime.fromisoformat(processing_lease_until_str)
-                    if now < lease_until_dt:
-                        logger.warning(
-                            f"Ticket {ticket_id} is already being processed (lease until {lease_until_dt})"
-                        )
-                        return False
-                    else:
-                        logger.warning(
-                            f"Recovering stale processing for ticket {ticket_id} (lease expired at {lease_until_dt})"
-                        )
-
-                # Fingerprint changed - allow re-evaluation (only if no active lease)
-                if stored_fingerprint != fingerprint:
-                    logger.info(
-                        f"Ticket {ticket_id} fingerprint changed - allowing re-evaluation"
+                try:
+                    # Check current state
+                    cursor.execute(
+                        "SELECT status, fingerprint, processing_lease_until, lease_owner_token FROM automation_state WHERE ticket_id = ?",
+                        (ticket_id,)
                     )
-                    # Update fingerprint and status to PENDING for re-evaluation
+                    row = cursor.fetchone()
+
+                    # Case 1: No state exists - create new processing state
+                    if not row:
+                        owner_token = str(uuid.uuid4())
+                        cursor.execute("""
+                            INSERT INTO automation_state (
+                                ticket_id, fingerprint, status, created_at, updated_at,
+                                retry_count, processing_lease_until, lease_owner_token
+                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                        """, (
+                            ticket_id,
+                            fingerprint,
+                            AutomationStatus.PROCESSING.value,
+                            now.isoformat(),
+                            now.isoformat(),
+                            0,
+                            lease_until.isoformat(),
+                            owner_token,
+                        ))
+                        conn.commit()
+                        logger.info(f"Claimed new ticket {ticket_id} for processing with token {owner_token[:8]}...")
+                        return owner_token
+
+                    status, stored_fingerprint, processing_lease_until_str, old_token = row
+
+                    # Case 2: Active lease exists - reject claim (atomicity protected by BEGIN IMMEDIATE)
+                    if processing_lease_until_str:
+                        lease_until_dt = datetime.fromisoformat(processing_lease_until_str)
+                        if now < lease_until_dt:
+                            conn.rollback()
+                            logger.warning(
+                                f"Ticket {ticket_id} is already being processed (lease until {lease_until_dt})"
+                            )
+                            return None
+
+                    # Case 3: Lease expired - reclaim atomically
+                    # FIX 1: Use atomic UPDATE with WHERE condition to prevent second worker from succeeding
+                    owner_token = str(uuid.uuid4())
+
+                    # Atomic UPDATE: only succeed if lease is actually expired NOW
                     cursor.execute("""
                         UPDATE automation_state
-                        SET fingerprint = ?, status = ?, processing_lease_until = NULL
-                        WHERE ticket_id = ?
-                    """, (fingerprint, AutomationStatus.PENDING.value, ticket_id))
+                        SET status = ?, fingerprint = ?, processing_lease_until = ?, lease_owner_token = ?, updated_at = ?
+                        WHERE ticket_id = ? AND (
+                            processing_lease_until IS NULL OR
+                            processing_lease_until <= ?
+                        )
+                    """, (
+                        AutomationStatus.PROCESSING.value,
+                        fingerprint,
+                        lease_until.isoformat(),
+                        owner_token,
+                        now.isoformat(),
+                        ticket_id,
+                        now.isoformat()
+                    ))
+
+                    # FIX 1: Check rowcount - only one worker will succeed
+                    if cursor.rowcount == 0:
+                        conn.rollback()
+                        logger.warning(
+                            f"Ticket {ticket_id} reclaim failed - another worker claimed it first"
+                        )
+                        return None
+
                     conn.commit()
-                    return True
+                    logger.info(f"Claimed ticket {ticket_id} for processing after expiration with token {owner_token[:8]}...")
+                    return owner_token
 
-                # Claim for processing
-                cursor.execute("""
-                    UPDATE automation_state
-                    SET status = ?, processing_lease_until = ?
-                    WHERE ticket_id = ?
-                """, (AutomationStatus.PROCESSING.value, lease_until.isoformat(), ticket_id))
-
-                conn.commit()
-                logger.info(f"Claimed ticket {ticket_id} for processing")
-                return True
+                except Exception as inner_e:
+                    conn.rollback()
+                    raise inner_e
 
         except Exception as e:
             logger.error(f"Failed to claim ticket {ticket_id} for processing: {str(e)}")
-            return False
+            return None
 
-    def mark_completed(self, ticket_id: int) -> bool:
+    def mark_completed(self, ticket_id: int, owner_token: Optional[str] = None) -> bool:
         """Mark ticket processing as completed.
+
+        ISSUE #2 FIX: Validates owner_token atomically in SQL to prevent stale workers
+        from marking completion on active leases. Uses conditional UPDATE with rowcount check.
 
         Args:
             ticket_id: Ticket ID
+            owner_token: Ownership token from claim_for_processing() - required for PROCESSING records
 
         Returns:
             True if successful, False otherwise
         """
         try:
+            now = datetime.now(timezone.utc)
+
             with sqlite3.connect(self.db_path) as conn:
                 cursor = conn.cursor()
+
+                # ISSUE #2 FIX: Atomic SQL validation - only update if token matches AND lease is active
                 cursor.execute("""
                     UPDATE automation_state
-                    SET status = ?, updated_at = ?, processing_lease_until = NULL
-                    WHERE ticket_id = ?
+                    SET status = ?, updated_at = ?, processing_lease_until = NULL, lease_owner_token = NULL
+                    WHERE ticket_id = ? AND (
+                        lease_owner_token IS NULL OR
+                        (lease_owner_token = ? AND (processing_lease_until IS NULL OR processing_lease_until > ?))
+                    )
                 """, (
                     AutomationStatus.COMPLETED.value,
-                    datetime.now(timezone.utc).isoformat(),
-                    ticket_id
+                    now.isoformat(),
+                    ticket_id,
+                    owner_token,
+                    now.isoformat()
                 ))
+
+                # Check if update succeeded (rowcount > 0 means validation passed)
+                if cursor.rowcount == 0:
+                    logger.warning(
+                        f"Token validation failed for ticket {ticket_id}: "
+                        f"mark_completed rejected (token mismatch or expired lease)"
+                    )
+                    return False
+
                 conn.commit()
                 logger.info(f"Marked ticket {ticket_id} as completed")
                 return True
@@ -325,29 +511,51 @@ class AutomationStateRepository:
             logger.error(f"Failed to mark ticket {ticket_id} as completed: {str(e)}")
             return False
 
-    def mark_manual_review(self, ticket_id: int, reason: str) -> bool:
+    def mark_manual_review(self, ticket_id: int, reason: str, owner_token: Optional[str] = None) -> bool:
         """Mark ticket for manual review.
+
+        ISSUE #2 FIX: Validates owner_token atomically in SQL to prevent stale workers
+        from transitioning active leases. Uses conditional UPDATE with rowcount check.
 
         Args:
             ticket_id: Ticket ID
             reason: Reason for manual review
+            owner_token: Ownership token from claim_for_processing() - required for PROCESSING records
 
         Returns:
             True if successful, False otherwise
         """
         try:
+            now = datetime.now(timezone.utc)
+
             with sqlite3.connect(self.db_path) as conn:
                 cursor = conn.cursor()
+
+                # ISSUE #2 FIX: Atomic SQL validation - only update if token matches AND lease is active
                 cursor.execute("""
                     UPDATE automation_state
-                    SET status = ?, last_reason = ?, updated_at = ?, processing_lease_until = NULL
-                    WHERE ticket_id = ?
+                    SET status = ?, last_reason = ?, updated_at = ?, processing_lease_until = NULL, lease_owner_token = NULL
+                    WHERE ticket_id = ? AND (
+                        lease_owner_token IS NULL OR
+                        (lease_owner_token = ? AND (processing_lease_until IS NULL OR processing_lease_until > ?))
+                    )
                 """, (
                     AutomationStatus.MANUAL_REVIEW.value,
                     reason,
-                    datetime.now(timezone.utc).isoformat(),
-                    ticket_id
+                    now.isoformat(),
+                    ticket_id,
+                    owner_token,
+                    now.isoformat()
                 ))
+
+                # Check if update succeeded (rowcount > 0 means validation passed)
+                if cursor.rowcount == 0:
+                    logger.warning(
+                        f"Token validation failed for ticket {ticket_id}: "
+                        f"mark_manual_review rejected (token mismatch or expired lease)"
+                    )
+                    return False
+
                 conn.commit()
                 logger.info(f"Marked ticket {ticket_id} for manual review")
                 return True
@@ -356,15 +564,138 @@ class AutomationStateRepository:
             logger.error(f"Failed to mark ticket {ticket_id} for manual review: {str(e)}")
             return False
 
+    def mark_skipped(self, ticket_id: int, owner_token: Optional[str] = None) -> bool:
+        """Mark ticket as skipped and release the processing lease.
+
+        ISSUE #2 FIX: Terminal outcome that releases ownership.
+
+        Args:
+            ticket_id: Ticket ID
+            owner_token: Ownership token from claim_for_processing() - required for PROCESSING records
+
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            now = datetime.now(timezone.utc)
+
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+
+                # Atomic SQL validation - only update if token matches AND lease is active
+                cursor.execute("""
+                    UPDATE automation_state
+                    SET status = ?, updated_at = ?, processing_lease_until = NULL, lease_owner_token = NULL
+                    WHERE ticket_id = ? AND (
+                        lease_owner_token IS NULL OR
+                        (lease_owner_token = ? AND (processing_lease_until IS NULL OR processing_lease_until > ?))
+                    )
+                """, (
+                    AutomationStatus.SKIPPED.value,
+                    now.isoformat(),
+                    ticket_id,
+                    owner_token,
+                    now.isoformat()
+                ))
+
+                # Check if update succeeded (rowcount > 0 means validation passed)
+                if cursor.rowcount == 0:
+                    logger.warning(
+                        f"Token validation failed for ticket {ticket_id}: "
+                        f"mark_skipped rejected (token mismatch or expired lease)"
+                    )
+                    return False
+
+                conn.commit()
+                logger.info(f"Marked ticket {ticket_id} as skipped and released lease")
+                return True
+
+        except Exception as e:
+            logger.error(f"Failed to mark ticket {ticket_id} as skipped: {str(e)}")
+            return False
+
+    def get_due_retries(self, limit: int = 50) -> list:
+        """Get tickets scheduled for retry whose retry time has passed.
+
+        TASK 1 FIX: Query automation_state database directly for due retries.
+        This discovers retries regardless of Odoo ticket stage.
+
+        Args:
+            limit: Maximum number of retry tickets to return
+
+        Returns:
+            List of AutomationState objects with status=RETRY_SCHEDULED and next_retry_at <= now
+        """
+        try:
+            now = datetime.now(timezone.utc)
+
+            with sqlite3.connect(self.db_path) as conn:
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
+
+                # TASK 1 FIX: Query automation_state directly, not Odoo
+                cursor.execute("""
+                    SELECT * FROM automation_state
+                    WHERE status = ? AND next_retry_at IS NOT NULL AND next_retry_at <= ?
+                    ORDER BY next_retry_at ASC
+                    LIMIT ?
+                """, (AutomationStatus.RETRY_SCHEDULED.value, now.isoformat(), limit))
+
+                rows = cursor.fetchall()
+                return [self._row_to_state(row) for row in rows]
+
+        except Exception as e:
+            logger.error(f"Failed to get due retries: {str(e)}")
+            return []
+
+    def get_expired_processing_tickets(self, limit: int = 50) -> list:
+        """Get PROCESSING tickets whose leases have expired.
+
+        TASK 4 FIX: Discover tickets stuck in PROCESSING status due to worker crash/timeout.
+        These are safe to reclaim after their lease expires.
+
+        Args:
+            limit: Maximum number of expired tickets to return
+
+        Returns:
+            List of AutomationState objects with status=PROCESSING and expired processing_lease_until
+        """
+        try:
+            now = datetime.now(timezone.utc)
+
+            with sqlite3.connect(self.db_path) as conn:
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
+
+                # TASK 4 FIX: Find PROCESSING tickets with expired leases
+                cursor.execute("""
+                    SELECT * FROM automation_state
+                    WHERE status = ? AND processing_lease_until IS NOT NULL AND processing_lease_until <= ?
+                    ORDER BY processing_lease_until ASC
+                    LIMIT ?
+                """, (AutomationStatus.PROCESSING.value, now.isoformat(), limit))
+
+                rows = cursor.fetchall()
+                return [self._row_to_state(row) for row in rows]
+
+        except Exception as e:
+            logger.error(f"Failed to get expired processing tickets: {str(e)}")
+            return []
+
     def schedule_retry(
-        self, ticket_id: int, retry_after_seconds: int = 3600, error: Optional[str] = None
+        self, ticket_id: int, retry_after_seconds: int = 3600, error: Optional[str] = None,
+        owner_token: Optional[str] = None
     ) -> bool:
         """Schedule a ticket for retry.
+
+        ISSUE #2 FIX: Validates owner_token atomically in SQL to prevent stale workers
+        from releasing another worker's lease. Uses conditional UPDATE with rowcount check.
 
         Args:
             ticket_id: Ticket ID
             retry_after_seconds: How long to wait before retrying (default 1 hour)
             error: Error message to store
+            owner_token: Ownership token from claim_for_processing() - required for PROCESSING records
 
         Returns:
             True if successful, False otherwise
@@ -375,19 +706,35 @@ class AutomationStateRepository:
 
             with sqlite3.connect(self.db_path) as conn:
                 cursor = conn.cursor()
+
+                # ISSUE #2 FIX: Atomic SQL validation - only update if token matches AND lease is active
                 cursor.execute("""
                     UPDATE automation_state
                     SET status = ?, retry_count = retry_count + 1,
                         next_retry_at = ?, last_error = ?, updated_at = ?,
-                        processing_lease_until = NULL
-                    WHERE ticket_id = ?
+                        processing_lease_until = NULL, lease_owner_token = NULL
+                    WHERE ticket_id = ? AND (
+                        lease_owner_token IS NULL OR
+                        (lease_owner_token = ? AND (processing_lease_until IS NULL OR processing_lease_until > ?))
+                    )
                 """, (
                     AutomationStatus.RETRY_SCHEDULED.value,
                     next_retry.isoformat(),
                     error,
                     now.isoformat(),
-                    ticket_id
+                    ticket_id,
+                    owner_token,
+                    now.isoformat()
                 ))
+
+                # Check if update succeeded (rowcount > 0 means validation passed)
+                if cursor.rowcount == 0:
+                    logger.warning(
+                        f"Token validation failed for ticket {ticket_id}: "
+                        f"schedule_retry rejected (token mismatch or expired lease)"
+                    )
+                    return False
+
                 conn.commit()
                 logger.info(
                     f"Scheduled ticket {ticket_id} for retry at {next_retry} "
@@ -531,6 +878,18 @@ class AutomationStateRepository:
 
     def _row_to_state(self, row: sqlite3.Row) -> AutomationState:
         """Convert database row to AutomationState."""
+        # P1-03: Handle email_delivery_completed field (backward compatibility)
+        try:
+            email_delivery_completed = bool(row["email_delivery_completed"])
+        except (IndexError, KeyError):
+            email_delivery_completed = False
+
+        # TASK 3 FIX: Handle lease_owner_token field
+        try:
+            lease_owner_token = row["lease_owner_token"]
+        except (IndexError, KeyError):
+            lease_owner_token = None
+
         return AutomationState(
             ticket_id=row["ticket_id"],
             fingerprint=row["fingerprint"],
@@ -548,4 +907,6 @@ class AutomationStateRepository:
             odoo_note_completed=bool(row["odoo_note_completed"]),
             customer_response_completed=bool(row["customer_response_completed"]),
             stage_update_completed=bool(row["stage_update_completed"]),
+            email_delivery_completed=email_delivery_completed,
+            lease_owner_token=lease_owner_token,
         )

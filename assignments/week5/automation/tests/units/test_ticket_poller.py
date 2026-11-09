@@ -263,10 +263,11 @@ class TestTicketPollerPollForRetry:
         assert result == []
 
     def test_poll_for_retry_finds_ready_retries(self, poller, mock_ticket_client, mock_state_repo):
-        """Should find tickets ready for retry."""
+        """Should find tickets ready for retry.
+
+        TASK 1 FIX: Now queries automation_state database directly via get_due_retries().
+        """
         ticket = Ticket(id=1, name="Test", email_from="user@company.com")
-        mock_ticket_client.search_tickets.return_value = [1]  # Return ticket ID
-        mock_ticket_client.get_ticket.return_value = ticket  # Return full Ticket object
 
         # Create state ready for retry
         past_time = datetime.now(timezone.utc) - timedelta(hours=1)
@@ -276,7 +277,10 @@ class TestTicketPollerPollForRetry:
             status=AutomationStatus.RETRY_SCHEDULED,
             next_retry_at=past_time,  # Ready to retry
         )
-        mock_state_repo.get.return_value = state
+
+        # TASK 1 FIX: Mock get_due_retries() instead of get()
+        mock_state_repo.get_due_retries.return_value = [state]
+        mock_ticket_client.get_ticket.return_value = ticket
 
         result = poller.poll_for_retry(limit=50)
 

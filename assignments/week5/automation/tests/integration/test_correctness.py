@@ -235,13 +235,13 @@ class TestAtomicProcessingClaims:
         ticket = Ticket(id=301, name="Test", email_from="test@company.com")
         fp1 = TicketFingerprinter.generate(ticket)
 
-        # Worker 1 claims with fp1
+        # Worker 1 claims with fp1 - TASK 3 FIX: Now returns ownership token
         claimed1 = repo.claim_for_processing(
             ticket_id=301,
             fingerprint=fp1,
             lease_duration_seconds=300
         )
-        assert claimed1 is True
+        assert claimed1 is not None  # TASK 3 FIX: Check for token, not True
 
         # Ticket content changes (new fingerprint)
         ticket.name = "Test - updated"
@@ -254,7 +254,7 @@ class TestAtomicProcessingClaims:
             fingerprint=fp2,
             lease_duration_seconds=300
         )
-        assert claimed2 is False  # Active lease blocks even fingerprint change
+        assert claimed2 is None  # TASK 3 FIX: Check for None, not False
 
         # Verify state is still PROCESSING
         state = repo.get(301)

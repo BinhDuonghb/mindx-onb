@@ -56,12 +56,17 @@ class AutomationState:
     # Processing lease for preventing concurrent execution
     processing_lease_until: Optional[datetime] = None
 
+    # TASK 3 FIX: Lease ownership token for preventing stale workers from overwriting state
+    # Generated when claiming, validated on updates
+    lease_owner_token: Optional[str] = None
+
     # Optional: Track which side effects have actually completed
     # These represent CONFIRMED actions, not attempted ones
     reactivation_completed: bool = False
     odoo_note_completed: bool = False
     customer_response_completed: bool = False
     stage_update_completed: bool = False
+    email_delivery_completed: bool = False  # P1-03: Track email delivery success separately
 
     def __post_init__(self) -> None:
         """Validate state after initialization."""
@@ -96,6 +101,7 @@ class AutomationState:
             "odoo_note_completed": self.odoo_note_completed,
             "customer_response_completed": self.customer_response_completed,
             "stage_update_completed": self.stage_update_completed,
+            "email_delivery_completed": self.email_delivery_completed,
         }
 
     @classmethod
@@ -129,4 +135,5 @@ class AutomationState:
             odoo_note_completed=data.get("odoo_note_completed", False),
             customer_response_completed=data.get("customer_response_completed", False),
             stage_update_completed=data.get("stage_update_completed", False),
+            email_delivery_completed=data.get("email_delivery_completed", False),
         )

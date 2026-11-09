@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
 
-from srcs.models import Employee, EmployeeStatus, DeactivationReason, Ticket
+from srcs.models import Employee, EmployeeStatus, DeactivationReason, Ticket, AutomationState
 
 logger = logging.getLogger(__name__)
 
@@ -40,12 +40,16 @@ class DecisionService:
     No external API calls are made here - decisions are based on provided data.
     """
 
-    def decide(self, employee: Optional[Employee], ticket: Ticket) -> DecisionResult:
+    def decide(
+        self, employee: Optional[Employee], ticket: Ticket,
+        state: Optional[AutomationState] = None
+    ) -> DecisionResult:
         """Make a decision for a login issue ticket.
 
         Args:
             employee: Employee model or None if not found
             ticket: Ticket model with classification
+            state: Optional previous AutomationState to check for pending operations
 
         Returns:
             DecisionResult with action and reason
@@ -102,6 +106,18 @@ class DecisionService:
             # Rule 7: Active employee with login issue - APPROVE
             if employee.status == EmployeeStatus.ACTIVE:
                 if employee.lms_account_status == "active":
+                    # P1-01 Fix: Check for pending operations before skipping
+                    # P1-03 Fix: Also check for pending email delivery
+                    # If this is a retry with incomplete side effects, continue workflow
+                    if state and (not state.odoo_note_completed or not state.stage_update_completed or not state.email_delivery_completed):
+                        return DecisionResult(
+                            action=Decision.APPROVE_REACTIVATION,
+                            reason=(
+                                "LMS account is active but retry has pending operations "
+                                "(note, stage update, or email delivery incomplete). Resuming workflow to complete side effects."
+                            ),
+                        )
+
                     return DecisionResult(
                         action=Decision.SKIP,
                         reason="LMS account is already active.",

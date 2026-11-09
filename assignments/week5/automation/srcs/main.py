@@ -51,9 +51,31 @@ logger = logging.getLogger(__name__)
 class AutomationExecutor:
     """Executes the complete automation workflow."""
 
-    def __init__(self):
-        """Initialize executor with clients and services."""
+    def __init__(self, ticket_client=None, hr_client=None, ticket_analyzer=None,
+                 gmail_service=None, state_repo=None):
+        """Initialize executor with clients and services.
+
+        Args:
+            ticket_client: Optional mocked ticket client for testing
+            hr_client: Optional mocked HR client for testing
+            ticket_analyzer: Optional mocked ticket analyzer for testing
+            gmail_service: Optional mocked Gmail service for testing
+            state_repo: Optional mocked state repository for testing
+        """
         try:
+            # If dependencies are provided (for testing), use them directly
+            if ticket_client is not None:
+                self.ticket_client = ticket_client
+                self.hr_client = hr_client
+                self.ticket_analyzer = ticket_analyzer
+                self.gmail_service = gmail_service
+                self.state_repo = state_repo
+                self.poller = None  # For testing, we don't need poller
+                self.decision_service = None
+                self.workflow = None
+                self.metrics = None
+                return
+
             # Import here to avoid circular imports and allow graceful error handling
             from srcs.clients.odoo.ticket_client import TicketClient
             from srcs.clients.hr.hr_client import HRClient
@@ -149,7 +171,23 @@ class AutomationExecutor:
             logger.info(f"Polling for due retries (limit={limit})...")
             retry_tickets = self.poller.poll_for_retry(limit=limit)
 
-            # Merge and deduplicate ticket IDs across both sources
+            # TASK 4 FIX: Poll for expired PROCESSING tickets to recover orphaned work
+            logger.info(f"Polling for expired processing leases (limit={limit})...")
+            expired_tickets = []
+            for expired_state in self.state_repo.get_expired_processing_tickets(limit=limit):
+                try:
+                    ticket = self.ticket_client.get_ticket(expired_state.ticket_id)
+                    if ticket:
+                        expired_tickets.append((ticket, expired_state))
+                        logger.info(
+                            f"Found expired processing ticket {expired_state.ticket_id} "
+                            f"(lease expired at {expired_state.processing_lease_until})"
+                        )
+                except Exception as e:
+                    logger.warning(f"Failed to fetch expired ticket {expired_state.ticket_id}: {str(e)}")
+                    # Continue processing other expired tickets
+
+            # Merge and deduplicate ticket IDs across all sources
             ticket_ids = set()
             all_tickets = []
 
@@ -160,6 +198,12 @@ class AutomationExecutor:
 
             # poll_for_retry() returns (ticket, state) tuples - extract just tickets
             for ticket, state in retry_tickets:
+                if ticket.id not in ticket_ids:
+                    ticket_ids.add(ticket.id)
+                    all_tickets.append(ticket)
+
+            # TASK 4 FIX: Also include expired processing tickets (for recovery)
+            for ticket, state in expired_tickets:
                 if ticket.id not in ticket_ids:
                     ticket_ids.add(ticket.id)
                     all_tickets.append(ticket)
@@ -195,11 +239,14 @@ class AutomationExecutor:
                     fingerprint = TicketFingerprinter.generate(ticket)
 
                     # Attempt to claim ticket for processing (prevents concurrent execution)
-                    if not self.state_repo.claim_for_processing(
+                    # TASK 3 FIX: claim_for_processing now returns ownership token (or None if claim fails)
+                    owner_token = self.state_repo.claim_for_processing(
                         ticket_id=ticket.id,
                         fingerprint=fingerprint,
                         lease_duration_seconds=300  # 5 minute lease
-                    ):
+                    )
+
+                    if not owner_token:
                         logger.info(
                             f"Ticket {ticket.id} already being processed by another worker, skipping"
                         )
@@ -213,30 +260,62 @@ class AutomationExecutor:
                     result = self.workflow.execute(ticket_id=ticket.id, state=existing_state)
 
                     # Save automation state after processing
-                    self._save_ticket_state(ticket, result)
+                    # ISSUE 2 FIX: Pass owner_token for atomic SQL validation
+                    self._save_ticket_state(ticket, result, owner_token=owner_token)
 
                     # Handle retry scheduling if workflow indicates failure
                     if result.action_taken == "retry_scheduled":
                         self.state_repo.schedule_retry(
                             ticket_id=ticket.id,
                             retry_after_seconds=3600,  # Retry after 1 hour
-                            error=result.error_message
+                            error=result.error_message,
+                            owner_token=owner_token  # ISSUE 2 FIX: Pass owner token
                         )
                         results["failed"] += 1
                         logger.info(f"Scheduled retry for ticket {ticket.id}: {result.error_message}")
                         continue
 
-                    # Track result
-                    if result.success:
-                        if result.action_taken == "skipped":
-                            results["skipped"] += 1
-                        elif result.action_taken == "escalated_manual_review":
-                            results["escalated"] += 1
-                        elif result.action_taken == "account_reactivated":
-                            results["successful"] += 1
-                    else:
+                    # P1-03: Handle email delivery failure - schedule retry for email only
+                    if result.action_taken == "account_reactivated" and not result.email_delivery_completed:
+                        logger.warning(f"Email delivery failed for ticket {ticket.id}, scheduling retry")
+                        self.state_repo.schedule_retry(
+                            ticket_id=ticket.id,
+                            retry_after_seconds=300,  # Retry sooner for email failures (5 minutes)
+                            error="Email delivery failed - will retry",
+                            owner_token=owner_token  # ISSUE 2 FIX: Pass owner token
+                        )
                         results["failed"] += 1
-                        logger.error(f"Ticket {ticket.id} failed: {result.error_message}")
+                        continue
+
+                    # ISSUE #2 FINAL FIX: Release lease after terminal workflow outcomes
+                    # Terminal outcomes: COMPLETED, MANUAL_REVIEW, SKIPPED
+                    if result.action_taken == "account_reactivated":
+                        # Successful completion - release lease
+                        self.state_repo.mark_completed(ticket_id=ticket.id, owner_token=owner_token)
+                        results["successful"] += 1
+                        logger.info(f"Completed and released lease for ticket {ticket.id}")
+                    elif result.action_taken == "escalated_manual_review":
+                        # Manual review escalation - release lease
+                        self.state_repo.mark_manual_review(
+                            ticket_id=ticket.id,
+                            reason="Escalated to manual review",
+                            owner_token=owner_token
+                        )
+                        results["escalated"] += 1
+                        logger.info(f"Escalated to manual review and released lease for ticket {ticket.id}")
+                    elif result.action_taken == "skipped":
+                        # Ticket skipped - release lease
+                        self.state_repo.mark_skipped(ticket_id=ticket.id, owner_token=owner_token)
+                        results["skipped"] += 1
+                        logger.info(f"Skipped and released lease for ticket {ticket.id}")
+                    else:
+                        # Handle any other terminal outcome
+                        if result.success:
+                            results["successful"] += 1
+                        else:
+                            results["failed"] += 1
+                            logger.error(f"Ticket {ticket.id} failed: {result.error_message}")
+
 
                 except Exception as e:
                     logger.error(f"Exception processing ticket {ticket.id}: {str(e)}", exc_info=True)
@@ -324,7 +403,7 @@ class AutomationExecutor:
         """
         return self.metrics.to_dict()
 
-    def _save_ticket_state(self, ticket, result) -> None:
+    def _save_ticket_state(self, ticket, result, owner_token: str = None) -> None:
         """Save automation state after processing a ticket.
 
         Updates existing state, preserving side-effect flags and retry metadata.
@@ -332,6 +411,7 @@ class AutomationExecutor:
         Args:
             ticket: Ticket model
             result: WorkflowResult from workflow execution
+            owner_token: Optional ownership token from claim_for_processing() for atomic SQL validation
         """
         try:
             from srcs.models import AutomationState, AutomationStatus
@@ -373,6 +453,8 @@ class AutomationExecutor:
                     existing_state.customer_response_completed = True
                 if result.stage_update_completed:
                     existing_state.stage_update_completed = True
+                if result.email_delivery_completed:
+                    existing_state.email_delivery_completed = True
 
                 state = existing_state
             else:
@@ -387,9 +469,10 @@ class AutomationExecutor:
                     odoo_note_completed=result.odoo_note_completed,
                     customer_response_completed=result.customer_response_completed,
                     stage_update_completed=result.stage_update_completed,
+                    email_delivery_completed=result.email_delivery_completed,
                 )
 
-            self.state_repo.save(state)
+            self.state_repo.save(state, owner_token=owner_token)
             logger.debug(f"Saved automation state for ticket {ticket.id}: status={status.value}")
 
         except Exception as e:

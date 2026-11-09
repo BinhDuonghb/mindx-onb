@@ -57,7 +57,7 @@ class TestProcessingClaimsIntegration:
             lease_duration_seconds=300
         )
 
-        assert claimed is True
+        assert claimed is not None  # TASK 3 FIX: Returns token on successful claim
 
     def test_claimed_ticket_cannot_be_claimed_again(self, repo, ticket):
         """Already claimed ticket should not be claimable by another worker."""
@@ -69,7 +69,7 @@ class TestProcessingClaimsIntegration:
             fingerprint=fingerprint,
             lease_duration_seconds=300
         )
-        assert claimed1 is True
+        assert claimed1 is not None  # TASK 3 FIX: Returns token on successful claim
 
         # Second claim fails (lease still active)
         claimed2 = repo.claim_for_processing(
@@ -77,7 +77,7 @@ class TestProcessingClaimsIntegration:
             fingerprint=fingerprint,
             lease_duration_seconds=300
         )
-        assert claimed2 is False
+        assert claimed2 is None  # TASK 3 FIX: Returns None when lease is active
 
     def test_expired_lease_can_be_recovered(self, repo, ticket):
         """Expired processing lease should be recoverable."""
@@ -89,7 +89,7 @@ class TestProcessingClaimsIntegration:
             fingerprint=fingerprint,
             lease_duration_seconds=0  # Already expired
         )
-        assert claimed1 is True
+        assert claimed1 is not None  # TASK 3 FIX: Returns token on successful claim
 
         # Should be able to recover expired lease
         claimed2 = repo.claim_for_processing(
@@ -97,7 +97,7 @@ class TestProcessingClaimsIntegration:
             fingerprint=fingerprint,
             lease_duration_seconds=300
         )
-        assert claimed2 is True
+        assert claimed2 is not None  # TASK 3 FIX: Returns token on successful claim
 
     def test_fingerprint_change_allows_reclaim(self, repo, ticket):
         """Fingerprint change allows re-evaluation only if lease has expired."""
@@ -109,7 +109,7 @@ class TestProcessingClaimsIntegration:
             fingerprint=fingerprint1,
             lease_duration_seconds=0  # Already expired
         )
-        assert claimed1 is True
+        assert claimed1 is not None  # TASK 3 FIX: Returns token on successful claim
 
         # Simulate ticket content change
         ticket.name = "Cannot login - updated"
@@ -121,7 +121,7 @@ class TestProcessingClaimsIntegration:
             fingerprint=fingerprint2,
             lease_duration_seconds=300
         )
-        assert claimed2 is True
+        assert claimed2 is not None  # TASK 3 FIX: Returns token on successful claim
 
     def test_fingerprint_change_cannot_bypass_active_lease(self, repo, ticket):
         """Fingerprint change cannot bypass an active processing lease."""
@@ -133,7 +133,7 @@ class TestProcessingClaimsIntegration:
             fingerprint=fingerprint1,
             lease_duration_seconds=300  # Active lease
         )
-        assert claimed1 is True
+        assert claimed1 is not None  # TASK 3 FIX: Returns token on successful claim
 
         # Simulate ticket content change
         ticket.name = "Cannot login - updated"
@@ -145,7 +145,7 @@ class TestProcessingClaimsIntegration:
             fingerprint=fingerprint2,
             lease_duration_seconds=300
         )
-        assert claimed2 is False
+        assert claimed2 is None  # TASK 3 FIX: Returns None when lease is active
 
     def test_claim_preserves_side_effect_flags(self, repo, ticket):
         """Claim should preserve existing side-effect completion flags."""
@@ -167,7 +167,7 @@ class TestProcessingClaimsIntegration:
             fingerprint=fingerprint,
             lease_duration_seconds=300
         )
-        assert claimed is True
+        assert claimed is not None  # TASK 3 FIX: Returns token on successful claim
 
         # Verify flags are still set
         updated_state = repo.get(ticket.id)
@@ -195,7 +195,7 @@ class TestProcessingClaimsIntegration:
             fingerprint=fingerprint,
             lease_duration_seconds=300
         )
-        assert claimed is True
+        assert claimed is not None  # TASK 3 FIX: Returns token on successful claim
 
         # Verify state is preserved
         retrieved_state = repo.get(ticket.id)
@@ -215,7 +215,7 @@ class TestProcessingClaimsIntegration:
         )
         after_claim = datetime.now(timezone.utc)
 
-        assert claimed is True
+        assert claimed is not None  # TASK 3 FIX: Returns token on successful claim
 
         # Verify lease was set
         state = repo.get(ticket.id)
@@ -234,12 +234,12 @@ class TestProcessingClaimsIntegration:
 
         # Claim ticket 1
         claimed1 = repo.claim_for_processing(ticket_id=1, fingerprint=fp1, lease_duration_seconds=300)
-        assert claimed1 is True
+        assert claimed1 is not None  # TASK 3 FIX: Returns token on successful claim
 
         # Ticket 2 should be independently claimable
         claimed2 = repo.claim_for_processing(ticket_id=2, fingerprint=fp2, lease_duration_seconds=300)
-        assert claimed2 is True
+        assert claimed2 is not None  # TASK 3 FIX: Returns token on successful claim
 
         # Ticket 1 still cannot be re-claimed
         claimed1_again = repo.claim_for_processing(ticket_id=1, fingerprint=fp1, lease_duration_seconds=300)
-        assert claimed1_again is False
+        assert claimed1_again is None  # TASK 3 FIX: Returns None when lease is active
