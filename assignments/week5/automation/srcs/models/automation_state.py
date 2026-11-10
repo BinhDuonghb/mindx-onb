@@ -63,6 +63,7 @@ class AutomationState:
     # Optional: Track which side effects have actually completed
     # These represent CONFIRMED actions, not attempted ones
     reactivation_completed: bool = False
+    reactivation_authorized: bool = False  # Persisted proof of prior VERIFIED approval, not inferred from LMS status
     odoo_note_completed: bool = False
     customer_response_completed: bool = False
     stage_update_completed: bool = False
@@ -104,6 +105,7 @@ class AutomationState:
             "next_retry_at": self.next_retry_at.isoformat() if self.next_retry_at else None,
             "last_error": self.last_error,
             "reactivation_completed": self.reactivation_completed,
+            "reactivation_authorized": self.reactivation_authorized,
             "odoo_note_completed": self.odoo_note_completed,
             "customer_response_completed": self.customer_response_completed,
             "stage_update_completed": self.stage_update_completed,
@@ -138,6 +140,7 @@ class AutomationState:
             next_retry_at=next_retry_at,
             last_error=data.get("last_error"),
             reactivation_completed=data.get("reactivation_completed", False),
+            reactivation_authorized=data.get("reactivation_authorized", False),
             odoo_note_completed=data.get("odoo_note_completed", False),
             customer_response_completed=data.get("customer_response_completed", False),
             stage_update_completed=data.get("stage_update_completed", False),

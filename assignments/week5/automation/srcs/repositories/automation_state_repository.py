@@ -58,6 +58,7 @@ class AutomationStateRepository:
                         next_retry_at TEXT,
                         last_error TEXT,
                         reactivation_completed INTEGER NOT NULL DEFAULT 0,
+                        reactivation_authorized INTEGER NOT NULL DEFAULT 0,
                         odoo_note_completed INTEGER NOT NULL DEFAULT 0,
                         customer_response_completed INTEGER NOT NULL DEFAULT 0,
                         stage_update_completed INTEGER NOT NULL DEFAULT 0,
@@ -141,6 +142,7 @@ class AutomationStateRepository:
             # List of required columns with their definitions
             required_columns = {
                 "email_delivery_completed": "INTEGER NOT NULL DEFAULT 0",
+                "reactivation_authorized": "INTEGER NOT NULL DEFAULT 0",
                 "lease_owner_token": "TEXT",
                 "ambiguous_write_outcome": "TEXT",
                 "ambiguous_write_context": "TEXT"
@@ -261,6 +263,7 @@ class AutomationStateRepository:
                         SET fingerprint = ?, status = ?, last_decision = ?, last_reason = ?,
                             updated_at = ?, last_checked_at = ?, retry_count = ?,
                             next_retry_at = ?, last_error = ?, reactivation_completed = ?,
+                            reactivation_authorized = ?,
                             odoo_note_completed = ?, customer_response_completed = ?,
                             stage_update_completed = ?, email_delivery_completed = ?,
                             processing_lease_until = COALESCE(?, processing_lease_until),
@@ -278,6 +281,7 @@ class AutomationStateRepository:
                         state.next_retry_at.isoformat() if state.next_retry_at else None,
                         state.last_error,
                         1 if state.reactivation_completed else 0,
+                        1 if state.reactivation_authorized else 0,
                         1 if state.odoo_note_completed else 0,
                         1 if state.customer_response_completed else 0,
                         1 if state.stage_update_completed else 0,
@@ -302,11 +306,11 @@ class AutomationStateRepository:
                         INSERT INTO automation_state (
                             ticket_id, fingerprint, status, last_decision, last_reason,
                             created_at, updated_at, last_checked_at, retry_count,
-                            next_retry_at, last_error, reactivation_completed,
+                            next_retry_at, last_error, reactivation_completed, reactivation_authorized,
                             odoo_note_completed, customer_response_completed,
                             stage_update_completed, email_delivery_completed, processing_lease_until,
                             lease_owner_token, ambiguous_write_outcome, ambiguous_write_context
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         ON CONFLICT(ticket_id) DO UPDATE SET
                             fingerprint = excluded.fingerprint,
                             status = excluded.status,
@@ -318,6 +322,7 @@ class AutomationStateRepository:
                             next_retry_at = excluded.next_retry_at,
                             last_error = excluded.last_error,
                             reactivation_completed = excluded.reactivation_completed,
+                            reactivation_authorized = excluded.reactivation_authorized,
                             odoo_note_completed = excluded.odoo_note_completed,
                             customer_response_completed = excluded.customer_response_completed,
                             stage_update_completed = excluded.stage_update_completed,
@@ -339,6 +344,7 @@ class AutomationStateRepository:
                         state.next_retry_at.isoformat() if state.next_retry_at else None,
                         state.last_error,
                         1 if state.reactivation_completed else 0,
+                        1 if state.reactivation_authorized else 0,
                         1 if state.odoo_note_completed else 0,
                         1 if state.customer_response_completed else 0,
                         1 if state.stage_update_completed else 0,
@@ -931,6 +937,7 @@ class AutomationStateRepository:
             last_error=row["last_error"],
             processing_lease_until=datetime.fromisoformat(row["processing_lease_until"]) if row["processing_lease_until"] else None,
             reactivation_completed=bool(row["reactivation_completed"]),
+            reactivation_authorized=bool(row["reactivation_authorized"]),
             odoo_note_completed=bool(row["odoo_note_completed"]),
             customer_response_completed=bool(row["customer_response_completed"]),
             stage_update_completed=bool(row["stage_update_completed"]),

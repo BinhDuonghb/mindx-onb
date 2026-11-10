@@ -95,6 +95,14 @@ HR_CACHE_TTL = int(os.getenv("HR_CACHE_TTL", "300"))
 # Odoo Stage Mapping (P2 Issue #4: Remove hardcoded stage IDs)
 # Maps workflow outcomes to Odoo stage IDs for ticket updates
 # These must be configured by the Odoo administrator based on their system setup
+# Configure terminal/Done stage IDs for your own Odoo database, e.g. "7,8".
+# Unknown stage meanings must be reviewed by an administrator before enabling automation.
+ODOO_STAGE_DONE_IDS = frozenset(
+    int(value.strip())
+    for value in os.getenv("ODOO_STAGE_DONE_IDS", "").split(",")
+    if value.strip()
+)
+
 ODOO_STAGE_MAPPING = {
     # Stage ID used when awaiting confirmation from the ticket owner
     # Typically applied after account reactivation is completed

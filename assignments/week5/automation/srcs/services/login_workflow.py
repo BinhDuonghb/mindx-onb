@@ -33,6 +33,7 @@ class WorkflowResult:
 
     # Side-effect completion flags (for retry scenarios)
     reactivation_completed: bool = False
+    reactivation_authorized: bool = False
     odoo_note_completed: bool = False
     customer_response_completed: bool = False
     stage_update_completed: bool = False
@@ -220,6 +221,11 @@ class LoginWorkflow:
             result = self._execute_decision(
                 ticket, employee, analysis, decision, state
             )
+            # The decision service may approve only via a VERIFIED identity
+            # or a durable, previously authorized reactivation. Preserve the
+            # authorization evidence even when downstream Odoo/email fails.
+            if decision.action == Decision.APPROVE_REACTIVATION:
+                result.reactivation_authorized = True
 
             # Step 6: Send exactly ONE appropriate email based on outcome
             # P1-03: Capture email send result for retry handling
@@ -413,9 +419,9 @@ class LoginWorkflow:
             from srcs import config
 
             stage_id = config.ODOO_STAGE_MAPPING.get("awaiting_confirmation", 0)
-            if stage_id == 0:
+            if stage_id == 0 or stage_id in config.ODOO_STAGE_DONE_IDS:
                 logger.error(
-                    f"Odoo awaiting_confirmation stage not configured. "
+                    f"Odoo awaiting_confirmation stage missing or mapped to a known Done stage. "
                     f"Set ODOO_STAGE_AWAITING_CONFIRMATION in .env. "
                     f"Cannot update ticket {ticket.id} stage without configuration."
                 )
@@ -672,9 +678,19 @@ class LoginWorkflow:
         Returns:
             True if email sent successfully (or no email needed), False if email send failed
         """
+        if result.action_taken not in ("account_reactivated", "escalated_manual_review"):
+            # Intentionally skipped: no email was delivered. Runner does not
+            # retry emails for skipped/error/retry outcomes.
+            logger.info(f"Outcome email intentionally skipped for: {result.action_taken}")
+            return False
+
         if not self.gmail_service or not ticket.email_from:
-            # No email service or no recipient - treat as success (no action needed)
-            return True
+            logger.warning(
+                "Outcome email NOT delivered for ticket %s: %s",
+                ticket.id,
+                "SMTP not configured" if not self.gmail_service else "recipient email missing",
+            )
+            return False  # Never report an unsent outcome email as delivered.
 
         from srcs.services.gmail import EmailContext, EmailTemplate
 

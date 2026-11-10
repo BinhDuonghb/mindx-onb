@@ -93,6 +93,7 @@ class TestP101PartialRetryWorkflow:
             fingerprint="fp1",
             status=AutomationStatus.RETRY_SCHEDULED,
             reactivation_completed=True,  # LMS was already reactivated
+            reactivation_authorized=True,  # Prior VERIFIED authorization was persisted
             odoo_note_completed=False,     # But note posting failed
             stage_update_completed=False,
             last_decision="account_reactivated",
@@ -182,6 +183,7 @@ class TestP101PartialRetryWorkflow:
             fingerprint=fingerprint,
             status=AutomationStatus.RETRY_SCHEDULED,
             reactivation_completed=result1.reactivation_completed,
+            reactivation_authorized=result1.reactivation_authorized,
             odoo_note_completed=result1.odoo_note_completed,
             stage_update_completed=result1.stage_update_completed,
         )
@@ -490,6 +492,7 @@ class TestP103EmailDeliveryFailure:
             fingerprint=fingerprint,
             status=AutomationStatus.RETRY_SCHEDULED,
             reactivation_completed=result1.reactivation_completed,
+            reactivation_authorized=result1.reactivation_authorized,
             odoo_note_completed=result1.odoo_note_completed,
             stage_update_completed=result1.stage_update_completed,
             email_delivery_completed=result1.email_delivery_completed,

@@ -2,9 +2,9 @@
 
 Enterprise-grade support automation for Odoo helpdesk tickets. Automatically detects login issues, validates employee status, reactivates LMS accounts, and manages customer communications with persistent state tracking and intelligent retry scheduling.
 
-**Status**: 🔄 **Demo / Integration Pending** | 483 tests passing (mocked-only) | Retry mechanism with state recovery | SQLite persistence | Gmail SMTP integration
+**Status**: 🔄 **Demo / Integration Pending** | 494 offline tests passed (independently verified); 518 full-suite tests passed (user-reported) | Retry mechanism with state recovery | SQLite persistence | Gmail SMTP integration
 
-**Note**: HR/LMS integration currently uses simulated JSON file adapter (mock data). Real HR/LMS API integration pending before production rollout. See [Integration Status](#integration-status) below.
+**Note**: HR/LMS integration currently uses simulated JSON file adapter (mock data). Real HR/LMS API integration pending before production rollout. An active LMS status alone is not authorization: resume requires persisted prior VERIFIED approval and completed reactivation. Legacy in-flight states without this evidence require manual reconciliation. Missing SMTP is recorded as undelivered, not as successful email delivery. Configure `ODOO_STAGE_AWAITING_CONFIRMATION` to a non-terminal stage and optionally list terminal IDs in `ODOO_STAGE_DONE_IDS`. See [Integration Status](#integration-status) below.
 
 ## Overview
 
@@ -20,7 +20,7 @@ Key differentiators:
 - **Idempotent retries**: Side effects tracked and persisted; skips already-completed actions
 - **Atomic processing**: Prevents concurrent workers from processing the same ticket
 - **Outcome-first emails**: Exactly one email per execution based on workflow result
-- **Graceful degradation**: Works without external services (HR, Gmail) if needed
+- **Graceful degradation**: Supports mock HR/LMS for training; missing SMTP leaves required outcome email undelivered and pending
 
 ## Quick Start
 
@@ -98,14 +98,15 @@ python srcs/main.py --help
 ### Running Tests
 
 ```bash
-# All tests (483 passing - mocked-only, offline)
+# Offline test suite (494 passed in independent verification; excludes tests/e2e/)
 pytest tests/units/ tests/integration/ tests/integrations/ -q --tb=short
 
 # By category
-pytest tests/units/ -q              # 389 unit tests
-pytest tests/integration/ tests/integrations/ -q        # 94 integration/e2e tests
+pytest tests/units/ -q              # Unit tests
+pytest tests/integration/ tests/integrations/ -q  # Mocked integration tests
 
-# With verbose output
+# Full suite (includes tests/e2e/; may require a configured Odoo test instance)
+# Run only against a dedicated, authorized test environment.
 pytest tests/ -v
 
 # With coverage report
@@ -117,15 +118,16 @@ pytest tests/ --cov=srcs --cov-report=html
 ```
 $ pytest tests/units/ tests/integration/ tests/integrations/ -q --tb=short
 ...................................................                     [100%]
-483 passed in 14.12s
+494 passed in the independently verified offline regression run
 ```
 
-**Test Breakdown**:
-- **389 Unit Tests**: Individual service testing (TicketAnalyzer, EmailTemplates, DecisionService, etc.)
-- **94 Integration/E2E Tests**: Multi-service workflows (complete automation flows, restart safety, idempotency)
+**Test Scope and Results**:
+- **494 passed (independently verified):** `tests/units/`, `tests/integration/`, and `tests/integrations/` with test/mock configuration; excludes `tests/e2e/`.
+- **518 passed in 33.27s (reported from a local developer run):** full `tests/` suite, including the 24 tests under `tests/e2e/`. This full result has not been independently reproduced in this README update.
+- Counts are tied to this project snapshot and may change as tests are added.
 
 **Test Environment**:
-- All tests are **mocked-only** (no real external services)
+- The **494-test offline subset** uses mocks and does not intentionally call real external services; the **518-test full suite** also includes E2E tests that may require a configured test Odoo instance.
 - HR/LMS integration uses mock JSON data from `data/hr.json`
 - Odoo integration uses mock ticket client fixtures
 - Gmail integration mocked (no actual SMTP calls)
@@ -155,7 +157,7 @@ $ pytest tests/units/ tests/integration/ tests/integrations/ -q --tb=short
 5. Execute reactivation (track side effects)
    ├─ LMS account activation
    ├─ Post internal note to Odoo
-   ├─ Update ticket stage to "resolved"
+   ├─ Update ticket stage to configured "Awaiting Confirmation" (not Done)
    ├─ Send RESOLUTION email to customer
    └─ Save final state to SQLite
    ↓
@@ -197,11 +199,11 @@ AutomationState(
 
 ### Idempotent Retry Mechanism
 
-When a step fails partway through reactivation (e.g., LMS succeeds but Odoo note posting fails):
+When a **VERIFIED and durably authorized** reactivation fails partway through (e.g., LMS succeeds but Odoo note posting fails):
 
 1. **Persist partial state immediately** - Save which side effects completed
 2. **Schedule retry** - Calculate retry time and save to database
-3. **Skip completed actions** - On retry, `_handle_reactivation()` checks flags and skips already-done work
+3. **Authorize safe resume** - Persisted `reactivation_authorized=True` and `reactivation_completed=True` are required; states without approval evidence require manual review. Then skip completed actions.
 4. **Send email on success** - Email only sent when entire workflow succeeds
 
 Example:
@@ -310,15 +312,15 @@ Lease check happens **before** fingerprint check to prevent bypass via content c
   - No manual switching needed
 
 - **Graceful Degradation**:
-  - Works without Gmail configured (emails skipped)
+  - Missing Gmail configuration prevents marking required outcome email as delivered; retry/escalate
   - Works without HR system (uses mock data)
   - Works without state repo (in-memory only)
   - Continues processing on service failures
 
 #### Testing & Quality
-- **483 Tests Passing** (mocked-only, offline):
-  - 389 unit tests (isolated service testing)
-  - 94 integration/e2e tests (multi-service workflows, restart safety)
+- **494 offline tests passing** (independently verified) and **518 full-suite tests passing** (developer-reported; includes E2E tests):
+  - Offline subset: unit and mocked integration checks, including restart safety
+  - Full suite: offline subset plus 24 `tests/e2e/` tests
   
 - **Test-Driven Development**:
   - RED → GREEN → REFACTOR cycle
@@ -385,7 +387,7 @@ automation/
 │   │   └── [others...]
 │   ├── integration/                 # 118 integration tests
 │   │   ├── test_login_workflow_email.py
-│   │   ├── test_p0_correctness.py
+│   │   ├── test_correctness.py
 │   │   ├── test_run_once_integration.py
 │   │   ├── test_communication_policy.py
 │   │   ├── test_persistent_communication_state.py
@@ -585,7 +587,7 @@ success = service.send_email(context)
 - **Atomic Processing Claims**: Fingerprint changes blocked by active lease
 - **Email Failure Recovery**: Don't mark complete on email failures, retry safely
 - **Integration Tests**: Full retry flow with actual side-effect call counts
-- Tests: 6 new integration tests, all 394 passing
+- Tests: 6 new integration tests, regression tests passing
 
 ### 🔄 Phase 9-14: P1 Advanced Retry (Ready)
 - Max retry limits and dead letter handling
@@ -808,7 +810,7 @@ Optimizations:
 ### For Demo/Testing
 - [x] Mock HR data configured (`data/hr.json`)
 - [x] Mock Odoo ticket client fixtures working
-- [x] 483 tests passing (mocked-only)
+- [x] 494 offline tests passed (independently verified); 518 full-suite tests passed (user-reported)
 - [x] SQLite persistence working
 - [x] State recovery tested across restarts
 - [x] All automation flows verified with mocks
@@ -825,7 +827,7 @@ Optimizations:
 - [ ] Test email sending with sample ticket
 - [ ] Verify real HR data loaded correctly
 - [ ] Run full test suite: `pytest tests/units/ tests/integration/ tests/integrations/ -q`
-- [ ] Verify 483 tests passing with real mocks
+- [ ] Verify current offline regression using mocked services
 - [ ] Run against real (non-production) Odoo test instance first
 - [ ] Monitor first few polling cycles for errors
 - [ ] Setup continuous polling: `python srcs/main.py --poll --interval 60`
@@ -915,8 +917,8 @@ For questions or issues:
 
 ---
 
-**Last Updated**: 2026-11-09
-**Test Status**: ✅ 483/483 tests passing (389 units + 94 integration/e2e, mocked-only, offline)
+**Last Updated**: 2026-11-10
+**Test Status**: ✅ 494/494 offline tests independently verified; 518/518 full-suite tests reported by developer (including 24 E2E tests; not independently rerun)
 **Current Status**: 🔄 Demo / Integration Pending
 **Retry Mechanism**: ✅ Implemented with state recovery and restart safety (P2 Issue #5)
 **Email Integration**: ✅ Gmail SMTP configured (optional)

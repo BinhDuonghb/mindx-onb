@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
 
-from srcs.models import Employee, EmployeeStatus, DeactivationReason, Ticket, AutomationState
+from srcs.models import Employee, EmployeeStatus, DeactivationReason, Ticket, AutomationState, AutomationStatus
 from srcs.services.identity_verifier import IdentityVerifier, VerificationStatus
 
 logger = logging.getLogger(__name__)
@@ -124,13 +124,29 @@ class DecisionService:
                     # P1-01 Fix: Check for pending operations before skipping
                     # P1-03 Fix: Also check for pending email delivery
                     # If this is a retry with incomplete side effects, continue workflow
-                    if state and (not state.odoo_note_completed or not state.stage_update_completed or not state.email_delivery_completed):
+                    pending_effects = state and (
+                        not state.odoo_note_completed
+                        or not state.stage_update_completed
+                        or not state.email_delivery_completed
+                    )
+                    # An active LMS account, pending effects, or a retry status do
+                    # NOT prove that the requester was authorized. The approval
+                    # evidence is written only after a VERIFIED decision and
+                    # persisted together with the completed LMS reactivation.
+                    if pending_effects:
+                        if (
+                            state.reactivation_authorized
+                            and state.reactivation_completed
+                            and state.status in (AutomationStatus.RETRY_SCHEDULED, AutomationStatus.PROCESSING)
+                            and not state.ambiguous_write_outcome
+                        ):
+                            return DecisionResult(
+                                action=Decision.APPROVE_REACTIVATION,
+                                reason="Previously authorized LMS reactivation completed; resuming remaining side effects.",
+                            )
                         return DecisionResult(
-                            action=Decision.APPROVE_REACTIVATION,
-                            reason=(
-                                "LMS account is active but retry has pending operations "
-                                "(note, stage update, or email delivery incomplete). Resuming workflow to complete side effects."
-                            ),
+                            action=Decision.MANUAL_REVIEW,
+                            reason="Pending operations without durable prior approval and completed reactivation. Manual verification required.",
                         )
 
                     return DecisionResult(

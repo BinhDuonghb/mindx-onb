@@ -550,6 +550,8 @@ class AutomationExecutor:
                 # Persist side-effect completion flags from workflow result
                 if result.reactivation_completed:
                     existing_state.reactivation_completed = True
+                if result.reactivation_authorized:
+                    existing_state.reactivation_authorized = True
                 if result.odoo_note_completed:
                     existing_state.odoo_note_completed = True
                 if result.customer_response_completed:
@@ -576,6 +578,7 @@ class AutomationExecutor:
                     last_decision=result.action_taken,
                     last_reason=result.message,
                     reactivation_completed=result.reactivation_completed,
+                    reactivation_authorized=result.reactivation_authorized,
                     odoo_note_completed=result.odoo_note_completed,
                     customer_response_completed=result.customer_response_completed,
                     stage_update_completed=result.stage_update_completed,
